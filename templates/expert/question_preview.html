@@ -68,6 +68,8 @@
         padding:2px 10px; flex-shrink:0; }
       .pv-gap-fb.ok .pill{ background:var(--ok); color:#fff; }
       .pv-gap-fb.wrong .pill{ background:var(--danger); color:#fff; }
+      /* Pembahasan: section penuh selebar kartu — satu box per baris, tidak berdampingan */
+      .pv-gap-fb-row{ width:100%; margin:8px 0 0; }
       .pv-exp-toggle{ font-size:12px; font-weight:600; color:var(--brand); cursor:pointer;
         background:none; border:none; padding:4px 0; text-align:left; }
       .pv-exp-toggle:hover{ text-decoration:underline; }
@@ -253,13 +255,10 @@ function pvInjectInputs() {
         function(all, pre, num) {
             const gap = byNo[num];
             if (!gap) return all;
-            // Kolom: baris kontrol + slot feedback LANGSUNG di bawah rumpangnya
-            return '<span class="pv-gap-wrap" style="display:inline-flex;flex-direction:column;align-items:flex-start;gap:4px;margin:0 2px;vertical-align:baseline">' +
-                '<span style="display:inline-flex;align-items:center;gap:5px;white-space:nowrap">' +
+            // Rumpang inline: nomor + kontrol saja — feedback dirender jadi section penuh di bawah paragrafnya
+            return '<span class="pv-gap-wrap" style="display:inline-flex;align-items:center;gap:5px;margin:0 2px;vertical-align:baseline;white-space:nowrap">' +
                 '<span class="pv-gap-num">' + num + '</span>' +
-                pvGapControlHtml(gap) + '</span>' +
-                '<span class="pv-gap-fb-slot"></span>' +
-                '</span>';
+                pvGapControlHtml(gap) + '</span>';
         }
     );
     // Rumpang tanpa penanda di teks → kontrol dirender di baris hasil
@@ -280,10 +279,12 @@ function pvEscape(text) {
 function pvCheckGaps() {
     const box = document.getElementById('pv-gap-results');
     if (!box) return;
-    // Bersihkan hasil sebelumnya (slot feedback di bawah tiap rumpang + ringkasan)
+    // Bersihkan hasil sebelumnya (section pembahasan penuh + slot fallback + ringkasan)
+    document.querySelectorAll('.pv-gap-fb-row').forEach(n => { n.remove(); });
     document.querySelectorAll('.pv-gap-fb-slot').forEach(s => { s.innerHTML = ''; });
     box.innerHTML = '';
     let correct = 0;
+    const lastByBlock = new Map();
     PV_GAPS.forEach((gap) => {
         const control = document.querySelector('.cloze-input-body [data-no="' + gap.no + '"]') ||
             Array.from(document.querySelectorAll('#pv-gap-results [data-no="' + gap.no + '"]'))[0];
@@ -308,7 +309,8 @@ function pvCheckGaps() {
         if (ok) correct++;
         if (control) control.classList.add(ok ? 'ok' : 'wrong');
         const feedbackHtml =
-            '<span class="pv-gap-fb ' + (ok ? 'ok' : 'wrong') + '" style="max-width:340px">' +
+            '<span class="pv-gap-fb pv-gap-fb-row ' + (ok ? 'ok' : 'wrong') + '">' +
+            '<span class="pv-gap-num">' + gap.no + '</span>' +
             '<span class="pill">' + (ok ? '✓ Richtig' : '✗ Falsch') + '</span>' +
             '<div style="min-width:0;flex:1">' +
             (ok ? '<div>Jawabanmu benar: ' + pvEscape(userAnswer) + '</div>' :
@@ -320,16 +322,28 @@ function pvCheckGaps() {
                 : '') +
             '</div>' +
             '</span>';
-        // Feedback langsung di bawah rumpangnya sendiri
+        // Feedback jadi section penuh: rumpang di dalam teks → di bawah paragraf rumpangnya
+        // (stacked satu per baris, urut nomor); rumpang tanpa penanda → di baris hasilnya sendiri
         const wrap = control && control.closest ? control.closest('.pv-gap-wrap') : null;
-        const slot = (wrap && wrap.querySelector('.pv-gap-fb-slot')) ||
-            (control && control.parentElement && control.parentElement.querySelector('.pv-gap-fb-slot'));
-        if (slot) {
-            slot.innerHTML = feedbackHtml;
-        } else {
+        if (wrap) {
+            const body = document.querySelector('.cloze-input-body');
+            let block = wrap;
+            while (body && block.parentElement && block.parentElement !== body) block = block.parentElement;
             const holder = document.createElement('div');
             holder.innerHTML = feedbackHtml;
-            box.appendChild(holder.firstChild);
+            const fbEl = holder.firstChild;
+            const last = lastByBlock.get(block);
+            if (last) last.after(fbEl); else block.after(fbEl);
+            lastByBlock.set(block, fbEl);
+        } else {
+            const slot = control && control.parentElement && control.parentElement.querySelector('.pv-gap-fb-slot');
+            if (slot) {
+                slot.innerHTML = feedbackHtml;
+            } else {
+                const holder = document.createElement('div');
+                holder.innerHTML = feedbackHtml;
+                box.appendChild(holder.firstChild);
+            }
         }
     });
     const summary = document.createElement('p');
