@@ -72,18 +72,20 @@
 {% for key, value in [('a', 'Richtig'), ('b', 'Falsch'), ('c', ''), ('d', '')] %}
 <input type="hidden" name="{{ name_prefix }}option_{{ key }}" id="{{ id_prefix }}{{ key }}{{ id_suffix }}" value="{{ value }}">
 {% endfor %}
-<p class="text-xs text-gray-500 bg-gray-50 border border-gray-100 rounded-xl px-3 py-2.5">
-    Soal <strong>Richtig / Falsch</strong> — peserta memilih salah satu. Tulis pernyataannya di teks pertanyaan (boleh dengan gambar).
+<p class="qe-note">
+    Peserta memilih <strong>Richtig</strong> atau <strong>Falsch</strong>. Tulis pernyataannya di kolom pertanyaan (boleh dengan gambar), lalu tandai kuncinya.
 </p>
 {% endmacro %}
 
 {% macro rf_answer_key(radio_name, current='', id_prefix='') %}
-<div class="grid grid-cols-2 gap-2">
+<div class="qe-rf">
     {% for opt, label in [('A', 'Richtig'), ('B', 'Falsch')] %}
-    <label class="flex flex-col items-center gap-1 cursor-pointer py-3 border-2 border-gray-200 rounded-xl hover:border-blue-400 has-[:checked]:border-blue-600 has-[:checked]:bg-blue-50 transition">
+    <label class="qe-rf-opt">
         <input type="radio" name="{{ radio_name }}" value="{{ opt }}" {% if id_prefix %}id="{{ id_prefix }}{{ opt }}"{% endif %}
             {% if current == opt or (not current and loop.first) %}checked{% endif %} class="sr-only">
-        <span class="text-sm font-extrabold text-gray-700">{{ label }}</span>
+        <span class="qe-rf-badge">{{ label[0] }}</span>
+        <span class="qe-rf-lbl">{{ label }}</span>
+        <svg class="qe-rf-check" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
     </label>
     {% endfor %}
 </div>
@@ -96,6 +98,12 @@
 {% set cloze_input = answer_type == 'cloze' and cloze_answer_mode == 'input' %}
 {% set q_mode = passage.question_mode if passage else (requested_mode if requested_mode in ['single', 'grouped'] else 'grouped') %}
 {% set lock_mode = (passage.question_mode if passage else requested_mode) if (passage or requested_mode in ['single', 'grouped']) else '' %}
+{% set passage_card_title = 'Teks Lückentext' if answer_type == 'cloze' else 'Bacaan & Audio' %}
+{% if answer_type == 'rf' %}{% set answer_label = 'Richtig / Falsch' %}
+{% elif answer_type == 'cloze' and cloze_answer_mode == 'select' %}{% set answer_label = 'Lückentext · Dropdown di teks' %}
+{% elif answer_type == 'cloze' and cloze_answer_mode == 'input' %}{% set answer_label = 'Lückentext · Ketik jawaban' %}
+{% elif answer_type == 'cloze' %}{% set answer_label = 'Lückentext · Pilihan A–D' %}
+{% else %}{% set answer_label = 'Pilihan Ganda' %}{% endif %}
 
 {% block title %}{% if passage %}Edit — {{ passage.title }}{% elif q_mode == 'single' %}Buat Soal Mandiri{% elif requested_mode == 'grouped' %}Buat Kelompok Soal{% else %}Buat Soal Baru{% endif %}{% if answer_type == 'rf' %} (Richtig/Falsch){% elif answer_type == 'cloze' %} (Lückentext){% endif %}{% endblock %}
 {% block page_title %}{% if passage %}Edit Soal{% elif q_mode == 'single' %}Buat Soal Mandiri{% elif requested_mode == 'grouped' %}Buat Kelompok Soal{% else %}Buat Soal Baru{% endif %}{% if answer_type == 'rf' %} — Richtig/Falsch{% elif answer_type == 'cloze' %} — Lückentext{% endif %}{% endblock %}
@@ -104,93 +112,242 @@
 {% block head %}
 <link rel="stylesheet" href="{{ url_for('static', filename='libs/quill/quill.snow.css') }}">
 <style>
-    .ql-container { min-height: 180px; font-family: 'Poppins', sans-serif; font-size: 14px; }
-    .ql-editor    { min-height: 180px; }
-
-    /* Fix: prevent Tailwind's italic utility from enlarging Quill toolbar's italic button */
+    /* ── Quill ─────────────────────────────────────────────────────────────── */
+    .ql-container { min-height: 180px; font-size: 14px; }
+    .ql-editor    { min-height: 180px; line-height: 1.65; }
+    .ql-container, .ql-editor { font-family:'IBM Plex Sans','Segoe UI',sans-serif !important; }
+    /* Tailwind's italic utility would otherwise enlarge Quill's italic button */
     .ql-snow .ql-toolbar button.ql-italic { font-style: normal; font-size: 13px; line-height: 1; }
     .ql-snow .ql-toolbar button           { width: 26px; height: 26px; padding: 3px; }
     .ql-snow .ql-toolbar button svg       { width: 16px; height: 16px; }
-
-    .mode-btn.active { background:#2563EB; color:#fff; border-color:#2563EB; }
-    .mode-btn        { background:#fff; color:#374151; border-color:#D1D5DB; }
-
-    /* Animate card reveal in single mode */
-    .sq-card { animation: fadeSlideIn .18s ease; }
-    @keyframes fadeSlideIn { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:none; } }
-
-    /* Images inserted via Quill should not overflow their container */
+    .ql-snow .ql-toolbar { border:1px solid var(--line) !important; background:#F8FAFC; border-radius:10px 10px 0 0; }
+    .ql-snow .ql-container { border:1px solid var(--line) !important; border-top:none !important; border-radius:0 0 10px 10px; background:#fff; }
+    .ql-snow .ql-container:focus-within { border-color:var(--brand) !important; }
     .ql-editor img { max-width: 100%; height: auto; border-radius: 8px; margin: 4px 0; }
-
-    /* Compact Quill for modal — override the global 180px min-height */
+    .ql-editor.ql-blank::before { color:var(--faint); font-style:normal; }
     .ql-modal .ql-container,
     .ql-modal .ql-editor { min-height: 110px; }
 
-    /* ── BelajDeutsch refinements ─────────────────────────────────────────── */
-    .ql-container, .ql-editor { font-family:'IBM Plex Sans','Segoe UI',sans-serif !important; }
-    .ql-snow .ql-toolbar { border-bottom:1px solid var(--line) !important; background:#F8FAFC;
-        border-radius:10px 10px 0 0; }
-    .ql-snow .ql-container { border-radius:0 0 10px 10px; }
-    #main-grid h3, #main-grid h4, #top-bar h3, #top-bar h4, .sq-card h4 {
-        font-family:'Barlow','Arial Narrow',sans-serif; letter-spacing:.005em; }
-    #passage-panel h3, #questions-panel h3 { font-size:15.5px; font-weight:600; }
-    #top-bar p.text-sm.font-semibold { font-family:'Barlow',sans-serif; font-size:15px; }
-    .mode-btn, .sub-type-btn { border-radius:9px !important; }
-    .mode-btn.active { background:var(--brand) !important; border-color:var(--brand) !important; }
-    #save-passage-btn {
-        background:var(--brand) !important; color:#fff !important;
-        font-family:'Barlow',sans-serif !important; font-weight:600; letter-spacing:.01em;
-        border-radius:10px !important; box-shadow:0 4px 14px rgba(29,78,216,.24);
-        transition:all .15s;
-    }
-    #save-passage-btn:hover { background:var(--brand-strong) !important; transform:translateY(-1px); }
-    #passage-panel .bg-white, #questions-panel .bg-white, .sq-card {
-        box-shadow:0 1px 2px rgba(23,26,33,.04) !important; }
+    .mode-btn        { background:#fff; color:#374151; border-color:#D1D5DB; border-radius:9px !important; }
+    .mode-btn.active { background:var(--brand) !important; color:#fff; border-color:var(--brand) !important; }
+    .sub-type-btn    { border-radius:9px !important; }
 
-    /* ── Compact context bar + unified single card ──────────────────────── */
+    .sq-card { animation: fadeSlideIn .18s ease; }
+    @keyframes fadeSlideIn { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:none; } }
+
+    /* ── Halaman & tata letak ──────────────────────────────────────────────── */
+    .qe-page{ container-type:inline-size; max-width:1320px; }
+    .qe-page[data-mode="single"]{ max-width:880px; }
+    .qe-page .hidden, .qe-page [hidden]{ display:none !important; }
+    .qe-grid{ display:grid; grid-template-columns:minmax(0,1fr); gap:18px; align-items:start; }
+    .qe-col{ display:flex; flex-direction:column; gap:14px; min-width:0; }
+    @container (min-width: 980px){
+        .qe-page[data-mode="grouped"] .qe-grid{ grid-template-columns:minmax(0,1fr) minmax(0,1fr); }
+        /* Teks bacaan tetap terlihat saat menulis soal di kolom kanan */
+        .qe-page[data-mode="grouped"] #passage-panel{ position:sticky; top:12px; max-height:calc(100vh - 108px);
+            overflow-y:auto; scrollbar-width:thin; border-radius:14px; }
+    }
+
+    /* ── Tombol di kepala halaman ── */
+    .qe-hbtn{ display:inline-flex; align-items:center; gap:6px; font-family:'Barlow',sans-serif; font-size:13px; font-weight:600;
+        padding:7px 13px; border-radius:9px; border:1px solid #C9D8F3; background:var(--brand-soft); color:var(--brand-ink); transition:all .15s; }
+    .qe-hbtn:hover{ background:#E3ECFE; text-decoration:none; }
+    .qe-hbtn.is-ghost{ background:var(--surface); border-color:var(--line); color:var(--muted); }
+    .qe-hbtn.is-ghost:hover{ background:#F3F5F8; color:var(--ink); }
+    .qe-hbtn svg{ width:15px; height:15px; }
+
+    /* ── Bilah konteks ── */
+    .qe-topbar{ background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:12px 14px; margin-bottom:16px; }
+    .qe-topbar-row{ display:flex; flex-wrap:wrap; align-items:center; gap:8px; }
+    .qe-topbar-tools{ margin-left:auto; display:flex; align-items:center; gap:8px; }
+    .qe-tools-lbl{ font-family:'Barlow',sans-serif; font-size:11px; font-weight:600; letter-spacing:.06em; text-transform:uppercase; color:var(--faint); }
     .ctx-chip{ display:inline-flex; align-items:center; gap:6px; font-family:'Barlow',sans-serif;
         font-size:12px; font-weight:600; padding:5px 11px; border-radius:8px; border:1px solid var(--line); }
     .ctx-chip svg{ width:13px; height:13px; flex-shrink:0; }
-    .qe-eyebrow{ font-family:'Barlow',sans-serif; font-size:10.5px; font-weight:600;
-        letter-spacing:.12em; text-transform:uppercase; color:var(--faint); }
-    .qe-label{ font-family:'Barlow',sans-serif; font-size:11px; font-weight:600;
-        letter-spacing:.08em; text-transform:uppercase; color:var(--muted); }
+    .qe-usage{ margin-top:10px; display:flex; gap:9px; align-items:flex-start; font-size:12.5px; line-height:1.5;
+        background:#FFF8EC; border:1px solid #F3E1BF; color:#7A4B09; border-radius:10px; padding:9px 12px; }
+    .qe-usage svg{ width:16px; height:16px; flex-shrink:0; margin-top:1px; }
+    .qe-usage a{ font-weight:600; text-decoration:underline; text-underline-offset:2px; }
+    .qe-json-hint{ font-size:12px; color:#6B21A8; margin-bottom:8px; }
+
+    /* ── Kartu ── */
+    .qe-card{ background:var(--surface); border:1px solid var(--line); border-radius:14px; }
+    .qe-card-head{ display:flex; align-items:flex-start; gap:12px; padding:16px 18px 14px; }
+    .qe-card-icon{ width:34px; height:34px; border-radius:10px; flex-shrink:0; display:flex; align-items:center; justify-content:center;
+        background:var(--brand-soft); color:var(--brand); }
+    .qe-card-icon.is-ok{ background:#E7F5EF; color:var(--ok); }
+    .qe-card-icon svg{ width:18px; height:18px; }
+    .qe-card-title{ font-family:'Barlow',sans-serif; font-size:15.5px; font-weight:600; color:var(--ink); line-height:1.3;
+        display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+    .qe-card-sub{ font-size:12.5px; color:var(--muted); margin-top:2px; line-height:1.45; }
+
+    /* Bagian di dalam kartu */
+    .qe-sec{ padding:16px 18px; border-top:1px solid var(--line-soft); }
+    .qe-sec.is-first{ border-top:none; }
+    .qe-card-head + .qe-sec{ border-top:1px solid var(--line-soft); }
+    .qe-sec-head{ display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-bottom:10px; }
+    .qe-sec-title{ display:inline-flex; align-items:center; gap:8px; font-family:'Barlow',sans-serif; font-size:13.5px; font-weight:600; color:var(--ink); }
+    p.qe-sec-title{ display:flex; }
+    .qe-step{ width:20px; height:20px; border-radius:50%; background:var(--brand-soft); color:var(--brand-ink);
+        font-family:'Barlow',sans-serif; font-size:11px; font-weight:700; display:inline-flex; align-items:center; justify-content:center; flex-shrink:0; }
+    .qe-req{ color:var(--danger); }
+    .qe-optional{ font-family:'IBM Plex Sans',sans-serif; font-size:11px; font-weight:500; color:var(--faint); }
+    .qe-hint{ font-size:11.5px; color:var(--faint); }
+    .qe-note{ font-size:12px; line-height:1.5; color:var(--muted); background:#F5F7FA; border:1px solid var(--line-soft);
+        border-radius:10px; padding:9px 12px; }
+    .qe-seg{ display:flex; border:1px solid var(--line); border-radius:8px; overflow:hidden; font-size:11.5px; font-weight:600; flex-shrink:0; }
+    .qe-label{ font-family:'Barlow',sans-serif; font-size:11px; font-weight:600; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); }
+    .qe-eyebrow{ font-family:'Barlow',sans-serif; font-size:10.5px; font-weight:600; letter-spacing:.12em; text-transform:uppercase; color:var(--faint); }
+
+    /* ── Audio (dilipat) ── */
+    details.sq-audio{ border:1px solid var(--line); border-radius:12px; background:var(--surface); }
+    details.sq-audio summary{ cursor:pointer; padding:11px 14px; font-family:'Barlow',sans-serif; font-weight:600; font-size:13.5px;
+        color:var(--ink); display:flex; align-items:center; gap:8px; list-style:none; border-radius:12px; }
+    details.sq-audio summary:hover{ background:#F8FAFC; }
+    details.sq-audio summary::-webkit-details-marker{ display:none; }
+    details.sq-audio summary > svg:first-child{ width:16px; height:16px; color:var(--brand); }
+    details.sq-audio[open] summary{ border-bottom:1px solid var(--line-soft); border-radius:12px 12px 0 0; }
+    .qe-chev{ width:15px; height:15px; margin-left:auto; color:var(--faint); transition:transform .2s; }
+    details[open] > summary .qe-chev{ transform:rotate(180deg); }
+    .qe-audio-state{ font-family:'IBM Plex Sans',sans-serif; font-size:11px; font-weight:600; padding:2px 8px; border-radius:999px;
+        background:#EFF1F4; color:var(--muted); }
+    .qe-audio-state.is-on{ background:#E7F5EF; color:var(--ok); }
+    .sq-audio-body{ padding:14px; }
+
+    /* ── Lückentext: bilah alat rumpang ── */
+    .qe-cloze-bar{ border:1px solid #C9D8F3; background:var(--brand-soft); border-radius:12px; padding:12px 14px; margin-bottom:12px; }
+    .qe-cloze-top{ display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:10px; }
+    .qe-cloze-steps{ display:flex; flex-wrap:wrap; gap:6px 14px; font-size:12px; color:var(--brand-ink); }
+    .qe-cloze-steps span{ display:inline-flex; align-items:center; gap:6px; }
+    .qe-cloze-steps b{ width:18px; height:18px; border-radius:50%; background:var(--brand); color:#fff; font:700 10.5px/18px 'Barlow',sans-serif; text-align:center; }
+    .qe-cloze-note{ font-size:11.5px; color:#3B5394; margin-top:8px; line-height:1.5; }
+    .qe-btn{ display:inline-flex; align-items:center; gap:6px; font-family:'Barlow',sans-serif; font-size:12.5px; font-weight:600;
+        padding:7px 13px; border-radius:8px; transition:all .15s; white-space:nowrap; }
+    .qe-btn-primary{ background:var(--brand); color:#fff; border:1px solid var(--brand); }
+    .qe-btn-primary:hover:not(:disabled){ background:var(--brand-strong); }
+    .qe-btn-primary:disabled{ opacity:.45; cursor:not-allowed; }
+    .qe-btn-soft{ background:#fff; color:var(--brand-ink); border:1px solid #C9D8F3; }
+    .qe-btn-soft:hover{ background:#F5F8FF; }
+
+    /* ── Pilihan jawaban + kunci ── */
     .sq-opt-row{ display:flex; align-items:center; gap:8px; }
     .opt-key{ cursor:pointer; flex-shrink:0; position:relative; }
-    .opt-key-badge{ width:32px; height:32px; border-radius:9px; border:1.5px solid var(--line);
-        background:var(--surface); font-family:'Barlow',sans-serif; font-weight:700; font-size:13px;
-        color:var(--muted); display:flex; align-items:center; justify-content:center; transition:all .15s; }
-    .opt-key:hover .opt-key-badge{ border-color:var(--brand); color:var(--brand-ink); }
-    .opt-key:has(input:checked) .opt-key-badge{ background:var(--brand); border-color:var(--brand);
-        color:#fff; box-shadow:0 3px 10px rgba(29,78,216,.30); }
-    .opt-key:has(input:focus-visible) .opt-key-badge{ outline:2px solid var(--brand); outline-offset:2px; }
-    .sq-audio-body{ padding:14px 16px; }
-    details.sq-audio{ border:1.5px dashed var(--line); border-radius:12px; background:var(--surface); }
-    details.sq-audio summary{ cursor:pointer; padding:12px 16px; font-family:'Barlow',sans-serif;
-        font-weight:600; font-size:13.5px; color:var(--ink); display:flex; align-items:center; gap:8px;
-        list-style:none; }
-    details.sq-audio summary::-webkit-details-marker{ display:none; }
-    details.sq-audio summary svg{ width:15px; height:15px; color:var(--brand); }
-    details.sq-audio[open] summary{ border-bottom:1px solid var(--line-soft); }
+    .opt-key-badge{ width:34px; height:34px; border-radius:10px; border:1.5px solid var(--line); background:var(--surface);
+        font-family:'Barlow',sans-serif; font-weight:700; font-size:13px; color:var(--muted);
+        display:flex; align-items:center; justify-content:center; transition:all .15s; }
+    .opt-key:hover .opt-key-badge{ border-color:var(--ok); color:var(--ok); }
+    .opt-key:has(input:checked) .opt-key-badge{ background:var(--ok); border-color:var(--ok); color:#fff;
+        box-shadow:0 3px 10px rgba(18,128,92,.28); }
+    .opt-key:has(input:focus-visible) .opt-key-badge{ outline:2px solid var(--ok); outline-offset:2px; }
+    .adm .sq-opt-row:has(.opt-key input:checked) > input[type="text"]{ border-color:#9BD5BC !important; background:#F2FAF6 !important; }
+    .qe-key-legend{ display:inline-flex; align-items:center; gap:6px; font-size:11.5px; color:var(--muted); }
+    .qe-key-legend i{ width:14px; height:14px; border-radius:4px; background:var(--ok); display:inline-block; }
 
-    /* ── Builder soal (buat semua sekali simpan) ────────────────────────── */
-    .builder-card{ border:1.5px solid var(--line); border-radius:12px; background:var(--surface); }
+    /* Richtig / Falsch */
+    .qe-rf{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+    .qe-rf-opt{ display:flex; align-items:center; gap:10px; padding:11px 14px; border:1.5px solid var(--line); border-radius:12px;
+        background:#fff; cursor:pointer; transition:all .15s; }
+    .qe-rf-opt:hover{ border-color:#9BD5BC; }
+    .qe-rf-badge{ width:28px; height:28px; border-radius:8px; border:1.5px solid var(--line); display:flex; align-items:center; justify-content:center;
+        font-family:'Barlow',sans-serif; font-weight:700; font-size:13px; color:var(--muted); flex-shrink:0; transition:all .15s; }
+    .qe-rf-lbl{ font-family:'Barlow',sans-serif; font-weight:600; font-size:14px; color:var(--ink); }
+    .qe-rf-check{ margin-left:auto; width:18px; height:18px; color:var(--ok); opacity:0; transition:opacity .15s; }
+    .qe-rf-opt:has(input:checked){ border-color:var(--ok); background:#F2FAF6; }
+    .qe-rf-opt:has(input:checked) .qe-rf-badge{ background:var(--ok); border-color:var(--ok); color:#fff; }
+    .qe-rf-opt:has(input:checked) .qe-rf-check{ opacity:1; }
+    .qe-rf-opt:has(input:focus-visible){ outline:2px solid var(--ok); outline-offset:2px; }
+
+    /* ── Builder soal (buat semua sekali simpan) ── */
+    .qe-builder-list{ padding:0 18px; display:flex; flex-direction:column; gap:10px; }
+    .qe-builder-foot{ padding:12px 18px 18px; }
+    .qe-add-row{ width:100%; display:flex; align-items:center; justify-content:center; gap:8px; padding:12px; border-radius:12px;
+        border:1.5px dashed #B8C6E8; background:#F8FAFF; color:var(--brand-ink); font-family:'Barlow',sans-serif; font-weight:600; font-size:13.5px;
+        transition:all .15s; }
+    .qe-add-row:hover{ border-color:var(--brand); background:var(--brand-soft); }
+    .qe-empty{ text-align:center; padding:26px 16px; font-size:12.5px; line-height:1.6; color:var(--muted);
+        border:1px dashed var(--line); border-radius:12px; background:#FAFBFC; }
+    .qe-empty b{ color:var(--ink); }
+    .builder-card{ border:1.5px solid var(--line); border-radius:12px; background:var(--surface); transition:border-color .15s; }
+    .builder-card[open]{ border-color:#C9D8F3; box-shadow:0 2px 10px rgba(29,78,216,.06); }
     .builder-card > summary{ list-style:none; cursor:pointer; display:flex; align-items:center; gap:10px;
-        padding:10px 14px; font-family:'Barlow',sans-serif; font-weight:600; font-size:13px; color:var(--ink); }
+        padding:10px 12px; font-family:'Barlow',sans-serif; font-weight:600; font-size:13px; color:var(--ink); border-radius:12px; }
+    .builder-card > summary:hover{ background:#F8FAFC; }
     .builder-card > summary::-webkit-details-marker{ display:none; }
-    .builder-card[open] > summary{ border-bottom:1px solid var(--line-soft); }
+    .builder-card[open] > summary{ border-bottom:1px solid var(--line-soft); border-radius:12px 12px 0 0; }
     .builder-num{ width:24px; height:24px; border-radius:50%; background:var(--brand); color:#fff;
         font-size:11.5px; font-weight:700; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
     .builder-snippet{ flex:1; min-width:0; font-family:'IBM Plex Sans',sans-serif; font-weight:400;
         font-size:12.5px; color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-    .builder-del{ font-family:'Barlow',sans-serif; font-size:11px; font-weight:600; color:var(--danger);
+    .builder-del{ font-family:'Barlow',sans-serif; font-size:11.5px; font-weight:600; color:var(--danger);
         padding:3px 9px; border-radius:6px; transition:background .15s; }
     .builder-del:hover{ background:#FDEBE9; }
-    .builder-body{ padding:14px; display:flex; flex-direction:column; gap:12px; }
+    .builder-body{ padding:14px; display:flex; flex-direction:column; gap:14px; }
     .qe-input{ width:100%; border:1.5px solid var(--line); border-radius:10px; padding:9px 12px;
         font-size:13.5px; font-family:'IBM Plex Sans',sans-serif; background:#F7F8FA;
         transition:all .15s; resize:vertical; color:var(--ink); }
     .qe-input:focus{ outline:none; border-color:var(--brand); background:#fff; }
+
+    /* ── Daftar soal tersimpan (halaman edit) ── */
+    .qe-list-head{ display:flex; align-items:center; justify-content:space-between; gap:10px; padding:2px 2px 0; }
+    .qe-list-head h3{ font-family:'Barlow',sans-serif; font-size:15.5px; font-weight:600; color:var(--ink); display:flex; align-items:center; gap:8px; }
+    .qe-link-btn{ font-family:'Barlow',sans-serif; font-size:13px; font-weight:600; color:var(--brand); padding:5px 10px; border-radius:8px; }
+    .qe-link-btn:hover{ background:var(--brand-soft); }
+    .qe-qlist{ display:flex; flex-direction:column; gap:10px; }
+    .qe-qcard{ background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:14px 16px; transition:border-color .15s, box-shadow .15s; }
+    .qe-qcard:hover{ border-color:#CBD5E4; box-shadow:0 4px 14px rgba(23,26,33,.05); }
+    .qe-qcard-head{ display:flex; align-items:center; gap:10px; margin-bottom:10px; }
+    .qe-qnum{ width:26px; height:26px; border-radius:50%; background:var(--brand); color:#fff; font-family:'Barlow',sans-serif;
+        font-weight:700; font-size:12px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+    .qe-qactions{ margin-left:auto; display:flex; align-items:center; gap:6px; }
+    .qe-act{ font-family:'Barlow',sans-serif; font-size:12px; font-weight:600; padding:5px 11px; border-radius:8px;
+        border:1px solid var(--line); background:var(--surface); color:var(--brand-ink); transition:all .15s; }
+    .qe-act:hover{ background:var(--brand-soft); border-color:#C9D8F3; }
+    .qe-act.is-danger{ color:var(--danger); }
+    .qe-act.is-danger:hover{ background:#FDEBE9; border-color:#F6C7C1; }
+    .qe-qtext{ font-size:13.5px; color:var(--ink); margin-bottom:10px; word-break:break-word; }
+    .qe-qopts{ display:grid; grid-template-columns:1fr 1fr; gap:6px; }
+    .qe-qopt{ display:flex; align-items:flex-start; gap:8px; padding:7px 10px; border-radius:9px; background:#F7F8FA;
+        border:1px solid var(--line-soft); font-size:12.5px; color:#4A5361; word-break:break-word; }
+    .qe-qopt b{ font-family:'Barlow',sans-serif; color:var(--faint); flex-shrink:0; }
+    .qe-qopt.is-key{ background:#ECF8F2; border-color:#B7E2CC; color:#0E5E43; }
+    .qe-qopt.is-key b{ color:var(--ok); }
+    .qe-qopt-check{ width:14px; height:14px; color:var(--ok); margin-left:auto; flex-shrink:0; margin-top:2px; }
+    .qe-qanswer{ display:flex; gap:8px; padding:8px 11px; border-radius:9px; background:#ECF8F2; border:1px solid #B7E2CC;
+        font-size:12.5px; color:#0E5E43; word-break:break-word; }
+    .qe-qexp{ margin-top:10px; border-top:1px dashed var(--line); padding-top:8px; }
+    .qe-qexp summary{ cursor:pointer; font-family:'Barlow',sans-serif; font-size:12px; font-weight:600; color:var(--muted); list-style:none; }
+    .qe-qexp summary::-webkit-details-marker{ display:none; }
+    .qe-qexp summary::before{ content:"▸ "; }
+    .qe-qexp[open] summary::before{ content:"▾ "; }
+    .qe-qexp > div{ margin-top:6px; font-size:12.5px; color:#3B4350; }
+    .qe-add{ border-color:#BFE3D1; }
+    .qe-add-foot{ display:flex; flex-wrap:wrap; align-items:center; gap:12px; padding:14px 18px; border-top:1px solid var(--line-soft);
+        background:#F8FBF9; border-radius:0 0 14px 14px; }
+    .qe-btn-ok{ font-family:'Barlow',sans-serif; font-size:14px; font-weight:600; color:#fff; background:var(--ok); border-radius:10px;
+        padding:10px 20px; transition:all .15s; }
+    .qe-btn-ok:hover{ filter:brightness(.94); }
+    .qe-btn-json{ display:inline-flex; align-items:center; gap:6px; font-family:'Barlow',sans-serif; font-size:12px; font-weight:600;
+        color:#6B21A8; background:#FAF5FF; border:1px solid #E9D5FF; padding:5px 10px; border-radius:8px; flex-shrink:0; }
+    .qe-btn-json:hover{ background:#F3E8FF; }
+    .qe-btn-json svg{ width:14px; height:14px; }
+
+    /* ── Aksi simpan di kepala halaman (selalu terlihat, tidak menutupi isi) ── */
+    .qe-hdr{ display:flex; align-items:center; gap:8px; }
+    .qe-hdr [hidden]{ display:none !important; }
+    .qe-gap-status{ font-size:11.5px; font-weight:600; padding:3px 10px; border-radius:999px; background:#EFF1F4; color:#4A5361; white-space:nowrap; }
+    .qe-gap-status.is-ok{ background:#E7F5EF; color:var(--ok); }
+    .qe-gap-status.is-bad{ background:#FDEBE9; color:var(--danger); }
+    #save-passage-btn{ padding:8px 18px; border-radius:9px; background:var(--brand); color:#fff; white-space:nowrap;
+        font-family:'Barlow',sans-serif; font-size:14px; font-weight:600; letter-spacing:.01em;
+        box-shadow:0 3px 10px rgba(29,78,216,.22); transition:all .15s; }
+    #save-passage-btn:hover{ background:var(--brand-strong); transform:translateY(-1px); }
+    #save-passage-btn:disabled{ opacity:.6; transform:none; cursor:wait; }
+    @media (max-width: 1180px){
+        .qe-hdr .qe-hbtn span{ display:none; }
+        .qe-hdr .qe-hbtn{ padding:7px 9px; }
+    }
+    .qe-card, .qe-qcard, .qe-list-head, .builder-card{ scroll-margin:12px 0; }
+
     #qe-toast{ position:fixed; bottom:20px; right:20px; z-index:60; background:var(--ink); color:#fff;
         font-size:13px; font-weight:500; padding:11px 18px; border-radius:10px;
         box-shadow:0 10px 30px rgba(0,0,0,.25); opacity:0; transform:translateY(8px);
@@ -218,55 +375,89 @@
 </nav>
 {% endblock %}
 
+{% block header_actions %}
+<div class="qe-hdr" id="qe-hdr">
+    {% if answer_type == 'cloze' %}<span id="qe-gap-status" class="qe-gap-status" hidden></span>{% endif %}
+    <span id="qe-dirty-tag" class="pill warn" hidden>Belum disimpan</span>
+    {% if passage %}
+    <a href="/expert/question-bank/{{ passage.pkey }}/preview" target="_blank" rel="noopener" class="qe-hbtn is-ghost"
+        title="Buka pratinjau tampilan peserta di tab baru">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+        <span>Pratinjau</span>
+    </a>
+    {% else %}
+    <a href="/expert/question-bank/new" class="qe-hbtn is-ghost" title="Kembali memilih bagian ujian & bentuk soal">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>
+        <span>Ganti bentuk</span>
+    </a>
+    {% endif %}
+    <button type="submit" form="passage-form" id="save-passage-btn"
+        title="{% if passage and q_mode == 'single' %}Simpan perubahan soal ini{% elif passage %}Menyimpan judul, audio &amp; teks — soal disimpan lewat kartunya masing-masing{% elif q_mode == 'single' %}Simpan soal mandiri ini{% else %}Simpan teks beserta semua soal sekaligus{% endif %}">
+        {% if passage and q_mode == 'single' %}Simpan Perubahan{% elif passage %}Simpan Teks &amp; Judul{% else %}<span id="btn-save-label">{% if q_mode == 'single' %}Simpan Soal Mandiri{% else %}Simpan Kelompok Soal{% endif %}</span>{% endif %}
+    </button>
+</div>
+{% endblock %}
+
 {% block content %}
 
-{# ── Config-driven top bar ───────────────────────────────────────────────── #}
 {% set cfg = section_config %}
 {% set cfg_mode = cfg.default_passage_mode if cfg else 'flexible' %}
+{% set current_section_key = (current_section_key or '')|lower %}
+{% set tt_label = namespace(value=current_section_key|upper) %}
+{% for opt in bank_section_options %}{% if opt.key == current_section_key %}{% set tt_label.value = opt.label %}{% endif %}{% endfor %}
+{% set audio_first = current_section_key == 'hoeren' %}
 
-<div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 mb-5" id="top-bar">
+<div id="qe-page" class="qe-page" data-mode="{{ q_mode }}">
 
-    <div class="flex flex-wrap items-center gap-2 mb-3">
+{# ── Bilah konteks: bentuk soal + bagian ujian + cara isi ─────────────────── #}
+<div id="top-bar" class="qe-topbar">
+
+    <div class="qe-topbar-row">
         {% if lock_mode == 'single' or cfg_mode == 'single' %}
         <span class="ctx-chip" style="background:#FDF6E9; border-color:#F0DFC0; color:var(--warn)">
-            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
-            Soal Mandiri{% if answer_type == 'rf' %} · Richtig/Falsch{% endif %}
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+            Soal Mandiri
         </span>
         {% elif lock_mode == 'grouped' or cfg_mode == 'grouped' %}
         <span class="ctx-chip" style="background:var(--brand-soft); border-color:#C9D8F3; color:var(--brand-ink)">
-            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg>
-            Kelompok Soal{% if answer_type == 'rf' %} · Richtig/Falsch{% elif answer_type == 'cloze' %} · Lückentext{% endif %}
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
+            Kelompok Soal
         </span>
         {% endif %}
-        {% set current_section_key = (current_section_key or '')|lower %}
+        <span class="ctx-chip" style="background:var(--surface); color:#4A5361">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            {{ answer_label }}
+        </span>
         {% if current_section_key %}
-        {% set tt_label = namespace(value=current_section_key|upper) %}
-        {% for opt in bank_section_options %}{% if opt.key == current_section_key %}{% set tt_label.value = opt.label %}{% endif %}{% endfor %}
         <span class="ctx-chip" style="background:#EFF1F4; border-color:var(--line); color:#4A5361">
             <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
             {{ tt_label.value }}
         </span>
         {% endif %}
-        <div class="flex rounded-lg border overflow-hidden text-xs font-semibold shrink-0 ml-auto" style="border-color:var(--line)">
-            <button type="button" id="btn-view-form" onclick="setInputView('form')"
-                class="px-3 py-1.5 bg-blue-600 text-white transition">Form</button>
-            <button type="button" id="btn-view-json" onclick="setInputView('json')"
-                class="px-3 py-1.5 bg-white text-gray-500 hover:bg-gray-50 transition">JSON</button>
-        </div>
-        {% if passage %}
-        <a href="/expert/question-bank/{{ passage.pkey }}/preview" target="_blank" rel="noopener"
-            class="inline-flex items-center gap-1.5 text-xs font-semibold shrink-0 px-3 py-1.5 rounded-lg transition"
-            style="background:var(--brand-soft); color:var(--brand-ink); border:1px solid #C9D8F3"
-            title="Buka pratinjau tampilan peserta di tab baru">
-            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
-            Pratinjau
-        </a>
-        {% endif %}
-        <a href="/expert/question-bank/new" class="text-xs font-medium shrink-0 transition hover:underline" style="color:var(--faint)">Ganti bentuk</a>
-    </div>
-    <p id="input-mode-hint" class="hidden"></p>
 
-    <div id="top-json-panel" class="hidden">
+        <div class="qe-topbar-tools">
+            <span class="qe-tools-lbl">Cara isi</span>
+            <div class="flex rounded-lg border overflow-hidden text-xs font-semibold shrink-0" style="border-color:var(--line)">
+                <button type="button" id="btn-view-form" onclick="setInputView('form')"
+                    class="px-3 py-1.5 bg-blue-600 text-white transition">Form</button>
+                <button type="button" id="btn-view-json" onclick="setInputView('json')" title="Tempel atau salin soal dalam format JSON"
+                    class="px-3 py-1.5 bg-white text-gray-500 hover:bg-gray-50 transition">JSON</button>
+            </div>
+        </div>
+    </div>
+
+    {% if passage and used_in_packages %}
+    <div class="qe-usage">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        <div>
+            Dipakai di <strong>{{ used_in_packages | length }} paket</strong> — perubahan di sini langsung berlaku di sana:
+            {% for u in used_in_packages %}<a href="/expert/exam-package/{{ u.pkey }}">{{ u.title }}{% if u.section_title %} · {{ u.section_title }}{% endif %}</a>{% if not loop.last %}, {% endif %}{% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <div id="top-json-panel" class="hidden" style="margin-top:12px">
+        <p id="input-mode-hint" class="qe-json-hint"></p>
         <textarea id="top-json-textarea" rows="16"
             class="w-full px-3 py-2.5 border border-purple-200 rounded-xl text-xs font-mono bg-purple-50/40 focus:bg-white focus:outline-none focus:ring-2 focus:ring-purple-400 resize-y leading-relaxed"
             placeholder='{"section":"lesen","question_mode":"grouped","title":"...","content_text":"...","questions":[{"question_text":"...","option_a":"...","option_b":"...","option_c":"...","option_d":"...","correct_answer":"C","explanation":"..."}]}'></textarea>
@@ -295,7 +486,7 @@
 
     {# Sub-type selector — only shown when section has sub_types (e.g. Listening) #}
     {% if cfg and cfg.sub_types %}
-    <div class="flex flex-col sm:flex-row sm:items-center gap-3 mb-3 pb-3 border-b border-gray-100">
+    <div class="flex flex-col sm:flex-row sm:items-center gap-3 pt-3 border-t border-gray-100" style="margin-top:12px">
         <div class="text-sm font-semibold text-gray-700 shrink-0">Tipe Bagian:</div>
         <div class="flex flex-wrap gap-2" id="sub-type-btns">
             {% for st in cfg.sub_types %}
@@ -323,7 +514,7 @@
     {% endif %}
 
     {# Mode buttons — hidden when type already chosen from Bank Soal #}
-    <div id="mode-row" class="flex flex-col sm:flex-row sm:items-center gap-3 {% if lock_mode in ['single', 'grouped'] %}hidden{% endif %}">
+    <div id="mode-row" class="flex flex-col sm:flex-row sm:items-center gap-3 pt-3 border-t border-gray-100 {% if lock_mode in ['single', 'grouped'] %}hidden{% endif %}" style="margin-top:12px">
         <div class="text-sm font-semibold text-gray-700 shrink-0">Mode Soal:</div>
         <div class="flex gap-2">
             <button type="button" id="btn-mode-single" onclick="setQuestionMode('single')"
@@ -348,44 +539,53 @@
 
 </div>
 
-{# ── Main grid — col count is toggled by JS for single mode ─────────────── #}
-<div id="main-grid" class="grid grid-cols-1 xl:grid-cols-5 gap-6">
+{# ── Area kerja: kiri = bacaan/soal mandiri, kanan = soal-soal ──────────── #}
+<div id="main-grid" class="qe-grid">
 
     <!-- LEFT: Passage / Context Form -->
-    <div class="xl:col-span-2 space-y-4" id="passage-panel">
+    <div class="qe-col" id="passage-panel">
 
-        <form method="POST" action="{% if passage %}/expert/question-bank/{{ passage.pkey }}/update{% else %}/expert/question-bank/create{% endif %}" id="passage-form" class="space-y-4">
+        <form method="POST" action="{% if passage %}/expert/question-bank/{{ passage.pkey }}/update{% else %}/expert/question-bank/create{% endif %}" id="passage-form" class="qe-col">
         <input type="hidden" name="question_mode"    id="question-mode-input"    value="{{ q_mode }}">
         <input type="hidden" name="answer_type"      value="{{ answer_type }}">
         <input type="hidden" name="cloze_answer_mode" id="cloze-answer-mode-input" value="{{ cloze_answer_mode if answer_type == 'cloze' else 'mc' }}">
         <input type="hidden" name="passage_sub_type" id="passage-sub-type-input" value="{{ passage.passage_sub_type if passage else '' }}">
         <input type="hidden" name="return_to" value="{{ return_to }}">
 
-        {# ── Kartu passage terpadu: Judul → Audio → Teks ──────────────────── #}
-        <div class="bg-white rounded-2xl shadow-sm border border-gray-100" id="content-card">
-            <div class="px-5 pt-4 pb-1">
-                <h3 class="qe-eyebrow" id="panel-title">
-                    {% if q_mode == 'single' %}Soal Mandiri{% elif passage %}Edit Kelompok Soal{% else %}Kelompok Soal Baru{% endif %}
-                </h3>
-            </div>
+        {# ── Kartu bacaan: Judul → Audio → Teks ───────────────────────────── #}
+        <section class="qe-card" id="content-card">
+            <header class="qe-card-head">
+                <span class="qe-card-icon">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                </span>
+                <div class="min-w-0">
+                    <h3 class="qe-card-title" id="panel-title">{{ passage_card_title }}</h3>
+                    <p class="qe-card-sub">{% if answer_type == 'cloze' %}Tulis teksnya, lalu blok kata yang mau dijadikan rumpang.{% else %}Dipakai bersama oleh semua soal di kelompok ini.{% endif %}</p>
+                </div>
+            </header>
             {% if preset_section and not passage %}
             <input type="hidden" name="section_id" value="{{ preset_section.pkey }}">
             {% endif %}
             <input type="hidden" name="section_key" id="section-key-input" value="{{ current_section_key }}">
 
             <div id="content-fields">
-                <div class="px-5 pt-2 pb-4" id="title-field-wrap">
-                    <label class="qe-label mb-2 block">Judul Passage <span style="color:var(--danger)">*</span></label>
+                <div class="qe-sec" id="title-field-wrap">
+                    <div class="qe-sec-head" style="margin-bottom:8px">
+                        <label for="title-input" class="qe-sec-title">Judul <span class="qe-req">*</span></label>
+                        <span class="qe-hint">Untuk menemukan soal ini di Bank Soal</span>
+                    </div>
                     <input type="text" name="title" id="title-input" value="{{ passage.title if passage else '' }}"
                         class="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50 focus:bg-white transition"
-                        placeholder="Contoh: Teil 1 - Leseverstehen / Alltag in Deutschland">
+                        placeholder="Contoh: Teil 1 – Alltag in Deutschland">
                 </div>
 
-                <div class="px-5 pb-4" id="audio-url-wrap">
-                    <details class="sq-audio" {% if passage and passage.audio_url %}open{% endif %}>
+                <div class="qe-sec" id="audio-url-wrap">
+                    <details class="sq-audio" {% if (passage and passage.audio_url) or audio_first %}open{% endif %}>
                         <summary>
                             <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072M12 18.364a9 9 0 000-12.728M12 18.364V5.636M9 9v6"/></svg>
-                            File Audio <span class="text-xs font-normal" style="color:var(--faint)">(opsional — klik untuk buka/tutup)</span>
+                            Audio
+                            <span class="qe-audio-state {% if passage and passage.audio_url %}is-on{% endif %}">{% if passage and passage.audio_url %}Terpasang{% else %}Opsional{% endif %}</span>
+                            <svg class="qe-chev" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                         </summary>
                         <div class="sq-audio-body">
                             {{ render_audio_upload_widget('passage-audio-url', passage.audio_url if passage else '') }}
@@ -393,44 +593,46 @@
                     </details>
                 </div>
 
-                <div id="text-editor-wrap" class="px-5 pb-5">
-                    {% if answer_type == 'cloze' %}
-                    <div class="mb-2 rounded-xl px-3.5 py-3 flex flex-wrap items-center justify-between gap-3" style="background:var(--brand-soft); border:1px solid #C9D8F3">
-                        <p class="text-xs leading-relaxed" style="color:var(--brand-ink)">
-                            <strong>Cara cepat:</strong> blok / pilih kata di teks → klik <strong>Jadikan Rumpang</strong>.
-                            Kata yang kamu pilih otomatis menjadi kunci jawaban, dan nomor rumpang tersusun sendiri —
-                            kamu tinggal menambah 3 pengecoh.
-                        </p>
-                        <div class="flex gap-2 shrink-0">
-                            <button type="button" id="btn-mark-gap" onclick="clozeMarkSelection()" disabled
-                                class="text-xs font-semibold px-3.5 py-1.5 rounded-lg text-white transition disabled:opacity-40 disabled:cursor-not-allowed"
-                                style="background:var(--brand)">
-                                ✂ Jadikan Rumpang
-                            </button>
-                            <button type="button" onclick="insertClozeGap()"
-                                class="text-xs font-semibold px-3 py-1.5 rounded-lg transition"
-                                style="background:#fff; border:1px solid #C9D8F3; color:var(--brand-ink)">
-                                + Sisip [n] kosong
-                            </button>
-                        </div>
-                    </div>
-                    {% endif %}
-                    <div class="flex items-center justify-between mb-2">
-                        <label class="block text-sm font-semibold text-gray-700">{% if answer_type == 'cloze' %}Teks Lückentext{% else %}Isi Teks / Bacaan{% endif %}</label>
-                        <!-- Mode toggle -->
-                        <div class="flex rounded-lg border border-gray-200 overflow-hidden text-xs font-semibold" id="editor-mode-toggle">
+                <div id="text-editor-wrap" class="qe-sec">
+                    <div class="qe-sec-head">
+                        <span class="qe-sec-title">{% if answer_type == 'cloze' %}Teks Lückentext{% else %}Teks bacaan{% endif %}{% if answer_type == 'cloze' %} <span class="qe-req">*</span>{% else %} <span class="qe-optional">opsional bila ada audio</span>{% endif %}</span>
+                        <div class="qe-seg" id="editor-mode-toggle">
                             <button type="button" id="btn-wysiwyg"
                                 onclick="setEditorMode('wysiwyg')"
                                 class="px-3 py-1.5 bg-blue-600 text-white transition">
-                                WYSIWYG
+                                Visual
                             </button>
                             <button type="button" id="btn-html"
                                 onclick="setEditorMode('html')"
                                 class="px-3 py-1.5 bg-white text-gray-500 hover:bg-gray-50 transition">
-                                Plain HTML
+                                HTML
                             </button>
                         </div>
                     </div>
+
+                    {% if answer_type == 'cloze' %}
+                    <div class="qe-cloze-bar">
+                        <div class="qe-cloze-top">
+                            <div class="qe-cloze-steps">
+                                <span><b>1</b>Tulis teks</span>
+                                <span><b>2</b>Blok kata</span>
+                                <span><b>3</b>Jadikan rumpang</span>
+                            </div>
+                            <div class="flex gap-2 shrink-0 flex-wrap">
+                                <button type="button" id="btn-mark-gap" onclick="clozeMarkSelection()" disabled class="qe-btn qe-btn-primary">
+                                    ✂ Jadikan Rumpang
+                                </button>
+                                <button type="button" onclick="insertClozeGap()" class="qe-btn qe-btn-soft">
+                                    + Sisip [n] kosong
+                                </button>
+                            </div>
+                        </div>
+                        <p class="qe-cloze-note">
+                            {% if cloze_input %}Kata yang kamu blok otomatis menjadi jawaban benar, dan nomor rumpang tersusun sendiri.
+                            {% else %}Kata yang kamu blok otomatis menjadi kunci jawaban, dan nomor rumpang tersusun sendiri — kamu tinggal menambah 3 pengecoh.{% endif %}
+                        </p>
+                    </div>
+                    {% endif %}
 
                     <!-- WYSIWYG mode -->
                     <div id="wysiwyg-wrap">
@@ -442,27 +644,27 @@
                         <textarea id="html-source" rows="10"
                             class="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50 focus:bg-white transition resize-y leading-relaxed"
                             placeholder="Masukkan HTML langsung, misal:&#10;&lt;p&gt;Paragraf pertama...&lt;/p&gt;&#10;&lt;p&gt;Paragraf kedua...&lt;/p&gt;"></textarea>
-                        <p class="text-xs text-gray-400 mt-1.5">
-                            Tip: Gunakan <code class="bg-gray-100 px-1 rounded">&lt;p&gt;</code>, <code class="bg-gray-100 px-1 rounded">&lt;strong&gt;</code>, <code class="bg-gray-100 px-1 rounded">&lt;em&gt;</code>, <code class="bg-gray-100 px-1 rounded">&lt;ol&gt;</code>, <code class="bg-gray-100 px-1 rounded">&lt;ul&gt;</code>.
-                            Klik WYSIWYG untuk preview & edit visual.
+                        <p class="qe-hint" style="margin-top:6px">
+                            Tip: gunakan <code class="bg-gray-100 px-1 rounded">&lt;p&gt;</code>, <code class="bg-gray-100 px-1 rounded">&lt;strong&gt;</code>, <code class="bg-gray-100 px-1 rounded">&lt;em&gt;</code>, <code class="bg-gray-100 px-1 rounded">&lt;ol&gt;</code>, <code class="bg-gray-100 px-1 rounded">&lt;ul&gt;</code>.
+                            Klik <strong>Visual</strong> untuk melihat hasilnya.
                         </p>
                     </div>
 
                     <input type="hidden" name="content_text" id="content-text-input" value="{{ passage.content_text if passage else '' }}">
                 </div>
             </div> {# end #content-fields #}
-        </div>
-        {# ── end Card B ──────────────────────────────────────────────────── #}
+        </section>
 
-        {# ── Single-mode cards — only visible in single mode ────────────── #}
+        {# ── Soal mandiri — hanya tampil di mode single ───────────────────── #}
         {% set sq = first_question %}
-        <div id="single-question-fields" class="hidden space-y-4">
+        <div id="single-question-fields" class="hidden qe-col">
 
-        {# Audio — dilipat agar hemat ruang #}
-        <details id="sq-audio-wrap" class="sq-audio">
+        <details id="sq-audio-wrap" class="sq-audio" {% if (passage and passage.audio_url) or audio_first %}open{% endif %}>
             <summary>
                 <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072M12 18.364a9 9 0 000-12.728M12 18.364V5.636M9 9v6"/></svg>
-                File Audio <span class="text-xs font-normal" style="color:var(--faint)">(opsional — klik untuk buka/tutup)</span>
+                Audio
+                <span class="qe-audio-state {% if passage and passage.audio_url %}is-on{% endif %}">{% if passage and passage.audio_url %}Terpasang{% else %}Opsional{% endif %}</span>
+                <svg class="qe-chev" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
             </summary>
             <div class="sq-audio-body">
                 {{ render_audio_upload_widget('sq-audio-url', passage.audio_url if passage else '') }}
@@ -471,26 +673,29 @@
         <textarea id="sq-json-textarea" class="hidden"></textarea>
         <div id="sq-json-panel" class="hidden"></div>
 
-        {# ── Kartu soal terpadu: Pertanyaan → Jawaban (+kunci) → Pembahasan ── #}
-        <div class="sq-card bg-white rounded-2xl shadow-sm border border-gray-100">
+        {# Kartu soal: 1 Pertanyaan → 2 Jawaban & kunci → 3 Pembahasan #}
+        <div class="sq-card qe-card">
 
-            <div class="p-5 pb-4">
-                <h4 class="qe-label mb-3">Teks Pertanyaan <span style="color:var(--danger)">*</span></h4>
+            <div class="qe-sec is-first">
+                <div class="qe-sec-head">
+                    <span class="qe-sec-title"><span class="qe-step">1</span>{% if answer_type == 'rf' %}Pernyataan{% else %}Pertanyaan{% endif %} <span class="qe-req">*</span></span>
+                    <span class="qe-hint">Gambar: klik ikon gambar atau tempel (Ctrl+V)</span>
+                </div>
                 <div id="quill-sq-question"></div>
                 <input type="hidden" name="sq_question_text" id="sq-question-text-input"
                     value="{{ sq.question_text if sq else '' }}">
             </div>
 
-            <div class="px-5 py-4" style="border-top:1px solid var(--line-soft)">
-                <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
-                    <h4 class="qe-label">Pilihan Jawaban <span style="color:var(--danger)">*</span></h4>
+            <div class="qe-sec">
+                <div class="qe-sec-head">
+                    <span class="qe-sec-title"><span class="qe-step">2</span>{% if answer_type == 'rf' %}Kunci jawaban{% else %}Pilihan jawaban{% endif %} <span class="qe-req">*</span></span>
                     {% if answer_type != 'rf' %}
-                    <span class="text-[11px]" style="color:var(--faint)">Klik huruf untuk menandai kunci jawaban</span>
+                    <span class="qe-key-legend"><i></i>Klik huruf untuk menandai jawaban benar</span>
                     {% endif %}
                 </div>
                 {% if answer_type == 'rf' %}
                 {{ rf_hidden_options('sq_', 'sq_option_', '_input') }}
-                <div class="mt-1">
+                <div style="margin-top:10px">
                     {{ rf_answer_key('sq_correct_answer', sq.correct_answer if sq else '') }}
                 </div>
                 {% else %}
@@ -516,16 +721,16 @@
                 {% endif %}
             </div>
 
-            <div class="px-5 py-4" style="border-top:1px solid var(--line-soft)">
-                <div class="flex items-center justify-between mb-3">
-                    <h4 class="qe-label">Pembahasan / Penjelasan</h4>
-                    <div class="flex rounded-lg border border-gray-200 overflow-hidden text-xs font-semibold">
+            <div class="qe-sec">
+                <div class="qe-sec-head">
+                    <span class="qe-sec-title"><span class="qe-step">3</span>Pembahasan <span class="qe-optional">opsional</span></span>
+                    <div class="qe-seg">
                         <button type="button" id="sq-exp-btn-wysiwyg"
                             onclick="setSqExpMode('wysiwyg')"
-                            class="px-2.5 py-1 bg-blue-600 text-white transition">WYSIWYG</button>
+                            class="px-2.5 py-1 bg-blue-600 text-white transition">Visual</button>
                         <button type="button" id="sq-exp-btn-html"
                             onclick="setSqExpMode('html')"
-                            class="px-2.5 py-1 bg-white text-gray-500 hover:bg-gray-50 transition">Plain HTML</button>
+                            class="px-2.5 py-1 bg-white text-gray-500 hover:bg-gray-50 transition">HTML</button>
                     </div>
                 </div>
                 <div id="sq-exp-wysiwyg-wrap" class="ql-modal">
@@ -541,93 +746,94 @@
             </div>
 
         </div>
-        {# ── end kartu soal terpadu ───────────────────────────────────────── #}
 
         </div>
         {# ── end #single-question-fields ─────────────────────────────────── #}
 
-        {# Aksi simpan — bar menempel di bawah layar #}
-        <div class="sticky bottom-0 z-20 mt-2 py-3 px-4 rounded-xl flex flex-wrap items-center gap-3"
-            style="background:rgba(255,255,255,.94); backdrop-filter:blur(8px); border:1px solid var(--line)">
-            <button type="submit" id="save-passage-btn"
-                class="flex-1 min-w-[200px] bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-xl text-sm transition shadow-sm">
-                {% if passage %}Simpan Perubahan{% else %}<span id="btn-save-label">{% if q_mode == 'single' %}Simpan Soal Mandiri{% else %}Simpan Kelompok Soal{% endif %}</span>{% endif %}
-            </button>
-            <a href="{% if return_to %}{{ return_to }}{% else %}/expert/question-bank{% endif %}"
-                class="text-sm font-medium whitespace-nowrap transition hover:underline" style="color:var(--muted)">
-                {% if return_to %}Kembali ke paket{% else %}Kembali ke Bank Soal{% endif %}
-            </a>
-        </div>
-
         </form>
     </div>
 
-    <!-- Questions Panel -->
-    <div class="xl:col-span-3 space-y-4" id="questions-panel">
+    <!-- RIGHT: Questions Panel -->
+    <div class="qe-col" id="questions-panel">
         {% if passage %}
 
-        <!-- Question List -->
+        <div class="qe-list-head">
+            <h3>Soal <span class="pill brand" id="qe-qcount">{{ questions | length }}</span></h3>
+            <button type="button" class="qe-link-btn" onclick="qeFocusAdd()">＋ Tambah soal</button>
+        </div>
+
+        <div class="qe-qlist" id="qe-qlist">
         {% for q in questions %}
-        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
-            <div class="flex items-center justify-between gap-3 mb-3">
-                <div class="flex items-center gap-2.5 min-w-0">
-                    <div class="w-7 h-7 text-white text-sm font-bold rounded-full flex items-center justify-center flex-shrink-0 font-display" style="background:var(--brand)">{{ loop.index }}</div>
-                    <span class="pill ok shrink-0">Kunci: {{ q.correct_answer }}</span>
-                </div>
-                <div class="flex gap-2 shrink-0">
+        {% set q_rf = (q.answer_type or answer_type) == 'rf' %}
+        <article class="qe-qcard">
+            <header class="qe-qcard-head">
+                <span class="qe-qnum">{{ loop.index }}</span>
+                <span class="pill ok shrink-0">{% if q.answer_text %}Isian{% elif q_rf %}{{ 'Richtig' if q.correct_answer == 'A' else 'Falsch' }}{% else %}Kunci: {{ q.correct_answer }}{% endif %}</span>
+                <div class="qe-qactions">
                     <button type="button"
                         data-pkey="{{ q.pkey }}"
                         data-question="{{ (q | tojson) | forceescape }}"
                         onclick="openEditQuestion(this)"
-                        class="text-xs text-blue-600 border border-blue-200 hover:bg-blue-50 px-3 py-1.5 rounded-lg font-medium transition">Edit</button>
+                        class="qe-act">Edit</button>
                     <form method="POST" action="/expert/question-bank/questions/{{ q.pkey }}/delete" class="inline" onsubmit="return confirm('Hapus soal ini?')">
                         <input type="hidden" name="passage_pkey" value="{{ passage.pkey }}">
-                        <button type="submit" class="text-xs text-red-600 border border-red-200 hover:bg-red-50 px-3 py-1.5 rounded-lg font-medium transition">Hapus</button>
+                        <button type="submit" class="qe-act is-danger">Hapus</button>
                     </form>
                 </div>
-            </div>
-            <div class="text-sm text-gray-800 mb-3 prose prose-sm max-w-none" style="word-break:break-word;">{{ q.question_text | safe }}</div>
+            </header>
+            <div class="qe-qtext prose prose-sm max-w-none">{{ q.question_text | safe }}</div>
             {% if q.answer_text %}
             {% set answer_alts = q.answer_text.split(';') | map('trim') | select | list %}
-            <div class="flex items-start gap-2 px-3 py-2 rounded-lg bg-green-50 border border-green-200 text-xs">
-                <span class="font-bold text-green-700 flex-shrink-0">✍️ Jawaban benar:</span>
-                <span class="text-green-800" style="word-break:break-word;">{{ answer_alts[0] }}{% if answer_alts | length > 1 %} <span class="text-green-600 font-normal">(+{{ answer_alts | length - 1 }} varian lain)</span>{% endif %}</span>
+            <div class="qe-qanswer">
+                <strong class="shrink-0">Jawaban benar:</strong>
+                <span>{{ answer_alts[0] }}{% if answer_alts | length > 1 %} <span style="opacity:.75">(+{{ answer_alts | length - 1 }} varian lain)</span>{% endif %}</span>
             </div>
             {% else %}
-            <div class="grid grid-cols-2 gap-2">
-                {% set is_rf = q.answer_type == 'rf' %}
-                {% for opt, label in ([('A', q.option_a), ('B', q.option_b)] if is_rf else [('A', q.option_a), ('B', q.option_b), ('C', q.option_c), ('D', q.option_d)]) %}
+            <div class="qe-qopts">
+                {% for opt, label in ([('A', q.option_a), ('B', q.option_b)] if q_rf else [('A', q.option_a), ('B', q.option_b), ('C', q.option_c), ('D', q.option_d)]) %}
                 {% set opt_img = q['option_' ~ (opt | lower) ~ '_image'] %}
-                <div class="flex items-start gap-2 px-3 py-2 rounded-lg {% if q.correct_answer == opt %}bg-green-50 border border-green-200{% else %}bg-gray-50 border border-gray-100{% endif %} text-xs">
-                    {% if not is_rf %}<span class="font-bold {% if q.correct_answer == opt %}text-green-700{% else %}text-gray-500{% endif %} flex-shrink-0">{{ opt }}</span>{% endif %}
+                <div class="qe-qopt {% if q.correct_answer == opt %}is-key{% endif %}">
+                    {% if not q_rf %}<b>{{ opt }}</b>{% endif %}
                     <div class="min-w-0">
                         {% if opt_img %}<img src="{{ opt_img }}" alt="" class="rounded-md border border-gray-200 mb-1" style="max-height:112px; max-width:200px; width:auto; height:auto">{% endif %}
-                        <span class="{% if q.correct_answer == opt %}text-green-800{% else %}text-gray-600{% endif %}">{{ label }}</span>
+                        <span>{{ label }}</span>
                     </div>
+                    {% if q.correct_answer == opt %}<svg class="qe-qopt-check" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>{% endif %}
                 </div>
                 {% endfor %}
             </div>
             {% endif %}
-        </div>
+            {% if q.explanation and (q.explanation | striptags | trim) %}
+            <details class="qe-qexp">
+                <summary>Pembahasan</summary>
+                <div class="prose prose-sm max-w-none">{{ q.explanation | safe }}</div>
+            </details>
+            {% endif %}
+        </article>
+        {% else %}
+        <div class="qe-empty" id="qe-qempty">Belum ada soal di kelompok ini. Tulis soal pertama di formulir di bawah.</div>
         {% endfor %}
+        </div>
 
         <!-- Add Question Form -->
-        <div class="bg-white rounded-2xl shadow-sm border border-blue-200" id="add-question-panel">
+        <section class="qe-card qe-add" id="add-question-panel">
 
-            <div class="flex items-center justify-between px-5 py-4 border-b border-gray-100">
-                <div class="flex items-center gap-2">
-                    <svg class="w-4 h-4 text-blue-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
-                    <h3 class="font-semibold text-gray-900 text-sm">Tambah Soal Baru</h3>
+            <header class="qe-card-head">
+                <span class="qe-card-icon is-ok">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M12 4v16m8-8H4"/></svg>
+                </span>
+                <div class="flex-1 min-w-0">
+                    <h3 class="qe-card-title">Tambah soal baru</h3>
+                    <p class="qe-card-sub">{% if answer_type == 'cloze' %}Satu kartu untuk satu rumpang [n] di teks.{% else %}Tersimpan langsung — kamu bisa lanjut menulis soal berikutnya.{% endif %}</p>
                 </div>
-                <button type="button" onclick="jsonPanelToggle(addJsonCtx)"
-                    class="inline-flex items-center gap-1.5 text-xs font-semibold text-purple-700 bg-purple-50 hover:bg-purple-100 border border-purple-200 px-3 py-1.5 rounded-lg transition">
-                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"/></svg>
+                <button type="button" onclick="jsonPanelToggle(addJsonCtx)" class="qe-btn-json">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"/></svg>
                     JSON
                 </button>
-            </div>
+            </header>
 
             {# JSON Import/Export panel #}
-            <div id="add-json-panel" class="hidden border-b border-gray-100 px-5 py-4 bg-purple-50">
+            <div id="add-json-panel" class="hidden border-t border-gray-100 px-5 py-4 bg-purple-50">
                 <p class="text-xs font-semibold text-purple-700 mb-2">Import / Export JSON</p>
                 <textarea id="add-json-textarea" rows="16"
                     class="w-full px-3 py-2.5 border border-purple-200 rounded-xl text-xs font-mono bg-white focus:outline-none focus:ring-2 focus:ring-purple-400 resize-y leading-relaxed"
@@ -656,165 +862,167 @@
                 <input type="hidden" name="question_text" id="question-text-input">
                 <input type="hidden" name="explanation"   id="explanation-input">
 
-                <div class="p-5 space-y-4">
-
-                    {% if answer_type == 'cloze' %}
+                {% if answer_type == 'cloze' %}
+                <div class="qe-sec">
                     <div class="flex items-end gap-3 flex-wrap">
                         <div>
-                            <label class="qe-label mb-1.5 block">Nomor Lücke <span style="color:var(--danger)">*</span></label>
+                            <label class="qe-sec-title" for="add-gap-no" style="margin-bottom:6px; display:flex">Nomor rumpang <span class="qe-req">*</span></label>
                             <input type="number" name="gap_no" id="add-gap-no" min="1" required value="{{ (questions | length) + 1 }}"
                                 class="w-24 px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50 focus:bg-white transition">
                         </div>
-                        <p class="text-xs pb-2.5" style="color:var(--faint)">Sesuai penanda [n] di teks Lückentext.</p>
+                        <p class="qe-hint" style="padding-bottom:10px">Sesuai penanda [n] di teks Lückentext.</p>
                     </div>
-                    {% endif %}
+                </div>
+                {% endif %}
 
-                    <div class="{% if answer_type == 'cloze' %}hidden{% endif %}">
-                        <div class="flex items-center justify-between mb-2">
-                            <span class="qe-label">Teks Pertanyaan <span style="color:var(--danger)">*</span></span>
-                            <div class="flex rounded-lg border border-gray-200 overflow-hidden text-xs font-semibold">
-                                <button type="button" id="add-btn-wysiwyg"
-                                    onclick="setAddQMode('wysiwyg')"
-                                    class="px-2.5 py-1 bg-blue-600 text-white transition">WYSIWYG</button>
-                                <button type="button" id="add-btn-html"
-                                    onclick="setAddQMode('html')"
-                                    class="px-2.5 py-1 bg-white text-gray-500 hover:bg-gray-50 transition">Plain HTML</button>
-                            </div>
-                        </div>
-                        <div id="add-wysiwyg-wrap" class="ql-modal">
-                            <div id="quill-question"></div>
-                        </div>
-                        <div id="add-html-wrap" class="hidden">
-                            <textarea id="add-html-source" rows="5"
-                                class="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50 resize-y leading-relaxed"
-                                placeholder="&lt;p&gt;Teks pertanyaan...&lt;/p&gt;"></textarea>
+                <div class="qe-sec {% if answer_type == 'cloze' %}hidden{% endif %}">
+                    <div class="qe-sec-head">
+                        <span class="qe-sec-title">{% if answer_type == 'rf' %}Pernyataan{% else %}Pertanyaan{% endif %} <span class="qe-req">*</span></span>
+                        <div class="qe-seg">
+                            <button type="button" id="add-btn-wysiwyg"
+                                onclick="setAddQMode('wysiwyg')"
+                                class="px-2.5 py-1 bg-blue-600 text-white transition">Visual</button>
+                            <button type="button" id="add-btn-html"
+                                onclick="setAddQMode('html')"
+                                class="px-2.5 py-1 bg-white text-gray-500 hover:bg-gray-50 transition">HTML</button>
                         </div>
                     </div>
+                    <div id="add-wysiwyg-wrap" class="ql-modal">
+                        <div id="quill-question"></div>
+                    </div>
+                    <div id="add-html-wrap" class="hidden">
+                        <textarea id="add-html-source" rows="5"
+                            class="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50 resize-y leading-relaxed"
+                            placeholder="&lt;p&gt;Teks pertanyaan...&lt;/p&gt;"></textarea>
+                    </div>
+                </div>
 
-                    <div>
-                        <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
-                            <p class="qe-label">{% if cloze_input %}Jawaban Benar{% else %}Pilihan Jawaban{% endif %} <span style="color:var(--danger)">*</span></p>
-                            {% if answer_type != 'rf' and not cloze_input %}
-                            <span class="text-[11px]" style="color:var(--faint)">Klik huruf untuk menandai kunci jawaban</span>
-                            {% endif %}
-                        </div>
-                        {% if cloze_input %}
-                        <input type="hidden" name="correct_answer" value="A">
-                        <input type="text" name="answer_text" id="add-answer-text"
-                            class="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50 focus:bg-white transition"
-                            placeholder="Kata / frasa yang benar — beberapa jawaban pisahkan dengan ;">
-                        <p class="text-xs mt-2 rounded-lg px-3 py-2" style="background:#EFF1F4;color:var(--muted)">
-                            Peserta mengetik jawaban di rumpang teks — penilaian otomatis mengabaikan besar-kecil huruf.
-                        </p>
-                        {% elif answer_type == 'rf' %}
-                        {{ rf_hidden_options('', 'add-opt-') }}
-                        {{ rf_answer_key('correct_answer') }}
-                        {% else %}
-                        <div class="space-y-2">
-                            {% for opt in ['A', 'B', 'C', 'D'] %}
-                            <div class="sq-opt-row">
-                                <label class="opt-key" title="Jadikan {{ opt }} kunci jawaban">
-                                    <input type="radio" name="correct_answer" value="{{ opt }}" {% if loop.first %}checked{% endif %} class="sr-only">
-                                    <span class="opt-key-badge">{{ opt }}</span>
-                                </label>
-                                {% if answer_type == 'cloze' %}
-                                <input type="text" name="option_{{ opt | lower }}"
-                                    id="add-opt-{{ opt | lower }}"
-                                    class="flex-1 min-w-0 px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50 focus:bg-white transition"
-                                    placeholder="Opsi {{ opt }}">
-                                {% else %}
-                                <input type="text" name="option_{{ opt | lower }}"
-                                    id="add-opt-{{ opt | lower }}"
-                                    data-image-field="add-option-{{ opt | lower }}-image"
-                                    class="flex-1 min-w-0 px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50 focus:bg-white transition"
-                                    placeholder="Opsi {{ opt }} — ketik teks atau Ctrl+V gambar">
-                                {{ render_option_image('option_' ~ (opt | lower) ~ '_image', 'add-option-' ~ (opt | lower) ~ '-image') }}
-                                {% endif %}
-                            </div>
-                            {% endfor %}
-                        </div>
+                <div class="qe-sec">
+                    <div class="qe-sec-head">
+                        <span class="qe-sec-title">{% if cloze_input %}Jawaban benar{% elif answer_type == 'rf' %}Kunci jawaban{% else %}Pilihan jawaban{% endif %} <span class="qe-req">*</span></span>
+                        {% if answer_type != 'rf' and not cloze_input %}
+                        <span class="qe-key-legend"><i></i>Klik huruf untuk menandai jawaban benar</span>
                         {% endif %}
                     </div>
+                    {% if cloze_input %}
+                    <input type="hidden" name="correct_answer" value="A">
+                    <input type="text" name="answer_text" id="add-answer-text"
+                        class="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50 focus:bg-white transition"
+                        placeholder="Kata / frasa yang benar — beberapa jawaban pisahkan dengan ;">
+                    <p class="qe-note" style="margin-top:8px">
+                        Peserta mengetik jawaban di rumpang teks — penilaian otomatis mengabaikan besar-kecil huruf.
+                    </p>
+                    {% elif answer_type == 'rf' %}
+                    {{ rf_hidden_options('', 'add-opt-') }}
+                    <div style="margin-top:10px">{{ rf_answer_key('correct_answer') }}</div>
+                    {% else %}
+                    <div class="space-y-2">
+                        {% for opt in ['A', 'B', 'C', 'D'] %}
+                        <div class="sq-opt-row">
+                            <label class="opt-key" title="Jadikan {{ opt }} kunci jawaban">
+                                <input type="radio" name="correct_answer" value="{{ opt }}" {% if loop.first %}checked{% endif %} class="sr-only">
+                                <span class="opt-key-badge">{{ opt }}</span>
+                            </label>
+                            {% if answer_type == 'cloze' %}
+                            <input type="text" name="option_{{ opt | lower }}"
+                                id="add-opt-{{ opt | lower }}"
+                                class="flex-1 min-w-0 px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50 focus:bg-white transition"
+                                placeholder="Opsi {{ opt }}">
+                            {% else %}
+                            <input type="text" name="option_{{ opt | lower }}"
+                                id="add-opt-{{ opt | lower }}"
+                                data-image-field="add-option-{{ opt | lower }}-image"
+                                class="flex-1 min-w-0 px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50 focus:bg-white transition"
+                                placeholder="Opsi {{ opt }} — ketik teks atau Ctrl+V gambar">
+                            {{ render_option_image('option_' ~ (opt | lower) ~ '_image', 'add-option-' ~ (opt | lower) ~ '-image') }}
+                            {% endif %}
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
 
-                    <div>
-                        <div class="flex items-center justify-between mb-2">
-                            <span class="qe-label">Pembahasan / Penjelasan</span>
-                            <div class="flex rounded-lg border border-gray-200 overflow-hidden text-xs font-semibold">
-                                <button type="button" id="add-exp-btn-wysiwyg"
-                                    onclick="setAddExpMode('wysiwyg')"
-                                    class="px-2.5 py-1 bg-blue-600 text-white transition">WYSIWYG</button>
-                                <button type="button" id="add-exp-btn-html"
-                                    onclick="setAddExpMode('html')"
-                                    class="px-2.5 py-1 bg-white text-gray-500 hover:bg-gray-50 transition">Plain HTML</button>
-                            </div>
-                        </div>
-                        <div id="add-exp-wysiwyg-wrap" class="ql-modal">
-                            <div id="quill-explanation"></div>
-                        </div>
-                        <div id="add-exp-html-wrap" class="hidden">
-                            <textarea id="add-exp-html-source" rows="5"
-                                class="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50 resize-y leading-relaxed"
-                                placeholder="&lt;p&gt;Pembahasan...&lt;/p&gt;"></textarea>
+                <div class="qe-sec">
+                    <div class="qe-sec-head">
+                        <span class="qe-sec-title">Pembahasan <span class="qe-optional">opsional</span></span>
+                        <div class="qe-seg">
+                            <button type="button" id="add-exp-btn-wysiwyg"
+                                onclick="setAddExpMode('wysiwyg')"
+                                class="px-2.5 py-1 bg-blue-600 text-white transition">Visual</button>
+                            <button type="button" id="add-exp-btn-html"
+                                onclick="setAddExpMode('html')"
+                                class="px-2.5 py-1 bg-white text-gray-500 hover:bg-gray-50 transition">HTML</button>
                         </div>
                     </div>
-
+                    <div id="add-exp-wysiwyg-wrap" class="ql-modal">
+                        <div id="quill-explanation"></div>
+                    </div>
+                    <div id="add-exp-html-wrap" class="hidden">
+                        <textarea id="add-exp-html-source" rows="5"
+                            class="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50 resize-y leading-relaxed"
+                            placeholder="&lt;p&gt;Pembahasan...&lt;/p&gt;"></textarea>
+                    </div>
                 </div>
 
-                <div class="px-5 py-4" style="border-top:1px solid var(--line-soft); background:#F8FAFD; border-radius:0 0 12px 12px;">
-                    <button type="submit"
-                        class="w-full text-white font-semibold py-2.5 rounded-xl text-sm transition shadow-sm"
-                        style="background:var(--ok)">
-                        + Simpan Soal
-                    </button>
+                <div class="qe-add-foot">
+                    <button type="submit" class="qe-btn-ok">＋ Simpan soal ini</button>
+                    <span class="qe-hint">Judul &amp; teks bacaan disimpan lewat tombol Simpan di kanan atas.</span>
                 </div>
             </form>
-        </div>
+        </section>
 
         {% elif q_mode == 'grouped' %}
         {# ── Builder: tulis semua soal di satu layar, simpan sekali ───────── #}
-        <div class="bg-white rounded-2xl shadow-sm border" id="builder-panel" style="border-color:var(--line)">
-            <div class="flex flex-wrap items-center justify-between gap-3 px-5 py-4" style="border-bottom:1px solid var(--line)">
-                <div class="flex items-center gap-2.5">
-                    <h3 class="font-display font-semibold text-[15px]" style="color:var(--ink)">Soal-Soal</h3>
-                    <span class="pill brand" id="builder-count">0 soal</span>
+        <section class="qe-card" id="builder-panel">
+            <header class="qe-card-head">
+                <span class="qe-card-icon">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/></svg>
+                </span>
+                <div class="flex-1 min-w-0">
+                    <h3 class="qe-card-title">{% if answer_type == 'cloze' %}Rumpang &amp; opsi{% else %}Soal-soal{% endif %} <span class="pill brand" id="builder-count">0 soal</span></h3>
+                    <p class="qe-card-sub">{% if answer_type == 'cloze' %}Satu kartu untuk setiap rumpang [n] di teks.{% else %}Tulis semua soal di sini, lalu simpan sekaligus.{% endif %}</p>
                 </div>
-                <button type="button" onclick="builderAdd()"
-                    class="text-xs font-semibold text-white px-3.5 py-2 rounded-lg transition"
-                    style="background:var(--brand)">
-                    ＋ Tambah Soal
+                <button type="button" id="builder-fold" class="qe-act hidden" onclick="builderToggleAll(this)">Lipat semua</button>
+            </header>
+            <div id="builder-list" class="qe-builder-list">
+                <div class="qe-empty" id="builder-empty">
+                    {% if answer_type == 'cloze' %}
+                    Blok kata di teks lalu klik <b>✂ Jadikan Rumpang</b> — kartunya muncul di sini otomatis,<br>dan kata itu langsung menjadi {% if cloze_input %}jawaban benar{% else %}kunci jawaban{% endif %}.
+                    {% else %}
+                    Belum ada soal. Klik <b>＋ Tambah soal</b> di bawah untuk mulai —<br>semua soal tersimpan sekaligus bersama teksnya.
+                    {% endif %}
+                </div>
+            </div>
+            <div class="qe-builder-foot">
+                <button type="button" onclick="builderAdd()" class="qe-add-row">
+                    ＋ Tambah {% if answer_type == 'cloze' %}rumpang{% else %}soal{% endif %}
                 </button>
             </div>
-            <div id="builder-list" class="px-5 py-4 space-y-3">
-                <p class="text-xs text-center py-8 leading-relaxed" id="builder-empty" style="color:var(--faint)">
-                    Belum ada soal. Klik <strong>＋ Tambah Soal</strong>, tulis semua soal di sini,<br>
-                    lalu simpan semuanya sekali lewat tombol <strong>Simpan</strong> di bawah.
-                </p>
-            </div>
-        </div>
+        </section>
         {% else %}
-        <div class="bg-gray-50 rounded-2xl border border-dashed border-gray-300 p-10 text-center text-gray-400">
-            <div class="text-4xl mb-2">💡</div>
-            <p class="text-sm">Simpan passage terlebih dahulu untuk mulai menambah soal</p>
-        </div>
+        <div class="qe-empty">Simpan teks bacaan terlebih dahulu untuk mulai menambah soal.</div>
         {% endif %}
     </div>
 
 </div>{# end #main-grid #}
 
+</div>{# end #qe-page #}
+
 <!-- Edit Question Modal -->
 <div id="edit-question-modal" class="hidden fixed inset-0 z-50 bg-black/50 flex items-start justify-center p-4 overflow-y-auto">
-    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-5xl my-6">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-3xl my-6">
 
-        {# ── Modal header ─────────────────────────────────────────────────── #}
         <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100">
-            <h3 class="font-bold text-gray-900 text-base">Edit Soal</h3>
+            <div>
+                <h3 class="font-display font-semibold text-base" style="color:var(--ink)">Edit soal</h3>
+                <p class="qe-hint">Perubahan berlaku setelah kamu klik Simpan Perubahan.</p>
+            </div>
             <div class="flex items-center gap-2">
-                <button type="button" onclick="jsonPanelToggle(editJsonCtx)"
-                    class="inline-flex items-center gap-1.5 text-xs font-semibold text-purple-700 bg-purple-50 hover:bg-purple-100 border border-purple-200 px-3 py-1.5 rounded-lg transition">
-                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"/></svg>
+                <button type="button" onclick="jsonPanelToggle(editJsonCtx)" class="qe-btn-json">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"/></svg>
                     JSON
                 </button>
-                <button type="button" onclick="closeEditModal()" class="text-gray-400 hover:text-gray-600 transition">
+                <button type="button" onclick="closeEditModal()" class="text-gray-400 hover:text-gray-600 transition" title="Tutup">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
                 </button>
             </div>
@@ -851,110 +1059,106 @@
             <input type="hidden" name="question_text" id="edit-question-text-hidden">
             <input type="hidden" name="explanation"   id="edit-explanation-hidden">
 
-            {# ── Body terpadu: Pertanyaan → Jawaban (+kunci) → Pembahasan ──── #}
-            <div class="p-5 space-y-4">
-
-                {% if answer_type == 'cloze' %}
+            {% if answer_type == 'cloze' %}
+            <div class="qe-sec is-first">
                 <div class="flex items-end gap-3 flex-wrap">
                     <div>
-                        <label class="qe-label mb-1.5 block">Nomor Lücke <span style="color:var(--danger)">*</span></label>
+                        <label class="qe-sec-title" for="edit-gap-no" style="margin-bottom:6px; display:flex">Nomor rumpang <span class="qe-req">*</span></label>
                         <input type="number" name="gap_no" id="edit-gap-no" min="1" required
                             class="w-24 px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50 focus:bg-white transition">
                     </div>
-                    <p class="text-xs pb-2.5" style="color:var(--faint)">Sesuai penanda [n] di teks Lückentext.</p>
+                    <p class="qe-hint" style="padding-bottom:10px">Sesuai penanda [n] di teks Lückentext.</p>
                 </div>
-                {% endif %}
+            </div>
+            {% endif %}
 
-                <div class="{% if answer_type == 'cloze' %}hidden{% endif %}">
-                    <div class="flex items-center justify-between mb-2">
-                        <span class="qe-label">Teks Pertanyaan <span style="color:var(--danger)">*</span></span>
-                        <div class="flex rounded-lg border border-gray-200 overflow-hidden text-xs font-semibold">
-                            <button type="button" id="edit-btn-wysiwyg"
-                                onclick="setEditQuestionMode('wysiwyg')"
-                                class="px-2.5 py-1 bg-blue-600 text-white transition">WYSIWYG</button>
-                            <button type="button" id="edit-btn-html"
-                                onclick="setEditQuestionMode('html')"
-                                class="px-2.5 py-1 bg-white text-gray-500 hover:bg-gray-50 transition">Plain HTML</button>
-                        </div>
-                    </div>
-                    <div id="edit-wysiwyg-wrap" class="ql-modal">
-                        <div id="quill-edit-question"></div>
-                    </div>
-                    <div id="edit-html-wrap" class="hidden">
-                        <textarea id="edit-html-source" rows="5"
-                            class="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50 resize-y leading-relaxed"
-                            placeholder="&lt;p&gt;Teks pertanyaan...&lt;/p&gt;"></textarea>
+            <div class="qe-sec is-first {% if answer_type == 'cloze' %}hidden{% endif %}">
+                <div class="qe-sec-head">
+                    <span class="qe-sec-title">{% if answer_type == 'rf' %}Pernyataan{% else %}Pertanyaan{% endif %} <span class="qe-req">*</span></span>
+                    <div class="qe-seg">
+                        <button type="button" id="edit-btn-wysiwyg"
+                            onclick="setEditQuestionMode('wysiwyg')"
+                            class="px-2.5 py-1 bg-blue-600 text-white transition">Visual</button>
+                        <button type="button" id="edit-btn-html"
+                            onclick="setEditQuestionMode('html')"
+                            class="px-2.5 py-1 bg-white text-gray-500 hover:bg-gray-50 transition">HTML</button>
                     </div>
                 </div>
-
-                <div>
-                    <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
-                        <p class="qe-label">{% if cloze_input %}Jawaban Benar{% else %}Pilihan Jawaban{% endif %} <span style="color:var(--danger)">*</span></p>
-                        {% if answer_type != 'rf' and not cloze_input %}
-                        <span class="text-[11px]" style="color:var(--faint)">Klik huruf untuk menandai kunci jawaban</span>
-                        {% endif %}
-                    </div>
-                    {% if cloze_input %}
-                    <input type="hidden" name="correct_answer" value="A">
-                    <input type="text" name="answer_text" id="edit-answer-text"
-                        class="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50 focus:bg-white transition"
-                        placeholder="Kata / frasa yang benar — beberapa jawaban pisahkan dengan ;">
-                    <p class="text-xs mt-2 rounded-lg px-3 py-2" style="background:#EFF1F4;color:var(--muted)">
-                        Peserta mengetik jawaban di rumpang teks — penilaian otomatis mengabaikan besar-kecil huruf.
-                    </p>
-                    {% elif answer_type == 'rf' %}
-                    {{ rf_hidden_options('', 'edit-option-') }}
-                    {{ rf_answer_key('correct_answer', '', 'edit-correct-') }}
-                    {% else %}
-                    <div class="space-y-2">
-                        {% for opt in ['a', 'b', 'c', 'd'] %}
-                        <div class="sq-opt-row">
-                            <label class="opt-key" title="Jadikan {{ opt | upper }} kunci jawaban">
-                                <input type="radio" name="correct_answer" value="{{ opt | upper }}" id="edit-correct-{{ opt | upper }}" class="sr-only">
-                                <span class="opt-key-badge">{{ opt | upper }}</span>
-                            </label>
-                            {% if answer_type == 'cloze' %}
-                            <input type="text" name="option_{{ opt }}" id="edit-option-{{ opt }}"
-                                class="flex-1 min-w-0 px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50 focus:bg-white transition"
-                                placeholder="Opsi {{ opt | upper }}">
-                            {% else %}
-                            <input type="text" name="option_{{ opt }}" id="edit-option-{{ opt }}"
-                                data-image-field="edit-option-{{ opt }}-image"
-                                class="flex-1 min-w-0 px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50 focus:bg-white transition"
-                                placeholder="Opsi {{ opt | upper }} — ketik teks atau Ctrl+V gambar">
-                            {{ render_option_image('option_' ~ opt ~ '_image', 'edit-option-' ~ opt ~ '-image') }}
-                            {% endif %}
-                        </div>
-                        {% endfor %}
-                    </div>
-                    {% endif %}
+                <div id="edit-wysiwyg-wrap" class="ql-modal">
+                    <div id="quill-edit-question"></div>
                 </div>
-
-                <div>
-                    <div class="flex items-center justify-between mb-2">
-                        <span class="qe-label">Pembahasan / Penjelasan</span>
-                        <div class="flex rounded-lg border border-gray-200 overflow-hidden text-xs font-semibold">
-                            <button type="button" id="edit-exp-btn-wysiwyg"
-                                onclick="setEditExpMode('wysiwyg')"
-                                class="px-2.5 py-1 bg-blue-600 text-white transition">WYSIWYG</button>
-                            <button type="button" id="edit-exp-btn-html"
-                                onclick="setEditExpMode('html')"
-                                class="px-2.5 py-1 bg-white text-gray-500 hover:bg-gray-50 transition">Plain HTML</button>
-                        </div>
-                    </div>
-                    <div id="edit-exp-wysiwyg-wrap" class="ql-modal">
-                        <div id="quill-edit-explanation"></div>
-                    </div>
-                    <div id="edit-exp-html-wrap" class="hidden">
-                        <textarea id="edit-exp-html-source" rows="5"
-                            class="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50 resize-y leading-relaxed"
-                            placeholder="&lt;p&gt;Pembahasan...&lt;/p&gt;"></textarea>
-                    </div>
+                <div id="edit-html-wrap" class="hidden">
+                    <textarea id="edit-html-source" rows="5"
+                        class="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50 resize-y leading-relaxed"
+                        placeholder="&lt;p&gt;Teks pertanyaan...&lt;/p&gt;"></textarea>
                 </div>
-
             </div>
 
-            {# ── Footer actions ───────────────────────────────────────────── #}
+            <div class="qe-sec">
+                <div class="qe-sec-head">
+                    <span class="qe-sec-title">{% if cloze_input %}Jawaban benar{% elif answer_type == 'rf' %}Kunci jawaban{% else %}Pilihan jawaban{% endif %} <span class="qe-req">*</span></span>
+                    {% if answer_type != 'rf' and not cloze_input %}
+                    <span class="qe-key-legend"><i></i>Klik huruf untuk menandai jawaban benar</span>
+                    {% endif %}
+                </div>
+                {% if cloze_input %}
+                <input type="hidden" name="correct_answer" value="A">
+                <input type="text" name="answer_text" id="edit-answer-text"
+                    class="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50 focus:bg-white transition"
+                    placeholder="Kata / frasa yang benar — beberapa jawaban pisahkan dengan ;">
+                <p class="qe-note" style="margin-top:8px">
+                    Peserta mengetik jawaban di rumpang teks — penilaian otomatis mengabaikan besar-kecil huruf.
+                </p>
+                {% elif answer_type == 'rf' %}
+                {{ rf_hidden_options('', 'edit-option-') }}
+                <div style="margin-top:10px">{{ rf_answer_key('correct_answer', '', 'edit-correct-') }}</div>
+                {% else %}
+                <div class="space-y-2">
+                    {% for opt in ['a', 'b', 'c', 'd'] %}
+                    <div class="sq-opt-row">
+                        <label class="opt-key" title="Jadikan {{ opt | upper }} kunci jawaban">
+                            <input type="radio" name="correct_answer" value="{{ opt | upper }}" id="edit-correct-{{ opt | upper }}" class="sr-only">
+                            <span class="opt-key-badge">{{ opt | upper }}</span>
+                        </label>
+                        {% if answer_type == 'cloze' %}
+                        <input type="text" name="option_{{ opt }}" id="edit-option-{{ opt }}"
+                            class="flex-1 min-w-0 px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50 focus:bg-white transition"
+                            placeholder="Opsi {{ opt | upper }}">
+                        {% else %}
+                        <input type="text" name="option_{{ opt }}" id="edit-option-{{ opt }}"
+                            data-image-field="edit-option-{{ opt }}-image"
+                            class="flex-1 min-w-0 px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50 focus:bg-white transition"
+                            placeholder="Opsi {{ opt | upper }} — ketik teks atau Ctrl+V gambar">
+                        {{ render_option_image('option_' ~ opt ~ '_image', 'edit-option-' ~ opt ~ '-image') }}
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+
+            <div class="qe-sec">
+                <div class="qe-sec-head">
+                    <span class="qe-sec-title">Pembahasan <span class="qe-optional">opsional</span></span>
+                    <div class="qe-seg">
+                        <button type="button" id="edit-exp-btn-wysiwyg"
+                            onclick="setEditExpMode('wysiwyg')"
+                            class="px-2.5 py-1 bg-blue-600 text-white transition">Visual</button>
+                        <button type="button" id="edit-exp-btn-html"
+                            onclick="setEditExpMode('html')"
+                            class="px-2.5 py-1 bg-white text-gray-500 hover:bg-gray-50 transition">HTML</button>
+                    </div>
+                </div>
+                <div id="edit-exp-wysiwyg-wrap" class="ql-modal">
+                    <div id="quill-edit-explanation"></div>
+                </div>
+                <div id="edit-exp-html-wrap" class="hidden">
+                    <textarea id="edit-exp-html-source" rows="5"
+                        class="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50 resize-y leading-relaxed"
+                        placeholder="&lt;p&gt;Pembahasan...&lt;/p&gt;"></textarea>
+                </div>
+            </div>
+
             <div class="flex gap-3 px-6 py-4 border-t border-gray-100 bg-gray-50 rounded-b-2xl">
                 <button type="submit"
                     class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 rounded-xl text-sm transition shadow-sm">
@@ -1013,10 +1217,7 @@ const MODE_HINTS = {
 function setQuestionMode(mode) {
     document.getElementById('question-mode-input').value = mode;
 
-    const passagePanel  = document.getElementById('passage-panel');
     const contentFields = document.getElementById('content-fields');
-    const mainGrid      = document.getElementById('main-grid');
-    const panelTitle    = document.getElementById('panel-title');
     const btnSingle     = document.getElementById('btn-mode-single');
     const btnGrouped    = document.getElementById('btn-mode-grouped');
     const hint          = document.getElementById('mode-hint');
@@ -1032,6 +1233,9 @@ function setQuestionMode(mode) {
     // Audio URL inputs — disable the one NOT in use so only one submits
     const passageAudioInput = document.getElementById('passage-audio-url');
     const sqAudioInput      = document.getElementById('sq-audio-url');
+    const qePage            = document.getElementById('qe-page');
+
+    if (qePage) qePage.dataset.mode = mode;
 
     if (mode === 'single') {
         contentFields.classList.add('hidden');
@@ -1041,10 +1245,6 @@ function setQuestionMode(mode) {
         if (sqFields)    sqFields.classList.remove('hidden');
         if (rightPanel)  rightPanel.classList.add('hidden');
         if (cardA)       cardA.classList.add('hidden');
-        if (panelTitle)  panelTitle.textContent = 'Soal Mandiri';
-        passagePanel.classList.remove('xl:col-span-2');
-        passagePanel.classList.add('xl:col-span-full');
-        mainGrid.classList.remove('xl:grid-cols-5', 'xl:grid-cols-3');
         if (btnSingle)         btnSingle.classList.add('active');
         if (btnGrouped)        btnGrouped.classList.remove('active');
         if (btnLabel)          btnLabel.textContent = 'Simpan Soal Mandiri';
@@ -1059,10 +1259,6 @@ function setQuestionMode(mode) {
         if (sqFields)    sqFields.classList.add('hidden');
         if (rightPanel)  rightPanel.classList.remove('hidden');
         if (cardA)       cardA.classList.remove('hidden');
-        if (panelTitle)  panelTitle.textContent = {% if passage %}'Edit Kelompok Soal'{% else %}'Kelompok Soal Baru'{% endif %};
-        passagePanel.classList.remove('xl:col-span-full');
-        passagePanel.classList.add('xl:col-span-2');
-        mainGrid.classList.add('xl:grid-cols-5');
         if (btnSingle)         btnSingle.classList.remove('active');
         if (btnGrouped)        btnGrouped.classList.add('active');
         if (btnLabel)          btnLabel.textContent = {% if passage %}'Simpan Perubahan'{% else %}'Simpan Kelompok Soal'{% endif %};
@@ -1737,6 +1933,8 @@ function setInputView(view) {
     if (jsonPanel) jsonPanel.classList.toggle('hidden', !showJson);
     if (formWrap)  formWrap.classList.toggle('hidden', showJson);
     if (mainGrid)  mainGrid.classList.toggle('hidden', showJson);
+    const saveBtn = document.getElementById('save-passage-btn');
+    if (saveBtn)   saveBtn.classList.toggle('hidden', showJson);
 
     if (btnForm && btnJson) {
         if (showJson) {
@@ -2244,6 +2442,8 @@ function audioWidgetPickFile(input) {
                 statusEl.className = 'text-xs font-medium mb-2 text-green-600';
                 statusEl.classList.remove('hidden');
                 setTimeout(() => statusEl.classList.add('hidden'), 4000);
+                qeSyncAudioState(fieldId);
+                qeMarkDirty('passage');
             } else {
                 statusEl.textContent = '✗ ' + (res.message || 'Upload gagal');
                 statusEl.className = 'text-xs font-medium mb-2 text-red-500';
@@ -2282,6 +2482,17 @@ function audioWidgetUrlChanged(input) {
         previewWrap.classList.add('hidden');
         audioEl.src = '';
     }
+    qeSyncAudioState(fieldId);
+}
+
+function qeSyncAudioState(fieldId) {
+    const input = document.getElementById(fieldId);
+    const box   = input && input.closest('details');
+    const state = box && box.querySelector('.qe-audio-state');
+    if (!state) return;
+    const has = !!input.value.trim();
+    state.textContent = has ? 'Terpasang' : 'Opsional';
+    state.classList.toggle('is-on', has);
 }
 
 // ── End audio upload widget helpers ──────────────────────────────────────
@@ -2555,9 +2766,9 @@ function builderCardHtml(n) {
     if (clozeInput) {
         optsBlock = `
             <div>
-                <p class="qe-label mb-1.5">Jawaban Benar <span style="color:var(--danger)">*</span></p>
+                <p class="qe-sec-title mb-1.5">Jawaban benar <span class="qe-req">*</span></p>
                 <input type="text" data-f="answer_text" class="qe-input" placeholder="Kata / frasa yang benar untuk rumpang ini…">
-                <p class="text-[11px] mt-1.5 rounded-lg px-3 py-2" style="background:#EFF1F4;color:var(--muted)">
+                <p class="qe-note" style="margin-top:8px">
                     Boleh beberapa jawaban benar — pisahkan dengan titik koma (<strong>;</strong>), mis. <em>zuhause; zu Hause</em>.
                     Penilaian otomatis mengabaikan besar-kecil huruf.
                 </p>
@@ -2573,31 +2784,28 @@ function builderCardHtml(n) {
             </div>`).join('');
         optsBlock = `
             <div>
-                <div class="flex flex-wrap items-center justify-between gap-2 mb-1.5">
-                    <p class="qe-label">Pilihan Jawaban <span style="color:var(--danger)">*</span></p>
-                    <span class="text-[11px]" style="color:var(--faint)">Klik huruf untuk menandai kunci jawaban</span>
+                <div class="qe-sec-head" style="margin-bottom:8px">
+                    <p class="qe-sec-title">Pilihan jawaban <span class="qe-req">*</span></p>
+                    <span class="qe-key-legend"><i></i>Klik huruf untuk menandai jawaban benar</span>
                 </div>
                 <div class="space-y-2">${rows}</div>
             </div>`;
     } else {
+        const rfTile = (val, label, checked) => `
+                    <label class="qe-rf-opt">
+                        <input type="radio" name="bq${n}_correct" value="${val}" ${checked ? 'checked' : ''} class="sr-only">
+                        <span class="qe-rf-badge">${label[0]}</span>
+                        <span class="qe-rf-lbl">${label}</span>
+                        <svg class="qe-rf-check" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
+                    </label>`;
         optsBlock = `
             <div>
-                <p class="qe-label mb-1.5">Kunci Jawaban <span style="color:var(--danger)">*</span></p>
-                <div class="grid grid-cols-2 gap-2">
-                    <label class="flex items-center justify-center cursor-pointer py-2.5 border-2 border-gray-200 rounded-xl hover:border-blue-400 has-[:checked]:border-blue-600 has-[:checked]:bg-blue-50 transition">
-                        <input type="radio" name="bq${n}_correct" value="A" checked class="sr-only">
-                        <span class="text-sm font-bold" style="color:var(--ink)">Richtig</span>
-                    </label>
-                    <label class="flex items-center justify-center cursor-pointer py-2.5 border-2 border-gray-200 rounded-xl hover:border-blue-400 has-[:checked]:border-blue-600 has-[:checked]:bg-blue-50 transition">
-                        <input type="radio" name="bq${n}_correct" value="B" class="sr-only">
-                        <span class="text-sm font-bold" style="color:var(--ink)">Falsch</span>
-                    </label>
-                </div>
-                <p class="text-xs mt-2 rounded-lg px-3 py-2" style="background:#EFF1F4;color:var(--muted)">Tulis pernyataannya di teks pertanyaan — peserta menilai Richtig atau Falsch.</p>
+                <p class="qe-sec-title mb-1.5">Kunci jawaban <span class="qe-req">*</span></p>
+                <div class="qe-rf">${rfTile('A', 'Richtig', true)}${rfTile('B', 'Falsch', false)}</div>
             </div>`;
     }
     const gapNote = cloze
-        ? `<p class="text-[11px] rounded-lg px-3 py-2" style="background:var(--brand-soft);color:var(--brand-ink)">${clozeInput
+        ? `<p class="qe-note" style="background:var(--brand-soft);border-color:#C9D8F3;color:var(--brand-ink)">${clozeInput
             ? `Jawaban untuk rumpang ke-<strong>${n}</strong> — peserta mengetik jawaban di penanda <strong>[${n}]</strong> pada teks.`
             : (CLOZE_ANSWER_MODE === 'select'
                 ? `Opsi untuk rumpang ke-<strong>${n}</strong> — tampil sebagai <strong>dropdown</strong> pada penanda <strong>[${n}]</strong> di teks.`
@@ -2609,19 +2817,19 @@ function builderCardHtml(n) {
             <span class="builder-num">${n}</span>
             <span class="builder-snippet">Soal baru…</span>
             <span class="pill ok b-key" style="display:none"></span>
-            <button type="button" class="builder-del" onclick="event.stopPropagation(); this.closest('details').remove(); builderSync();">Hapus</button>
+            <button type="button" class="builder-del" onclick="event.preventDefault(); event.stopPropagation(); builderRemove(this);">Hapus</button>
         </summary>
         <div class="builder-body">
             ${gapNote}
             ${cloze ? '' : `
             <div>
-                <p class="qe-label mb-1.5">Teks Pertanyaan <span style="color:var(--danger)">*</span></p>
-                <textarea data-f="question_text" rows="2" class="qe-input" placeholder="Tulis pertanyaannya…"></textarea>
+                <p class="qe-sec-title mb-1.5">${rf ? 'Pernyataan' : 'Pertanyaan'} <span class="qe-req">*</span></p>
+                <textarea data-f="question_text" rows="2" class="qe-input" placeholder="${rf ? 'Tulis pernyataan yang dinilai Richtig/Falsch…' : 'Tulis pertanyaannya…'}"></textarea>
             </div>`}
             ${optsBlock}
             <div>
-                <p class="qe-label mb-1.5">Pembahasan</p>
-                <textarea data-f="explanation" rows="2" class="qe-input" placeholder="Kenapa jawabannya benar… (opsional)"></textarea>
+                <p class="qe-sec-title mb-1.5">Pembahasan <span class="qe-optional">opsional</span></p>
+                <textarea data-f="explanation" rows="2" class="qe-input" placeholder="Kenapa jawabannya benar…"></textarea>
             </div>
         </div>
     </details>`;
@@ -2642,9 +2850,12 @@ function builderSync() {
     const cards = document.querySelectorAll('#builder-list .builder-card');
     const list = document.getElementById('builder-list');
     if (!cards.length && !document.getElementById('builder-empty')) {
-        list.insertAdjacentHTML('beforeend',
-            '<p class="text-xs text-center py-8" id="builder-empty" style="color:var(--faint)">Belum ada soal. Klik <strong>＋ Tambah Soal</strong>.</p>');
+        list.insertAdjacentHTML('beforeend', '<div class="qe-empty" id="builder-empty">' + (ANSWER_TYPE === 'cloze'
+            ? 'Blok kata di teks lalu klik <b>✂ Jadikan Rumpang</b> — kartunya muncul di sini otomatis.'
+            : 'Belum ada soal. Klik <b>＋ Tambah soal</b> di bawah untuk mulai.') + '</div>');
     }
+    const fold = document.getElementById('builder-fold');
+    if (fold) fold.classList.toggle('hidden', cards.length < 2);
     cards.forEach((card, i) => {
         const n = i + 1;
         card.querySelector('.builder-num').textContent = n;
@@ -2677,6 +2888,23 @@ function builderSync() {
     if (lbl) lbl.textContent = cards.length
         ? 'Simpan Kelompok Soal (' + cards.length + ' soal)'
         : 'Simpan Kelompok Soal';
+    qeGapStatus();
+}
+
+function builderRemove(btn) {
+    const card = btn.closest('.builder-card');
+    if (!card) return;
+    const hasContent = Array.from(card.querySelectorAll('.qe-input')).some(el => el.value.trim());
+    if (hasContent && !confirm('Hapus soal nomor ' + card.querySelector('.builder-num').textContent + '? Isinya akan hilang.')) return;
+    card.remove();
+    builderSync();
+}
+
+function builderToggleAll(btn) {
+    const cards = Array.from(document.querySelectorAll('#builder-list .builder-card'));
+    const anyOpen = cards.some(c => c.open);
+    cards.forEach(c => { c.open = !anyOpen; });
+    btn.textContent = anyOpen ? 'Buka semua' : 'Lipat semua';
 }
 
 document.addEventListener('change', e => {
@@ -2753,6 +2981,7 @@ if (BUILDER_ACTIVE) {
             questions: questions,
         };
         const btn = document.getElementById('save-passage-btn');
+        const btnHtml = btn ? btn.innerHTML : '';
         if (btn) { btn.disabled = true; btn.textContent = 'Menyimpan…'; }
         fetch('/expert/question-bank/import-json', {
             method: 'POST',
@@ -2764,14 +2993,15 @@ if (BUILDER_ACTIVE) {
             }),
         }).then(r => r.json()).then(data => {
             if (data.status === 'OK' && data.passage_pkey) {
+                qeClearDirty('passage');
                 qeToast('Tersimpan — membuka editor…');
                 window.location.href = '/expert/question-bank/' + data.passage_pkey;
             } else {
-                if (btn) { btn.disabled = false; btn.textContent = 'Simpan Kelompok Soal'; }
+                if (btn) { btn.disabled = false; btn.innerHTML = btnHtml; }
                 qeToast((data.errors && data.errors[0]) || data.message || 'Gagal menyimpan', false);
             }
         }).catch(() => {
-            if (btn) { btn.disabled = false; btn.textContent = 'Simpan Kelompok Soal'; }
+            if (btn) { btn.disabled = false; btn.innerHTML = btnHtml; }
             qeToast('Koneksi bermasalah, coba lagi', false);
         });
     });
@@ -2782,79 +3012,91 @@ if (BUILDER_ACTIVE) {
 // Tambah soal TANPA pindah halaman (halaman edit, bentuk mc/rf).
 // Cloze tetap memakai form POST biasa (butuh nomor Lücke dari server).
 // ─────────────────────────────────────────────────────────────────────────────
+function qeEsc(text) {
+    return String(text == null ? '' : text)
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
 function qeInsertQuestionCard(item, pkey) {
     EXISTING_QUESTIONS.push(Object.assign({pkey: pkey}, item));
     const n = EXISTING_QUESTIONS.length;
     const is_rf = (item.answer_type || ANSWER_TYPE) === 'rf';
     const is_input = !!(item.answer_text || '').trim();
+    const check = '<svg class="qe-qopt-check" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>';
     let optHtml = '';
     if (is_input) {
         const alts = String(item.answer_text || '').split(';').map(s => s.trim()).filter(Boolean);
-        const more = alts.length > 1 ? ' <span class="text-green-600 font-normal">(+' + (alts.length - 1) + ' varian lain)</span>' : '';
-        optHtml = '<div class="flex items-start gap-2 px-3 py-2 rounded-lg border text-xs bg-green-50 border-green-200">' +
-            '<span class="font-bold text-green-700 flex-shrink-0">✍️ Jawaban benar:</span>' +
-            '<span class="text-green-800" style="word-break:break-word;">' + alts[0] + more + '</span></div>';
+        const more = alts.length > 1 ? ' <span style="opacity:.75">(+' + (alts.length - 1) + ' varian lain)</span>' : '';
+        optHtml = '<div class="qe-qanswer"><strong class="shrink-0">Jawaban benar:</strong><span>' + qeEsc(alts[0]) + more + '</span></div>';
     } else {
         const pairs = is_rf
             ? [['A', item.option_a || 'Richtig'], ['B', item.option_b || 'Falsch']]
             : [['A', item.option_a], ['B', item.option_b], ['C', item.option_c], ['D', item.option_d]];
-        optHtml = pairs.map(pair => {
-            const o = pair[0], label = pair[1] || '';
+        optHtml = '<div class="qe-qopts">' + pairs.map(pair => {
+            const o = pair[0];
             const hit = item.correct_answer === o;
-            return '<div class="flex items-start gap-2 px-3 py-2 rounded-lg border text-xs ' +
-                (hit ? 'bg-green-50 border-green-200' : 'bg-gray-50 border-gray-100') + '">' +
-                (is_rf ? '' : '<span class="font-bold ' + (hit ? 'text-green-700' : 'text-gray-500') + ' flex-shrink-0">' + o + '</span>') +
-                '<div class="min-w-0"><span class="' + (hit ? 'text-green-800' : 'text-gray-600') + '"></span>' + label + '</div></div>';
-        }).join('');
+            const img = item['option_' + o.toLowerCase() + '_image'];
+            return '<div class="qe-qopt' + (hit ? ' is-key' : '') + '">' +
+                (is_rf ? '' : '<b>' + o + '</b>') +
+                '<div class="min-w-0">' +
+                (img ? '<img src="' + qeEsc(img) + '" alt="" class="rounded-md border border-gray-200 mb-1" style="max-height:112px; max-width:200px; width:auto; height:auto">' : '') +
+                '<span>' + qeEsc(pair[1]) + '</span></div>' +
+                (hit ? check : '') + '</div>';
+        }).join('') + '</div>';
     }
-    const dataQ = JSON.stringify({
-        pkey: pkey,
-        question_text: item.question_text,
-        option_a: item.option_a, option_b: item.option_b,
-        option_c: item.option_c, option_d: item.option_d,
-        correct_answer: item.correct_answer,
-        explanation: item.explanation,
-        answer_type: item.answer_type || ANSWER_TYPE,
-        answer_text: item.answer_text || '',
-    }).replace(/"/g, '&quot;');
-    const card = '<div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5" style="animation:fadeSlideIn .25s ease">' +
-        '<div class="flex items-center justify-between gap-3 mb-3">' +
-        '<div class="flex items-center gap-2.5 min-w-0">' +
-        '<div class="w-7 h-7 text-white text-sm font-bold rounded-full flex items-center justify-center flex-shrink-0 font-display" style="background:var(--brand)">' + n + '</div>' +
-        '<span class="pill ok shrink-0">Kunci: ' + (is_input ? 'isian' : (is_rf ? (item.correct_answer === 'A' ? 'Richtig' : 'Falsch') : item.correct_answer)) + '</span>' +
-        '</div>' +
-        '<div class="flex gap-2 shrink-0">' +
-        '<button type="button" data-pkey="' + pkey + '" data-question="' + dataQ + '" onclick="openEditQuestion(this)" class="text-xs text-blue-600 border border-blue-200 hover:bg-blue-50 px-3 py-1.5 rounded-lg font-medium transition">Edit</button>' +
-        '<form method="POST" action="/expert/question-bank/questions/' + pkey + '/delete" class="inline" onsubmit="return confirm(\'Hapus soal ini?\')">' +
-        '<input type="hidden" name="passage_pkey" value="' + CURRENT_PASSAGE_PKEY + '">' +
-        '<button type="submit" class="text-xs text-red-600 border border-red-200 hover:bg-red-50 px-3 py-1.5 rounded-lg font-medium transition">Hapus</button>' +
-        '</form>' +
-        '</div>' +
-        '</div>' +
-        '<div class="text-sm text-gray-800 mb-3 prose prose-sm max-w-none" style="word-break:break-word;">' + item.question_text + '</div>' +
-        '<div class="' + (is_input ? '' : 'grid grid-cols-2 gap-2') + '">' + optHtml + '</div>' +
-        '</div>';
-    const addPanel = document.getElementById('add-question-panel');
-    if (addPanel) addPanel.insertAdjacentHTML('beforebegin', card);
+    const keyLabel = is_input ? 'Isian' : (is_rf ? (item.correct_answer === 'A' ? 'Richtig' : 'Falsch') : 'Kunci: ' + item.correct_answer);
+    const dataQ = qeEsc(JSON.stringify(Object.assign({ pkey: pkey, answer_type: ANSWER_TYPE, answer_text: '' }, item)));
+    const expHtml = jsonIsBlankHtml(item.explanation) ? '' :
+        '<details class="qe-qexp"><summary>Pembahasan</summary><div class="prose prose-sm max-w-none">' + item.explanation + '</div></details>';
+    const card = '<article class="qe-qcard" style="animation:fadeSlideIn .25s ease">' +
+        '<header class="qe-qcard-head">' +
+            '<span class="qe-qnum">' + n + '</span>' +
+            '<span class="pill ok shrink-0">' + keyLabel + '</span>' +
+            '<div class="qe-qactions">' +
+                '<button type="button" data-pkey="' + qeEsc(pkey) + '" data-question="' + dataQ + '" onclick="openEditQuestion(this)" class="qe-act">Edit</button>' +
+                '<form method="POST" action="/expert/question-bank/questions/' + qeEsc(pkey) + '/delete" class="inline" onsubmit="return confirm(\'Hapus soal ini?\')">' +
+                    '<input type="hidden" name="passage_pkey" value="' + qeEsc(CURRENT_PASSAGE_PKEY) + '">' +
+                    '<button type="submit" class="qe-act is-danger">Hapus</button>' +
+                '</form>' +
+            '</div>' +
+        '</header>' +
+        '<div class="qe-qtext prose prose-sm max-w-none">' + item.question_text + '</div>' +
+        optHtml + expHtml +
+        '</article>';
+    const list = document.getElementById('qe-qlist');
+    const empty = document.getElementById('qe-qempty');
+    if (empty) empty.remove();
+    if (list) list.insertAdjacentHTML('beforeend', card);
+    const count = document.getElementById('qe-qcount');
+    if (count) count.textContent = n;
+    qeGapStatus();
 }
 
 if (CURRENT_PASSAGE_PKEY && ANSWER_TYPE !== 'cloze') {
     document.getElementById('add-question-form').addEventListener('submit', function (e) {
         e.preventDefault();
+        const val = id => (document.getElementById(id) || {}).value || '';
         const item = {
-            question_text: (document.getElementById('question-text-input') || {}).value || '',
-            option_a: (document.getElementById('add-opt-a') || {}).value || '',
-            option_b: (document.getElementById('add-opt-b') || {}).value || '',
-            option_c: (document.getElementById('add-opt-c') || {}).value || '',
-            option_d: (document.getElementById('add-opt-d') || {}).value || '',
+            question_text: val('question-text-input'),
+            option_a: val('add-opt-a'),
+            option_b: val('add-opt-b'),
+            option_c: val('add-opt-c'),
+            option_d: val('add-opt-d'),
+            option_a_image: val('add-option-a-image'),
+            option_b_image: val('add-option-b-image'),
+            option_c_image: val('add-option-c-image'),
+            option_d_image: val('add-option-d-image'),
             correct_answer: ((document.querySelector('#add-question-form input[name="correct_answer"]:checked') || {}).value) || 'A',
-            explanation: (document.getElementById('explanation-input') || {}).value || '',
+            explanation: val('explanation-input'),
             answer_type: ANSWER_TYPE,
         };
-        if (!item.question_text.trim() || item.question_text.trim() === '<p><br></p>') {
-            qeToast('Tulis teks pertanyaannya dulu', false);
+        if (jsonIsBlankHtml(item.question_text)) {
+            qeToast(ANSWER_TYPE === 'rf' ? 'Tulis pernyataannya dulu' : 'Tulis teks pertanyaannya dulu', false);
+            questionQuill.focus();
             return;
         }
+        const submitBtn = this.querySelector('button[type="submit"]');
+        if (submitBtn) submitBtn.disabled = true;
         fetch('/expert/question-bank/import-json', {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
@@ -2871,19 +3113,17 @@ if (CURRENT_PASSAGE_PKEY && ANSWER_TYPE !== 'cloze') {
                 document.getElementById('question-text-input').value = '';
                 document.getElementById('explanation-input').value = '';
                 document.querySelectorAll('#add-question-form input[type="text"]').forEach(inp => { inp.value = ''; });
-                document.querySelectorAll('#add-question-form input[name$="_image"]').forEach(inp => {
-                    inp.value = '';
-                    const prev = document.getElementById(inp.id + '-preview');
-                    if (prev) prev.style.display = 'none';
-                });
+                document.querySelectorAll('#add-question-form input[name$="_image"]').forEach(inp => optionImageSet(inp.id, ''));
                 const firstRad = document.querySelector('#add-question-form input[name="correct_answer"][value="A"]');
                 if (firstRad) firstRad.checked = true;
-                qeToast('Soal tersimpan ✓  — lanjut tulis soal berikutnya');
-                window.scrollTo({top: 0, behavior: 'smooth'});
+                qeClearDirty('add');
+                qeToast('Soal ' + EXISTING_QUESTIONS.length + ' tersimpan ✓ — lanjut tulis soal berikutnya');
+                qeFocusAdd();
             } else {
                 qeToast((data.errors && data.errors[0]) || data.message || 'Gagal menyimpan soal', false);
             }
-        }).catch(() => qeToast('Koneksi bermasalah, coba lagi', false));
+        }).catch(() => qeToast('Koneksi bermasalah, coba lagi', false))
+          .finally(() => { if (submitBtn) submitBtn.disabled = false; });
     });
 }
 
@@ -2914,6 +3154,8 @@ function clozeMarkSelection() {
         if (card) {
             const optA = card.querySelector('[data-f="option_a"]');
             if (optA) optA.value = word;
+            const answer = card.querySelector('[data-f="answer_text"]');
+            if (answer) answer.value = word;
             const radA = card.querySelector('input[type=radio][value="A"]');
             if (radA) radA.checked = true;
         }
@@ -2924,21 +3166,27 @@ function clozeMarkSelection() {
             const snip = last.querySelector('.builder-snippet');
             if (snip) snip.textContent = 'Rumpang ' + n + ' · ' + word;
             const optB = last.querySelector('[data-f="option_b"]');
-            if (optB) optB.focus();
+            if (optB) optB.focus({ preventScroll: true });
+            last.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         }
     } else {
         const gapInput = document.getElementById('add-gap-no');
         if (gapInput) gapInput.value = n;
         const addA = document.getElementById('add-opt-a');
         if (addA) addA.value = word;
+        const addAnswer = document.getElementById('add-answer-text');
+        if (addAnswer) addAnswer.value = word;
         const radA = document.querySelector('#add-question-form input[name="correct_answer"][value="A"]');
         if (radA) radA.checked = true;
         const addB = document.getElementById('add-opt-b');
-        if (addB) addB.focus();
+        if (addB) addB.focus({ preventScroll: true });
         const addPanel = document.getElementById('add-question-panel');
         if (addPanel) addPanel.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
-    qeToast('Rumpang ' + marker + ' dibuat — kuncinya "' + word + '". Tinggal isi 3 pengecoh.');
+    qeMarkDirty('passage');
+    qeToast(CLOZE_INPUT_MODE
+        ? 'Rumpang ' + marker + ' dibuat — jawaban benarnya "' + word + '".'
+        : 'Rumpang ' + marker + ' dibuat — kuncinya "' + word + '". Tinggal isi 3 pengecoh.');
 }
 
 function clozeNextGapNo() {
@@ -2971,5 +3219,104 @@ if (typeof topJsonDump === 'function') {
     if (bootMode === 'grouped' && typeof topJsonDumpGrouped === 'function') topJsonDumpGrouped();
     else topJsonDump();
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Penanda "belum disimpan" + peringatan sebelum meninggalkan halaman.
+// 'passage' = form bacaan / soal mandiri / builder, 'add' = form tambah soal.
+// ─────────────────────────────────────────────────────────────────────────────
+var qeDirty = new Set();
+var qeDirtyReady = false;
+// Quill reports the initial innerHTML load as a 'user' change via its MutationObserver
+setTimeout(() => { qeDirtyReady = true; }, 500);
+
+function qeMarkDirty(key) {
+    if (!qeDirtyReady) return;
+    qeDirty.add(key);
+    const tag = document.getElementById('qe-dirty-tag');
+    if (tag) tag.hidden = false;
+}
+
+function qeClearDirty(key) {
+    qeDirty.delete(key);
+    const tag = document.getElementById('qe-dirty-tag');
+    if (tag) tag.hidden = !qeDirty.has('passage');
+}
+
+(function () {
+    const passageForm = document.getElementById('passage-form');
+    const addForm     = document.getElementById('add-question-form');
+    const builderList = document.getElementById('builder-list');
+    const watch = (el, key) => {
+        if (!el) return;
+        el.addEventListener('input',  () => qeMarkDirty(key));
+        el.addEventListener('change', () => qeMarkDirty(key));
+    };
+    watch(passageForm, 'passage');
+    watch(builderList, 'passage');
+    watch(addForm, 'add');
+    [passageQuill, sqQuestionQuill, sqExplanationQuill].forEach(q => {
+        q.on('text-change', (d, o, source) => { if (source === 'user') qeMarkDirty('passage'); });
+    });
+    if (typeof questionQuill !== 'undefined') {
+        [questionQuill, explanationQuill].forEach(q => {
+            q.on('text-change', (d, o, source) => { if (source === 'user') qeMarkDirty('add'); });
+        });
+    }
+    // Builder clears its own flag only after a successful save
+    if (passageForm && !BUILDER_ACTIVE) passageForm.addEventListener('submit', () => qeClearDirty('passage'));
+    if (addForm && (ANSWER_TYPE === 'cloze' || !CURRENT_PASSAGE_PKEY)) addForm.addEventListener('submit', () => qeClearDirty('add'));
+    // The "Belum disimpan" tag only describes the bottom-bar form
+    qeClearDirty('add');
+
+    window.addEventListener('beforeunload', e => {
+        if (!qeDirty.size) return;
+        e.preventDefault();
+        e.returnValue = '';
+    });
+})();
+
+// ── Lückentext: jumlah rumpang [n] di teks vs jumlah kartu ──────────────────
+function qeGapStatus() {
+    const el = document.getElementById('qe-gap-status');
+    if (!el || ANSWER_TYPE !== 'cloze') return;
+    const source = currentEditorMode === 'html'
+        ? (document.getElementById('html-source') || {}).value || ''
+        : passageQuill.getText();
+    const marks = (source.match(/\[\d+\]/g) || []).length;
+    const cards = BUILDER_ACTIVE
+        ? document.querySelectorAll('#builder-list .builder-card').length
+        : EXISTING_QUESTIONS.length;
+    el.hidden = false;
+    el.textContent = marks + ' rumpang · ' + cards + ' kartu' + (marks === cards ? (marks ? ' ✓' : '') : ' ⚠');
+    el.title = marks === cards
+        ? 'Jumlah rumpang [n] di teks sama dengan jumlah kartu'
+        : 'Jumlah rumpang [n] di teks (' + marks + ') belum sama dengan jumlah kartu (' + cards + ')';
+    el.classList.toggle('is-ok', marks === cards && marks > 0);
+    el.classList.toggle('is-bad', marks !== cards);
+}
+
+if (ANSWER_TYPE === 'cloze') {
+    passageQuill.on('text-change', qeGapStatus);
+    const htmlSrc = document.getElementById('html-source');
+    if (htmlSrc) htmlSrc.addEventListener('input', qeGapStatus);
+    qeGapStatus();
+}
+
+// ── Lompat ke form "Tambah soal baru" dan fokus ke kolom pertama ────────────
+function qeFocusAdd() {
+    const panel = document.getElementById('add-question-panel');
+    if (!panel) return;
+    panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    setTimeout(() => {
+        if (ANSWER_TYPE === 'cloze') {
+            const first = document.getElementById('add-answer-text') || document.getElementById('add-opt-a');
+            if (first) first.focus({ preventScroll: true });
+        } else if (typeof questionQuill !== 'undefined') {
+            questionQuill.focus();
+        }
+    }, 350);
+}
+
+['passage-audio-url', 'sq-audio-url'].forEach(qeSyncAudioState);
 </script>
 {% endblock %}

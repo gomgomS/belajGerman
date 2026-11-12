@@ -2,51 +2,143 @@
 
 {% block title %}Soal Baru{% endblock %}
 {% block page_title %}Soal Baru{% endblock %}
-{% block page_subtitle %}Pilih bagian ujian, lalu bentuk soalnya{% endblock %}
+{% block page_subtitle %}Tiga pilihan singkat, lalu langsung ke editor{% endblock %}
 
 {% block head %}
 <style>
-    .qn-rail{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
-    .qn-step{ display:flex; align-items:center; gap:8px; font-family:'Barlow'; font-size:13px; font-weight:600; color:var(--muted); }
-    .qn-step .n{ width:26px; height:26px; border-radius:50%; display:flex; align-items:center; justify-content:center;
-        font-weight:700; font-size:12.5px; flex-shrink:0; }
-    .qn-step.on .n{ background:var(--brand); color:#fff; }
-    .qn-step.on{ color:var(--brand-ink); }
-    .qn-step.dim .n{ background:#EFF1F4; color:var(--faint); }
-    .qn-step.dim{ color:var(--faint); font-weight:500; }
-    .qn-sep{ width:28px; height:1.5px; background:var(--line); }
+    /* ── Tata letak: kolom pilihan + panel ringkasan ── */
+    .qn-host{ container-type:inline-size; }
+    .qn-host [hidden]{ display:none !important; }
+    .qn-wrap{ display:grid; grid-template-columns:minmax(0,1fr); gap:18px; max-width:1140px; }
+    .qn-main{ display:flex; flex-direction:column; gap:16px; min-width:0; }
+    .qn-sec, .qn-opt{ scroll-margin-bottom:150px; }
 
-    .tt-btn{ text-align:left; border:1.5px solid var(--line); border-radius:12px; background:var(--surface);
-        padding:14px 16px; transition:all .15s; display:flex; align-items:center; gap:12px; width:100%; }
-    .tt-btn:hover{ border-color:#B8C6E8; transform:translateY(-1px); box-shadow:0 4px 12px rgba(23,26,33,.07); }
-    .tt-btn .mono-tile{ width:38px; height:38px; border-radius:10px; background:var(--brand-soft); color:var(--brand-ink);
-        font-family:'Barlow'; font-weight:700; font-size:15px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
-    .tt-btn .lbl{ font-family:'Barlow'; font-weight:600; font-size:14.5px; color:var(--ink); }
-    .tt-btn .check{ margin-left:auto; width:20px; height:20px; border-radius:50%; background:var(--brand); color:#fff;
-        display:flex; align-items:center; justify-content:center; flex-shrink:0; opacity:0; transform:scale(.6); transition:all .15s; }
-    .tt-btn.is-sel{ border-color:var(--brand); background:var(--brand-soft); }
-    .tt-btn.is-sel .check{ opacity:1; transform:scale(1); }
+    /* ── Kartu langkah ── */
+    .qn-sec{ background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:18px 20px 20px;
+        transition:border-color .2s, box-shadow .2s; }
+    .qn-sec.is-current{ border-color:#C9D8F3; box-shadow:0 0 0 3px var(--brand-soft); }
+    .qn-sec-head{ display:flex; align-items:flex-start; gap:12px; margin-bottom:14px; }
+    .qn-sec-head h3{ font-size:15.5px; font-weight:600; color:var(--ink); line-height:1.3; }
+    .qn-sec-head p{ font-size:12.5px; color:var(--muted); margin-top:2px; }
+    .qn-badge{ width:26px; height:26px; border-radius:50%; flex-shrink:0; display:flex; align-items:center; justify-content:center;
+        font-family:'Barlow'; font-weight:700; font-size:12.5px; background:#EFF1F4; color:var(--faint); transition:all .2s; }
+    .qn-badge svg{ display:none; width:13px; height:13px; }
+    .qn-sec.is-current .qn-badge{ background:var(--surface); color:var(--brand); box-shadow:inset 0 0 0 2px var(--brand); }
+    .qn-sec.is-done .qn-badge{ background:var(--brand); color:#fff; box-shadow:none; }
+    .qn-sec.is-done .qn-badge .num{ display:none; }
+    .qn-sec.is-done .qn-badge svg{ display:block; }
 
-    .bentuk-card{ display:block; border:1.5px solid var(--line); border-radius:12px; background:var(--surface);
-        padding:16px; transition:all .15s; position:relative; }
-    .bentuk-card:hover{ border-color:var(--brand); box-shadow:0 6px 18px rgba(29,78,216,.10); transform:translateY(-1px); text-decoration:none; }
-    .bentuk-card h4{ font-size:14.5px; font-weight:600; color:var(--ink); }
-    .bentuk-card:hover h4{ color:var(--brand-ink); }
-    .bentuk-card p{ font-size:12px; color:var(--muted); margin-top:3px; }
-    .bentuk-card .go{ position:absolute; top:14px; right:14px; color:var(--faint); transition:all .15s; }
-    .bentuk-card:hover .go{ color:var(--brand); transform:translateX(2px); }
+    /* ── Grid pilihan ── */
+    .qn-grid{ display:grid; gap:10px; grid-template-columns:repeat(auto-fill, minmax(190px, 1fr)); }
+    .qn-grid.tt{ grid-template-columns:repeat(auto-fill, minmax(200px, 1fr)); }
 
-    /* mini pratinjau bentuk soal */
-    .skel{ display:flex; flex-direction:column; gap:5px; margin-top:14px; }
-    .skel i{ display:block; height:6px; border-radius:3px; background:var(--line); }
-    .skel .opts{ display:flex; gap:5px; margin-top:3px; }
-    .skel .opts i{ flex:1; }
-    .skel .doc{ background:var(--brand-soft); border-radius:6px; padding:7px 8px; display:flex; flex-direction:column; gap:5px; margin-bottom:3px; }
-    .skel .doc i{ background:#C9D8F3; }
-    .skel i.gap{ background:repeating-linear-gradient(90deg, var(--brand) 0 16px, transparent 16px 22px); }
-    .rf-mini{ display:flex; gap:6px; margin-top:14px; }
-    .rf-mini span{ font-family:'Barlow'; font-weight:700; font-size:12px; padding:4px 14px; border-radius:8px;
-        border:1.5px solid var(--line); color:var(--muted); }
+    /* ── Kartu pilihan (radio) ── */
+    .qn-opt{ position:relative; display:block; cursor:pointer; margin:0; }
+    .qn-opt input{ position:absolute; opacity:0; width:1px; height:1px; pointer-events:none; }
+    .qn-card{ height:100%; display:flex; flex-direction:column; gap:10px; padding:14px; border-radius:12px;
+        border:1.5px solid var(--line); background:var(--surface); transition:border-color .15s, background .15s, box-shadow .15s, transform .15s; }
+    .qn-opt:hover .qn-card{ border-color:#B8C6E8; box-shadow:0 4px 12px rgba(23,26,33,.06); transform:translateY(-1px); }
+    .qn-opt input:checked + .qn-card{ border-color:var(--brand); background:var(--brand-soft); box-shadow:0 0 0 3px rgba(29,78,216,.10); transform:none; }
+    .qn-opt input:focus-visible + .qn-card{ outline:2px solid var(--brand); outline-offset:2px; }
+    .qn-h{ display:block; font-family:'Barlow'; font-size:14.5px; font-weight:600; color:var(--ink); line-height:1.3; padding-right:24px; }
+    .qn-d{ display:block; font-size:12px; color:var(--muted); line-height:1.5; margin-top:3px; }
+    .qn-opt input:checked + .qn-card .qn-h{ color:var(--brand-ink); }
+    .nw{ white-space:nowrap; }
+    .qn-meta{ font-family:'Barlow'; font-size:11px; font-weight:600; letter-spacing:.04em; color:var(--faint); text-transform:uppercase; margin-top:auto; }
+    .qn-radio{ position:absolute; top:14px; right:14px; width:18px; height:18px; border-radius:50%; border:1.5px solid #C3CAD5;
+        background:var(--surface); display:flex; align-items:center; justify-content:center; transition:all .15s; }
+    .qn-radio svg{ width:11px; height:11px; color:#fff; opacity:0; transform:scale(.5); transition:all .15s; }
+    .qn-opt input:checked + .qn-card .qn-radio{ background:var(--brand); border-color:var(--brand); }
+    .qn-opt input:checked + .qn-card .qn-radio svg{ opacity:1; transform:scale(1); }
+
+    /* Kartu bagian ujian (ringkas, horizontal) */
+    .qn-opt.tt .qn-card{ flex-direction:row; align-items:center; gap:12px; padding:12px 14px; }
+    .qn-opt.tt .qn-radio{ position:static; margin-left:auto; flex-shrink:0; }
+    .qn-mono{ width:36px; height:36px; border-radius:10px; flex-shrink:0; display:flex; align-items:center; justify-content:center;
+        background:var(--brand-soft); color:var(--brand-ink); font-family:'Barlow'; font-weight:700; font-size:15px; }
+    .qn-opt input:checked + .qn-card .qn-mono{ background:var(--brand); color:#fff; }
+    .qn-tt-lbl{ display:block; flex:1; font-family:'Barlow'; font-weight:600; font-size:14px; color:var(--ink); line-height:1.3; }
+
+    /* Placeholder langkah 3 */
+    .qn-wait{ border:1.5px dashed var(--line); border-radius:12px; padding:22px 16px; text-align:center; font-size:12.5px; color:var(--faint); }
+
+    /* ── Mini pratinjau bentuk soal ── */
+    .pv{ background:#F7F9FC; border:1px solid var(--line-soft); border-radius:9px; padding:11px 12px; min-height:82px;
+        display:flex; flex-direction:column; justify-content:center; gap:6px; transition:background .15s; }
+    .qn-opt input:checked + .qn-card .pv{ background:#fff; border-color:#D6E1F7; }
+    .pv i{ display:block; height:6px; border-radius:3px; background:#DCE1E8; }
+    .pv i.f{ flex:1; }
+    .pv .row{ display:flex; align-items:center; gap:6px; }
+    .pv .opts{ display:grid; grid-template-columns:1fr 1fr; gap:5px 10px; margin-top:2px; }
+    .pv .opt{ display:flex; align-items:center; gap:5px; }
+    .pv .opt b{ width:10px; height:10px; border-radius:50%; border:1.5px solid #C3CAD5; flex-shrink:0; }
+    .pv .opt.ok b{ border-color:var(--brand); background:var(--brand); }
+    .pv .doc{ background:var(--brand-soft); border-radius:6px; padding:7px 8px; display:flex; flex-direction:column; gap:5px; }
+    .qn-opt input:checked + .qn-card .pv .doc{ background:#E3ECFE; }
+    .pv .doc i{ background:#C9D8F3; }
+    .pv .no{ width:11px; height:11px; border-radius:3px; background:#C3CAD5; flex-shrink:0; }
+    .pv .img{ width:22px; height:16px; border-radius:3px; background:#DCE1E8; flex-shrink:0; position:relative; overflow:hidden; }
+    .pv .img::after{ content:""; position:absolute; left:3px; bottom:-3px; width:14px; height:9px; background:#C3CAD5; transform:rotate(45deg); }
+    .pv .aud{ width:14px; height:14px; border-radius:50%; background:var(--brand); flex-shrink:0; position:relative; }
+    .pv .aud::after{ content:""; position:absolute; left:5px; top:3.5px; border-top:3.5px solid transparent; border-bottom:3.5px solid transparent; border-left:5px solid #fff; }
+    .pv i.wave{ height:8px; background:repeating-linear-gradient(90deg, #B8C6E8 0 2px, transparent 2px 4px); }
+    .pv .gap{ height:13px; min-width:20px; padding:0 4px; border-radius:4px; background:var(--brand); color:#fff;
+        font:700 8.5px/13px 'Barlow'; text-align:center; flex-shrink:0; }
+    .pv .dd{ width:54px; height:14px; border:1.5px solid var(--brand); border-radius:4px; background:#fff; flex-shrink:0; position:relative; }
+    .pv .dd::after{ content:""; position:absolute; right:4px; top:3.5px; border-left:3.5px solid transparent; border-right:3.5px solid transparent; border-top:4.5px solid var(--brand); }
+    .pv .inp{ width:50px; height:14px; border:1.5px dashed var(--brand); border-radius:4px; background:#fff; flex-shrink:0; }
+    .pv .chips{ display:flex; gap:3px; flex-shrink:0; }
+    .pv .chips span{ font:700 8.5px/1 'Barlow'; padding:3px 6px; border-radius:4px; border:1.2px solid #C3CAD5; color:var(--muted); background:#fff; }
+    .pv .chips span.ok{ border-color:var(--brand); color:var(--brand-ink); background:var(--brand-soft); }
+
+    /* ── Panel ringkasan ── */
+    .qn-aside{ position:sticky; bottom:0; z-index:5; }
+    .qn-sum{ background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:14px 16px;
+        box-shadow:0 -6px 24px rgba(23,26,33,.08); display:flex; flex-wrap:wrap; align-items:center; gap:10px 16px; }
+    .qn-sum-head, .qn-sum-detail, .qn-sum-restored{ display:none; }
+    .qn-sum-head h3{ font-size:14px; font-weight:600; color:var(--ink); }
+    .qn-sum-list{ display:flex; flex-wrap:wrap; gap:4px 16px; flex:1; min-width:0; margin:0; }
+    .qn-sum-list > div{ min-width:0; }
+    .qn-sum-list dt{ font-family:'Barlow'; font-size:10.5px; font-weight:600; letter-spacing:.08em; text-transform:uppercase; color:var(--faint); }
+    .qn-sum-list dd{ margin:0; font-size:13px; font-weight:600; color:var(--ink); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .qn-sum-list dd.is-empty{ color:var(--faint); font-weight:400; font-style:italic; }
+    .qn-cta{ display:flex; flex-direction:column; gap:6px; flex:0 0 auto; }
+    .qn-go{ display:inline-flex; align-items:center; justify-content:center; gap:8px; width:100%; padding:11px 18px; border-radius:10px;
+        background:var(--brand); color:#fff; font-family:'Barlow'; font-weight:600; font-size:14.5px; border:none; cursor:pointer;
+        transition:background .15s, transform .15s, box-shadow .15s; white-space:nowrap; }
+    .qn-go:hover{ background:var(--brand-strong); box-shadow:0 6px 16px rgba(29,78,216,.25); }
+    .qn-go:active{ transform:translateY(1px); }
+    .qn-go:focus-visible{ outline:2px solid var(--brand); outline-offset:3px; }
+    .qn-go svg{ width:16px; height:16px; transition:transform .15s; }
+    .qn-go:hover svg{ transform:translateX(2px); }
+    .qn-go:disabled{ background:#E6E9EE; color:var(--faint); cursor:not-allowed; box-shadow:none; transform:none; }
+    .qn-go:disabled svg{ transform:none; }
+    .qn-hint{ font-size:11.5px; color:var(--muted); text-align:center; }
+    .qn-hint kbd{ font-family:'IBM Plex Sans'; font-size:10.5px; padding:1px 5px; border-radius:4px; border:1px solid var(--line); background:#F7F8FA; }
+    .qn-fill-lbl{ font-family:'Barlow'; font-size:10.5px; font-weight:600; letter-spacing:.08em; text-transform:uppercase; color:var(--faint); margin:14px 0 6px; }
+    .qn-fill{ list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:6px; }
+    .qn-fill li{ display:flex; gap:8px; font-size:12.5px; color:#3B4350; line-height:1.45; }
+    .qn-fill li::before{ content:""; width:6px; height:6px; border-radius:50%; background:var(--brand); flex-shrink:0; margin-top:6px; }
+    .qn-sum .pv{ min-height:120px; padding:14px; gap:7px; }
+    .qn-sum .pv-empty{ font-size:12px; color:var(--faint); text-align:center; }
+    .qn-sum-restored{ font-size:11.5px; color:var(--muted); align-items:center; justify-content:space-between; gap:8px;
+        background:#F7F8FA; border-radius:8px; padding:7px 10px; }
+    .qn-sum-restored button{ font-family:'IBM Plex Sans'; font-size:11.5px; font-weight:600; color:var(--brand); background:none; border:none; cursor:pointer; padding:0; }
+    .qn-sum-restored button:hover{ text-decoration:underline; }
+
+    /* Layar lebar: ringkasan jadi kolom kanan yang menempel */
+    @container (min-width: 880px){
+        .qn-wrap{ grid-template-columns:minmax(0,1fr) 290px; align-items:start; gap:20px; }
+        .qn-sec, .qn-opt{ scroll-margin-bottom:16px; }
+        .qn-aside{ top:4px; bottom:auto; }
+        .qn-sum{ display:block; padding:18px; box-shadow:0 1px 2px rgba(23,26,33,.05); }
+        .qn-sum-head{ display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; }
+        .qn-sum-list{ flex-direction:column; gap:10px; padding-bottom:14px; border-bottom:1px solid var(--line-soft); }
+        .qn-sum-list dd{ white-space:normal; }
+        .qn-sum-detail{ display:block; padding-top:14px; }
+        .qn-sum-restored:not([hidden]){ display:flex; margin-top:12px; }
+        .qn-cta{ margin-top:16px; }
+    }
 </style>
 {% endblock %}
 
@@ -61,159 +153,457 @@
 {% endblock %}
 
 {% block content %}
-<div class="max-w-4xl space-y-5">
+<div class="qn-host">
+<form id="qn-form" class="qn-wrap" autocomplete="off" novalidate>
 
-    <!-- Step rail -->
-    <div class="bg-white rounded-2xl border px-5 py-4" style="border-color:var(--line)">
-        <div class="qn-rail">
-            <div class="qn-step on"><span class="n">1</span>Bagian Ujian</div>
-            <div class="qn-sep"></div>
-            <div class="qn-step on"><span class="n">2</span>Bentuk Soal</div>
-            <div class="qn-sep"></div>
-            <div class="qn-step dim"><span class="n">3</span>Tulis &amp; simpan <span class="text-[11px] font-normal">(otomatis setelah ini)</span></div>
-        </div>
+    <div class="qn-main">
+
+        <!-- Langkah 1: Bagian ujian -->
+        <section class="qn-sec" id="sec-1" aria-labelledby="sec-1-title">
+            <header class="qn-sec-head">
+                <span class="qn-badge"><span class="num">1</span><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg></span>
+                <div>
+                    <h3 id="sec-1-title">Untuk bagian ujian apa?</h3>
+                    <p>Soal akan tersimpan di bawah bagian ini, mis. Hören atau Lesen.</p>
+                </div>
+            </header>
+            {% if type_tests %}
+            <div class="qn-grid tt" role="radiogroup" aria-labelledby="sec-1-title">
+                {% for tt in type_tests %}
+                <label class="qn-opt tt">
+                    <input type="radio" name="qn_section" value="{{ tt.key }}" data-label="{{ tt.label }}">
+                    <span class="qn-card">
+                        <span class="qn-mono">{{ tt.label[0] }}</span>
+                        <span class="qn-tt-lbl">{{ tt.label }}</span>
+                        <span class="qn-radio"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3.5" d="M5 13l4 4L19 7"/></svg></span>
+                    </span>
+                </label>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="qn-wait" style="color:var(--muted)">
+                <p class="font-medium" style="color:var(--ink); font-size:13.5px">Belum ada bagian ujian</p>
+                <p class="mt-1 mb-4">Tambahkan dulu di Pengaturan → Bagian Ujian, lalu kembali ke sini.</p>
+                <a href="/dashboard/admin/settings/test-type" class="text-xs font-semibold px-4 py-2 rounded-lg text-white inline-block" style="background:var(--brand)">Buka Pengaturan</a>
+            </div>
+            {% endif %}
+        </section>
+
+        <!-- Langkah 2: Jenis jawaban -->
+        <section class="qn-sec" id="sec-2" aria-labelledby="sec-2-title">
+            <header class="qn-sec-head">
+                <span class="qn-badge"><span class="num">2</span><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg></span>
+                <div>
+                    <h3 id="sec-2-title">Bagaimana peserta menjawab?</h3>
+                    <p>Pilih jenis jawaban. Bentuk detailnya kamu pilih di langkah berikutnya.</p>
+                </div>
+            </header>
+            <div class="qn-grid" role="radiogroup" aria-labelledby="sec-2-title">
+
+                <label class="qn-opt">
+                    <input type="radio" name="qn_answer" value="mc" data-label="Pilihan Ganda">
+                    <span class="qn-card">
+                        <span class="qn-radio"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3.5" d="M5 13l4 4L19 7"/></svg></span>
+                        <span><span class="qn-h">Pilihan Ganda</span><span class="qn-d">Peserta memilih satu jawaban dari <span class="nw">A–D</span>.</span></span>
+                        <span class="pv" aria-hidden="true">
+                            <i style="width:80%"></i>
+                            <span class="opts">
+                                <span class="opt"><b></b><i class="f"></i></span><span class="opt ok"><b></b><i class="f"></i></span>
+                                <span class="opt"><b></b><i class="f"></i></span><span class="opt"><b></b><i class="f"></i></span>
+                            </span>
+                        </span>
+                        <span class="qn-meta">2 bentuk</span>
+                    </span>
+                </label>
+
+                <label class="qn-opt">
+                    <input type="radio" name="qn_answer" value="rf" data-label="Richtig / Falsch">
+                    <span class="qn-card">
+                        <span class="qn-radio"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3.5" d="M5 13l4 4L19 7"/></svg></span>
+                        <span><span class="qn-h">Richtig / Falsch</span><span class="qn-d">Peserta menilai pernyataan benar atau salah.</span></span>
+                        <span class="pv" aria-hidden="true">
+                            <span class="row"><i class="f"></i><span class="chips"><span class="ok">R</span><span>F</span></span></span>
+                            <span class="row"><i class="f"></i><span class="chips"><span>R</span><span class="ok">F</span></span></span>
+                            <span class="row"><i class="f"></i><span class="chips"><span class="ok">R</span><span>F</span></span></span>
+                        </span>
+                        <span class="qn-meta">2 bentuk</span>
+                    </span>
+                </label>
+
+                <label class="qn-opt">
+                    <input type="radio" name="qn_answer" value="cloze" data-label="Lückentext">
+                    <span class="qn-card">
+                        <span class="qn-radio"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3.5" d="M5 13l4 4L19 7"/></svg></span>
+                        <span><span class="qn-h">Lückentext</span><span class="qn-d">Teks rumpang [1], [2], … yang harus dilengkapi.</span></span>
+                        <span class="pv" aria-hidden="true">
+                            <span class="row"><i class="f"></i><span class="gap">1</span><i style="width:22%"></i></span>
+                            <span class="row"><i style="width:28%"></i><span class="gap">2</span><i class="f"></i></span>
+                            <span class="row"><i class="f"></i><span class="gap">3</span></span>
+                        </span>
+                        <span class="qn-meta">3 bentuk</span>
+                    </span>
+                </label>
+
+            </div>
+        </section>
+
+        <!-- Langkah 3: Bentuk soal -->
+        <section class="qn-sec" id="sec-3" aria-labelledby="sec-3-title">
+            <header class="qn-sec-head">
+                <span class="qn-badge"><span class="num">3</span><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg></span>
+                <div>
+                    <h3 id="sec-3-title">Pilih bentuk soalnya</h3>
+                    <p id="sec-3-help">Pilihan muncul setelah kamu memilih jenis jawaban.</p>
+                </div>
+            </header>
+
+            <div id="variant-wait" class="qn-wait">Pilih jenis jawaban di langkah 2 untuk melihat bentuk yang tersedia.</div>
+
+            <!-- Pilihan Ganda -->
+            <div class="qn-grid" data-group="mc" role="radiogroup" aria-labelledby="sec-3-title" hidden>
+                <label class="qn-opt">
+                    <input type="radio" name="qn_variant" value="mc-single" data-mode="single" data-label="Mandiri"
+                        data-fill="Pertanyaan dan pilihan A–D|Kunci jawaban dan pembahasan|Audio (opsional)">
+                    <span class="qn-card">
+                        <span class="qn-radio"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3.5" d="M5 13l4 4L19 7"/></svg></span>
+                        <span class="pv" aria-hidden="true">
+                            <span class="row"><span class="aud"></span><i class="f wave"></i></span>
+                            <i style="width:78%"></i>
+                            <span class="opts">
+                                <span class="opt"><b></b><i class="f"></i></span><span class="opt ok"><b></b><i class="f"></i></span>
+                                <span class="opt"><b></b><i class="f"></i></span><span class="opt"><b></b><i class="f"></i></span>
+                            </span>
+                        </span>
+                        <span><span class="qn-h">Mandiri</span><span class="qn-d">Satu pertanyaan berdiri sendiri, bisa dengan audio.</span></span>
+                    </span>
+                </label>
+                <label class="qn-opt">
+                    <input type="radio" name="qn_variant" value="mc-grouped" data-mode="grouped" data-label="Kelompok (teks/audio + beberapa soal)"
+                        data-fill="Teks bacaan dan/atau audio|Beberapa pertanyaan pilihan A–D|Kunci jawaban dan pembahasan tiap soal">
+                    <span class="qn-card">
+                        <span class="qn-radio"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3.5" d="M5 13l4 4L19 7"/></svg></span>
+                        <span class="pv" aria-hidden="true">
+                            <span class="doc"><i style="width:94%"></i><i style="width:86%"></i><i style="width:58%"></i></span>
+                            <span class="row"><span class="no"></span><i style="width:70%"></i></span>
+                            <span class="row"><span class="no"></span><i style="width:62%"></i></span>
+                        </span>
+                        <span><span class="qn-h">Kelompok</span><span class="qn-d">Satu teks bacaan dan/atau audio, lalu beberapa pertanyaan.</span></span>
+                    </span>
+                </label>
+            </div>
+
+            <!-- Richtig / Falsch -->
+            <div class="qn-grid" data-group="rf" role="radiogroup" aria-labelledby="sec-3-title" hidden>
+                <label class="qn-opt">
+                    <input type="radio" name="qn_variant" value="rf-single" data-mode="single" data-answer-type="rf" data-label="Mandiri (1 pernyataan)"
+                        data-fill="Satu pernyataan, boleh berisi gambar|Kunci: Richtig atau Falsch">
+                    <span class="qn-card">
+                        <span class="qn-radio"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3.5" d="M5 13l4 4L19 7"/></svg></span>
+                        <span class="pv" aria-hidden="true">
+                            <span class="row"><span class="img"></span><i class="f"></i></span>
+                            <i style="width:64%"></i>
+                            <span class="row" style="margin-top:2px"><span class="chips"><span class="ok">R · Richtig</span><span>F · Falsch</span></span></span>
+                        </span>
+                        <span><span class="qn-h">Mandiri</span><span class="qn-d">Satu pernyataan berdiri sendiri, bisa berisi gambar.</span></span>
+                    </span>
+                </label>
+                <label class="qn-opt">
+                    <input type="radio" name="qn_variant" value="rf-grouped" data-mode="grouped" data-answer-type="rf" data-label="Kelompok (teks/audio + beberapa pernyataan)"
+                        data-fill="Teks bacaan dan/atau audio|Beberapa pernyataan, boleh berisi gambar|Kunci R/F tiap pernyataan">
+                    <span class="qn-card">
+                        <span class="qn-radio"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3.5" d="M5 13l4 4L19 7"/></svg></span>
+                        <span class="pv" aria-hidden="true">
+                            <span class="doc"><i style="width:94%"></i><i style="width:72%"></i></span>
+                            <span class="row"><i class="f"></i><span class="chips"><span class="ok">R</span><span>F</span></span></span>
+                            <span class="row"><i class="f"></i><span class="chips"><span>R</span><span class="ok">F</span></span></span>
+                        </span>
+                        <span><span class="qn-h">Kelompok</span><span class="qn-d">Teks dan/atau audio, lalu beberapa pernyataan.</span></span>
+                    </span>
+                </label>
+            </div>
+
+            <!-- Lückentext -->
+            <div class="qn-grid" data-group="cloze" role="radiogroup" aria-labelledby="sec-3-title" hidden>
+                <label class="qn-opt">
+                    <input type="radio" name="qn_variant" value="cloze-mc" data-mode="grouped" data-answer-type="cloze" data-label="Pilihan A–D di kartu soal"
+                        data-fill="Teks dengan rumpang [1], [2], …|Pilihan A–D untuk tiap rumpang|Kunci jawaban dan pembahasan tiap rumpang">
+                    <span class="qn-card">
+                        <span class="qn-radio"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3.5" d="M5 13l4 4L19 7"/></svg></span>
+                        <span class="pv" aria-hidden="true">
+                            <span class="row"><i class="f"></i><span class="gap">1</span><i style="width:20%"></i></span>
+                            <span class="row"><i style="width:30%"></i><span class="gap">2</span><i class="f"></i></span>
+                            <span class="row" style="margin-top:3px"><span class="gap">1</span><span class="chips"><span>A</span><span class="ok">B</span><span>C</span><span>D</span></span></span>
+                        </span>
+                        <span><span class="qn-h">Pilihan A–D di kartu</span><span class="qn-d">Tiap rumpang punya pilihan <span class="nw">A–D</span> dan pembahasan. Tanpa gambar.</span></span>
+                    </span>
+                </label>
+                <label class="qn-opt">
+                    <input type="radio" name="qn_variant" value="cloze-select" data-mode="grouped" data-answer-type="cloze" data-cloze-mode="select" data-label="Dropdown di dalam teks"
+                        data-fill="Teks dengan rumpang [1], [2], …|Opsi dropdown untuk tiap rumpang|Kunci jawaban tiap rumpang">
+                    <span class="qn-card">
+                        <span class="qn-radio"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3.5" d="M5 13l4 4L19 7"/></svg></span>
+                        <span class="pv" aria-hidden="true">
+                            <i style="width:88%"></i>
+                            <span class="row"><i style="width:26%"></i><span class="dd"></span><i class="f"></i></span>
+                            <span class="row"><i class="f"></i><span class="dd"></span></span>
+                        </span>
+                        <span><span class="qn-h">Dropdown di teks</span><span class="qn-d">Peserta memilih opsi langsung di dalam kalimatnya.</span></span>
+                    </span>
+                </label>
+                <label class="qn-opt">
+                    <input type="radio" name="qn_variant" value="cloze-input" data-mode="grouped" data-answer-type="cloze" data-cloze-mode="input" data-label="Ketik jawaban"
+                        data-fill="Teks dengan rumpang [1], [2], …|Jawaban benar tiap rumpang (dinilai otomatis)|Pembahasan tiap rumpang">
+                    <span class="qn-card">
+                        <span class="qn-radio"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3.5" d="M5 13l4 4L19 7"/></svg></span>
+                        <span class="pv" aria-hidden="true">
+                            <i style="width:88%"></i>
+                            <span class="row"><i style="width:24%"></i><span class="inp"></span><i class="f"></i></span>
+                            <span class="row"><i class="f"></i><span class="inp"></span></span>
+                        </span>
+                        <span><span class="qn-h">Ketik jawaban</span><span class="qn-d">Peserta mengetik jawaban di rumpang, dinilai otomatis.</span></span>
+                    </span>
+                </label>
+            </div>
+        </section>
+
     </div>
 
-    <!-- Step 1 -->
-    <div class="bg-white rounded-2xl border p-5" style="border-color:var(--line)">
-        <div class="flex items-center justify-between gap-3 mb-4">
-            <div>
-                <h3 class="font-display font-semibold text-base" style="color:var(--ink)">Pilih Bagian Ujian</h3>
-                <p class="text-xs mt-0.5" style="color:var(--muted)">Soal akan tersimpan di bawah bagian ini — mis. Hören atau Lesen.</p>
+    <!-- Ringkasan + tombol lanjut -->
+    <aside class="qn-aside" aria-label="Ringkasan pilihan">
+        <div class="qn-sum">
+            <div class="qn-sum-head">
+                <h3>Ringkasan</h3>
+                <span id="sum-progress" class="pill neutral">0 / 3</span>
+            </div>
+            <dl class="qn-sum-list">
+                <div><dt>Bagian ujian</dt><dd id="sum-section" class="is-empty">Belum dipilih</dd></div>
+                <div><dt>Jenis jawaban</dt><dd id="sum-answer" class="is-empty">Belum dipilih</dd></div>
+                <div><dt>Bentuk</dt><dd id="sum-variant" class="is-empty">Belum dipilih</dd></div>
+            </dl>
+            <div class="qn-sum-detail">
+                <div id="sum-preview" class="pv" aria-hidden="true"><p class="pv-empty">Pratinjau bentuk soal muncul di sini</p></div>
+                <div id="sum-fill-wrap" hidden>
+                    <p class="qn-fill-lbl">Yang akan kamu isi di editor</p>
+                    <ul id="sum-fill" class="qn-fill"></ul>
+                </div>
+            </div>
+            <div class="qn-cta">
+                <button type="submit" id="qn-go" class="qn-go" disabled>
+                    Mulai menulis soal
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M13 7l5 5m0 0l-5 5m5-5H6"/></svg>
+                </button>
+                <p id="sum-hint" class="qn-hint" aria-live="polite"></p>
+            </div>
+            <div id="sum-restored" class="qn-sum-restored" hidden>
+                <span>Diisi dari pilihan terakhirmu</span>
+                <button type="button" id="qn-reset">Atur ulang</button>
             </div>
         </div>
-        {% if type_tests %}
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {% for tt in type_tests %}
-            <button type="button" data-test-type="{{ tt.key }}" onclick="pickTestType(this)" class="tt-btn">
-                <span class="mono-tile">{{ tt.label[0] }}</span>
-                <span class="lbl">{{ tt.label }}</span>
-                <span class="check">
-                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
-                </span>
-            </button>
-            {% endfor %}
-        </div>
-        {% else %}
-        <div class="text-center py-8">
-            <p class="text-sm font-medium" style="color:var(--ink)">Belum ada bagian ujian</p>
-            <p class="text-xs mt-1 mb-4" style="color:var(--muted)">Tambahkan dulu di Pengaturan → Bagian Ujian, lalu kembali ke sini.</p>
-            <a href="/dashboard/admin/settings/test-type" class="text-xs font-semibold px-4 py-2 rounded-lg text-white inline-block" style="background:var(--brand)">Buka Pengaturan</a>
-        </div>
-        {% endif %}
-    </div>
+    </aside>
 
-    <!-- Step 2 -->
-    <div id="step-mode" class="bg-white rounded-2xl border p-5 opacity-50 pointer-events-none transition" style="border-color:var(--line)">
-        <div class="flex items-center justify-between gap-3 mb-4">
-            <div>
-                <h3 class="font-display font-semibold text-base" style="color:var(--ink)">Pilih Bentuk Soal</h3>
-                <p class="text-xs mt-0.5" style="color:var(--muted)">Kartu di bawah otomatis terhubung setelah kamu memilih bagian ujian.</p>
-            </div>
-        </div>
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-
-            <a href="#" data-mode="single" class="bentuk-card mode-link">
-                <svg class="go w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
-                <h4>Soal Mandiri</h4>
-                <p>Satu pertanyaan berdiri sendiri, bisa dengan audio.</p>
-                <div class="skel">
-                    <i style="width:72%"></i>
-                    <div class="opts"><i></i><i></i><i></i><i></i></div>
-                    <div class="opts"><i></i><i></i><i></i><i></i></div>
-                </div>
-            </a>
-
-            <a href="#" data-mode="grouped" class="bentuk-card mode-link">
-                <svg class="go w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
-                <h4>Kelompok Soal</h4>
-                <p>Satu teks bacaan dan/atau audio, lalu banyak pertanyaan.</p>
-                <div class="skel">
-                    <div class="doc"><i style="width:92%"></i><i style="width:84%"></i><i style="width:60%"></i></div>
-                    <i style="width:78%"></i>
-                    <i style="width:70%"></i>
-                </div>
-            </a>
-
-            <div class="sm:col-span-2 rounded-xl border p-4" style="border-color:var(--line); border-style:dashed">
-                <h4 class="font-display font-semibold text-[14.5px]" style="color:var(--ink)">Richtig / Falsch</h4>
-                <p class="text-xs mt-1" style="color:var(--muted)">Peserta menilai pernyataan benar (Richtig) atau salah (Falsch). Pernyataan bisa berisi gambar.</p>
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-3">
-                    <a href="#" data-mode="single" data-answer-type="rf"
-                        class="mode-link flex items-center justify-between gap-2 text-[13px] font-semibold px-4 py-2.5 rounded-lg border transition"
-                        style="border-color:var(--line); color:var(--brand-ink)">
-                        1 pernyataan (Mandiri)
-                        <svg class="w-3.5 h-3.5 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
-                    </a>
-                    <a href="#" data-mode="grouped" data-answer-type="rf"
-                        class="mode-link flex items-center justify-between gap-2 text-[13px] font-semibold px-4 py-2.5 rounded-lg border transition"
-                        style="border-color:var(--line); color:var(--brand-ink)">
-                        Teks/audio + beberapa pernyataan
-                        <svg class="w-3.5 h-3.5 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
-                    </a>
-                </div>
-                <div class="rf-mini"><span>R · Richtig</span><span>F · Falsch</span></div>
-            </div>
-
-            <a href="#" data-mode="grouped" data-answer-type="cloze" class="bentuk-card mode-link">
-                <svg class="go w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
-                <h4>Lückentext <span class="font-normal text-[13px]" style="color:var(--muted)">(Pilihan Ganda)</span></h4>
-                <p>Teks dengan rumpang bernomor [1], [2], …; tiap rumpang punya pilihan A–D pada kartu soal dan pembahasan. Tanpa gambar.</p>
-                <div class="skel">
-                    <i style="width:88%"></i>
-                    <div style="display:flex; gap:5px; align-items:center;"><i style="width:34%" class="gap"></i><i style="flex:1"></i></div>
-                    <div style="display:flex; gap:5px; align-items:center;"><i style="flex:1"></i><i style="width:30%" class="gap"></i></div>
-                </div>
-            </a>
-
-            <a href="#" data-mode="grouped" data-answer-type="cloze" data-cloze-mode="select" class="bentuk-card mode-link">
-                <svg class="go w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
-                <h4>Lückentext <span class="font-normal text-[13px]" style="color:var(--muted)">(Pilihan di Teks)</span></h4>
-                <p>Rumpang [1], [2], … berupa dropdown inline di teks — peserta memilih opsi langsung di kalimatnya.</p>
-                <div class="skel">
-                    <i style="width:88%"></i>
-                    <div style="display:flex; gap:5px; align-items:center;"><i style="width:30%" class="gap"></i>
-                        <span style="width:74px;height:13px;border:1.5px solid var(--brand);border-radius:5px;position:relative"><b style="position:absolute;right:4px;top:2px;border-left:4px solid transparent;border-right:4px solid transparent;border-top:5px solid var(--brand)"></b></span>
-                        <i style="flex:1"></i></div>
-                    <div style="display:flex; gap:5px; align-items:center;"><i style="flex:1"></i><i style="width:24%" class="gap"></i>
-                        <span style="width:74px;height:13px;border:1.5px solid var(--brand);border-radius:5px;position:relative"><b style="position:absolute;right:4px;top:2px;border-left:4px solid transparent;border-right:4px solid transparent;border-top:5px solid var(--brand)"></b></span></div>
-                </div>
-            </a>
-
-            <a href="#" data-mode="grouped" data-answer-type="cloze" data-cloze-mode="input" class="bentuk-card mode-link">
-                <svg class="go w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
-                <h4>Lückentext <span class="font-normal text-[13px]" style="color:var(--muted)">(Ketik Jawaban)</span></h4>
-                <p>Peserta mengetik jawaban langsung di rumpang [1], [2], … — dinilai otomatis, ada pembahasan per rumpang.</p>
-                <div class="skel">
-                    <i style="width:88%"></i>
-                    <div style="display:flex; gap:5px; align-items:center;"><i style="width:26%" class="gap"></i>
-                        <span style="width:64px;height:10px;border:1.5px dashed var(--brand);border-radius:4px"></span><i style="flex:1"></i></div>
-                    <div style="display:flex; gap:5px; align-items:center;"><i style="flex:1"></i><i style="width:22%" class="gap"></i>
-                        <span style="width:64px;height:10px;border:1.5px dashed var(--brand);border-radius:4px"></span></div>
-                </div>
-            </a>
-
-        </div>
-    </div>
-
+</form>
 </div>
 {% endblock %}
 
 {% block scripts %}
 <script>
-function pickTestType(btn) {
-    const key = btn.dataset.testType;
-    document.querySelectorAll('.tt-btn').forEach(function(b) {
-        b.classList.toggle('is-sel', b === btn);
+(function () {
+    var STORE_KEY = 'qn_last_choice_v1';
+    var form      = document.getElementById('qn-form');
+    var goBtn     = document.getElementById('qn-go');
+    var hasSection = !!form.querySelector('input[name="qn_section"]');
+
+    var HELP = {
+        mc:    'Satu soal berdiri sendiri, atau beberapa soal berbagi satu teks/audio?',
+        rf:    'Satu pernyataan saja, atau beberapa pernyataan berbagi satu teks/audio?',
+        cloze: 'Lückentext selalu satu teks dengan banyak rumpang. Bagaimana peserta mengisinya?'
+    };
+
+    function $(id) { return document.getElementById(id); }
+    function checked(name) { return form.querySelector('input[name="' + name + '"]:checked'); }
+
+    function groupOf(input) {
+        var g = input && input.closest('[data-group]');
+        return g ? g.dataset.group : '';
+    }
+
+    function showVariantGroup(answer) {
+        form.querySelectorAll('[data-group]').forEach(function (g) {
+            g.hidden = g.dataset.group !== answer;
+        });
+        $('variant-wait').hidden = !!answer;
+        $('sec-3-help').textContent = HELP[answer] || 'Pilihan muncul setelah kamu memilih jenis jawaban.';
+    }
+
+    function syncVariantToAnswer() {
+        var answer  = checked('qn_answer');
+        var variant = checked('qn_variant');
+        showVariantGroup(answer ? answer.value : '');
+        if (!answer) return;
+        if (!variant || groupOf(variant) !== answer.value) {
+            if (variant) variant.checked = false;
+            var first = form.querySelector('[data-group="' + answer.value + '"] input[name="qn_variant"]');
+            if (first) first.checked = true;
+        }
+    }
+
+    function buildUrl() {
+        var section = checked('qn_section');
+        var variant = checked('qn_variant');
+        if (!section || !variant) return '';
+        var d = variant.dataset;
+        return '/expert/question-bank/create?mode=' + d.mode + '&test_type=' + encodeURIComponent(section.value) +
+            (d.answerType ? '&answer_type=' + d.answerType : '') +
+            (d.clozeMode ? '&cloze_mode=' + d.clozeMode : '');
+    }
+
+    function setSummary(id, input) {
+        var el = $(id);
+        el.textContent = input ? input.dataset.label : 'Belum dipilih';
+        el.classList.toggle('is-empty', !input);
+    }
+
+    function update() {
+        var section = checked('qn_section');
+        var answer  = checked('qn_answer');
+        var variant = checked('qn_variant');
+        var done    = [!!section, !!answer, !!variant];
+        var current = done.indexOf(false);
+
+        ['sec-1', 'sec-2', 'sec-3'].forEach(function (id, i) {
+            var sec = $(id);
+            sec.classList.toggle('is-done', done[i]);
+            sec.classList.toggle('is-current', i === current);
+        });
+
+        setSummary('sum-section', section);
+        setSummary('sum-answer', answer);
+        setSummary('sum-variant', variant);
+
+        var count    = done.filter(Boolean).length;
+        var progress = $('sum-progress');
+        progress.textContent = count === 3 ? 'Siap' : count + ' / 3';
+        progress.className   = 'pill ' + (count === 3 ? 'ok' : 'neutral');
+
+        var preview = $('sum-preview');
+        var srcPv   = variant && variant.parentNode.querySelector('.pv');
+        preview.innerHTML = srcPv ? srcPv.innerHTML : '<p class="pv-empty">Pratinjau bentuk soal muncul di sini</p>';
+
+        var fillWrap = $('sum-fill-wrap');
+        var fillList = $('sum-fill');
+        fillList.innerHTML = '';
+        if (variant && variant.dataset.fill) {
+            variant.dataset.fill.split('|').forEach(function (txt) {
+                var li = document.createElement('li');
+                li.textContent = txt;
+                fillList.appendChild(li);
+            });
+            fillWrap.hidden = false;
+        } else {
+            fillWrap.hidden = true;
+        }
+
+        var hint = $('sum-hint');
+        if (!hasSection) {
+            hint.textContent = 'Tambahkan bagian ujian di Pengaturan terlebih dulu.';
+        } else if (!section) {
+            hint.textContent = 'Pilih bagian ujian untuk melanjutkan.';
+        } else if (!answer) {
+            hint.textContent = 'Pilih jenis jawaban untuk melanjutkan.';
+        } else if (!variant) {
+            hint.textContent = 'Pilih bentuk soal untuk melanjutkan.';
+        } else {
+            hint.innerHTML = 'Atau tekan <kbd>Enter</kbd> untuk membuka editor.';
+        }
+        goBtn.disabled = count < 3;
+    }
+
+    function save() {
+        try {
+            var s = checked('qn_section'), a = checked('qn_answer'), v = checked('qn_variant');
+            localStorage.setItem(STORE_KEY, JSON.stringify({
+                section: s ? s.value : '', answer: a ? a.value : '', variant: v ? v.value : ''
+            }));
+        } catch (e) {}
+    }
+
+    function pick(name, value) {
+        if (!value) return false;
+        var el = form.querySelector('input[name="' + name + '"][value="' + CSS.escape(value) + '"]');
+        if (el) el.checked = true;
+        return !!el;
+    }
+
+    function restore() {
+        var saved = {};
+        try { saved = JSON.parse(localStorage.getItem(STORE_KEY) || '{}') || {}; } catch (e) {}
+        var urlSection = new URLSearchParams(window.location.search).get('test_type');
+        var restored = false;
+
+        if (!pick('qn_section', urlSection)) {
+            restored = pick('qn_section', saved.section) || restored;
+        }
+        var sectionInputs = form.querySelectorAll('input[name="qn_section"]');
+        if (!checked('qn_section') && sectionInputs.length === 1) sectionInputs[0].checked = true;
+
+        if (pick('qn_answer', saved.answer)) {
+            restored = true;
+            pick('qn_variant', saved.variant);
+        }
+        syncVariantToAnswer();
+        $('sum-restored').hidden = !restored;
+    }
+
+    function scrollToNext(fromName) {
+        var next = { qn_section: 'sec-2', qn_answer: 'sec-3' }[fromName];
+        var target = next ? $(next) : null;
+        if (target && !target.classList.contains('is-done')) {
+            target.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+    }
+
+    form.addEventListener('change', function (e) {
+        if (e.target.name === 'qn_answer') syncVariantToAnswer();
+        update();
+        save();
+        scrollToNext(e.target.name);
     });
-    document.querySelectorAll('.mode-link').forEach(function(a) {
-        a.href = '/expert/question-bank/create?mode=' + a.dataset.mode + '&test_type=' + encodeURIComponent(key) +
-            (a.dataset.answerType ? '&answer_type=' + a.dataset.answerType : '') +
-            (a.dataset.clozeMode ? '&cloze_mode=' + a.dataset.clozeMode : '');
+
+    function go() {
+        var url = buildUrl();
+        if (!url) return;
+        save();
+        goBtn.disabled = true;
+        window.location.href = url;
+    }
+
+    form.addEventListener('submit', function (e) {
+        e.preventDefault();
+        go();
     });
-    const step = document.getElementById('step-mode');
-    step.classList.remove('opacity-50', 'pointer-events-none');
-    step.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-}
+
+    document.addEventListener('keydown', function (e) {
+        if (e.key !== 'Enter' || e.isComposing) return;
+        var t = e.target;
+        if (t === document.body || (t.type === 'radio' && form.contains(t))) {
+            e.preventDefault();
+            go();
+        }
+    });
+
+    $('qn-reset').addEventListener('click', function () {
+        form.querySelectorAll('input[type="radio"]').forEach(function (r) { r.checked = false; });
+        try { localStorage.removeItem(STORE_KEY); } catch (e) {}
+        $('sum-restored').hidden = true;
+        syncVariantToAnswer();
+        update();
+    });
+
+    window.addEventListener('pageshow', function () { update(); });
+
+    restore();
+    update();
+    if (!goBtn.disabled) goBtn.focus({ preventScroll: true });
+})();
 </script>
 {% endblock %}
