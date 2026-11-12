@@ -1,0 +1,86 @@
+{% extends "base_platform.html" %}
+
+{% block title %}Checkout — {{ package.title if package else '' }}{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto px-4 sm:px-6 py-12">
+
+    <div class="text-center mb-8">
+        <h1 class="text-2xl font-bold text-gray-900">Konfirmasi Pembelian</h1>
+        <p class="text-gray-500 text-sm mt-1">Periksa kembali detail order kamu</p>
+    </div>
+
+    <div class="grid grid-cols-1 gap-6">
+
+        <!-- Order Summary -->
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+            <h3 class="font-semibold text-gray-900 mb-4">Ringkasan Order</h3>
+            <div class="space-y-3">
+                <div class="flex justify-between items-start">
+                    <span class="text-sm text-gray-500">Paket</span>
+                    <span class="text-sm font-semibold text-gray-900 text-right max-w-[60%]">{{ package.title if package else '' }}</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-sm text-gray-500">Tipe Tes</span>
+                    <span class="text-sm font-bold text-blue-600">{{ package.test_type if package else '' }}</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-sm text-gray-500">Tier</span>
+                    <span class="text-sm font-bold {% if tier == 'PREMIUM' %}text-purple-700{% else %}text-gray-700{% endif %}">{{ tier }}</span>
+                </div>
+                <div class="border-t border-gray-100 pt-3 flex justify-between items-center">
+                    <span class="font-semibold text-gray-900">Total Bayar</span>
+                    <span class="text-xl font-bold text-blue-600">Rp {{ "{:,}".format(amount) }}</span>
+                </div>
+            </div>
+
+            {% if tier == 'PREMIUM' %}
+            <div class="mt-4 bg-purple-50 border border-purple-200 rounded-xl p-4">
+                <div class="text-sm font-semibold text-purple-800 mb-1">✨ Yang kamu dapatkan dengan Premium:</div>
+                <ul class="text-xs text-purple-700 space-y-1">
+                    <li>✅ Akses simulasi ujian penuh</li>
+                    <li>✅ Skor prediksi & breakdown per seksi</li>
+                    <li>✅ Pembahasan detail setiap soal (WYSIWYG)</li>
+                    <li>✅ Review jawaban salah & benar</li>
+                </ul>
+            </div>
+            {% else %}
+            <div class="mt-4 bg-gray-50 border border-gray-200 rounded-xl p-4">
+                <div class="text-sm font-semibold text-gray-700 mb-1">Yang kamu dapatkan dengan Basic:</div>
+                <ul class="text-xs text-gray-600 space-y-1">
+                    <li>✅ Akses simulasi ujian penuh</li>
+                    <li>✅ Skor prediksi & breakdown per seksi</li>
+                    <li>❌ Pembahasan detail (upgrade ke Premium)</li>
+                </ul>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Payment Info -->
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+            <h3 class="font-semibold text-gray-900 mb-4">Cara Pembayaran</h3>
+            <div class="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-4">
+                <div class="text-sm font-semibold text-blue-800 mb-2">Transfer Bank / E-Wallet</div>
+                <div class="text-sm text-blue-700 space-y-1">
+                    <div>BCA: <strong>1234567890</strong> a.n. BelajDeutsch</div>
+                    <div>OVO/GoPay/Dana: <strong>08xxxxxxxx</strong></div>
+                </div>
+            </div>
+            <p class="text-xs text-gray-500">Setelah transfer, klik tombol "Buat Order" dan tunggu konfirmasi dari admin. Akses akan aktif dalam 1×24 jam.</p>
+        </div>
+
+        <!-- Create Order Button -->
+        <form method="POST" action="/order/create">
+            <input type="hidden" name="package_pkey" value="{{ package.pkey if package else '' }}">
+            <input type="hidden" name="tier" value="{{ tier }}">
+            <button type="submit"
+                class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-2xl transition shadow-lg text-sm">
+                Buat Order &amp; Lanjutkan →
+            </button>
+        </form>
+
+        <a href="/catalog" class="text-center text-sm text-gray-500 hover:text-gray-700">← Kembali ke katalog</a>
+
+    </div>
+</div>
+{% endblock %}

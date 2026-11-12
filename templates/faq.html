@@ -1,0 +1,65 @@
+{% extends 'base.html' %}
+{% block title %}FAQ — {{ data.name }}{% endblock %}
+
+{% block content %}
+
+<!-- Page Header -->
+<div class="bg-gradient-to-br from-blue-700 to-indigo-800 text-white py-16 text-center">
+    <div class="max-w-2xl mx-auto px-4">
+        <p class="text-sm font-semibold text-blue-200 uppercase tracking-widest mb-3">FAQ</p>
+        <h1 class="text-4xl font-extrabold mb-4">Pertanyaan yang Sering Ditanyakan</h1>
+        <p class="text-blue-100">Butuh bantuan? Kami menjawab pertanyaan paling umum dari pengguna kami.</p>
+    </div>
+</div>
+
+<!-- FAQ List -->
+<section class="py-20 bg-white">
+    <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="space-y-4" id="faq-list">
+            {% for faq in data.faqs %}
+            <div class="faq-item border border-gray-200 rounded-2xl overflow-hidden">
+                <button onclick="toggleFaq(this)"
+                    class="w-full flex justify-between items-center px-6 py-5 text-left hover:bg-gray-50 transition">
+                    <span class="font-semibold text-gray-900 text-sm sm:text-base">{{ faq.q }}</span>
+                    <svg class="faq-icon w-5 h-5 text-blue-600 shrink-0 ml-4 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                    </svg>
+                </button>
+                <div class="faq-answer hidden px-6 pb-5 text-sm text-gray-600 leading-relaxed border-t border-gray-100 pt-4">
+                    {{ faq.a }}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Still have questions? -->
+        <div class="mt-14 bg-blue-50 rounded-2xl p-8 text-center border border-blue-100">
+            <div class="text-3xl mb-3">💬</div>
+            <h3 class="font-bold text-gray-900 mb-2 text-lg">Masih ada pertanyaan?</h3>
+            <p class="text-sm text-gray-500 mb-5">Hubungi kami langsung, kami dengan senang hati membantu.</p>
+            <a href="/kontak" class="inline-flex items-center gap-2 bg-blue-600 text-white font-semibold px-6 py-3 rounded-xl hover:bg-blue-700 transition text-sm shadow-sm">
+                Hubungi Kami
+            </a>
+        </div>
+    </div>
+</section>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+function toggleFaq(btn) {
+    const answer = btn.nextElementSibling;
+    const icon   = btn.querySelector('.faq-icon');
+    const isOpen = !answer.classList.contains('hidden');
+
+    document.querySelectorAll('.faq-answer').forEach(el => el.classList.add('hidden'));
+    document.querySelectorAll('.faq-icon').forEach(el => el.style.transform = 'rotate(0deg)');
+
+    if (!isOpen) {
+        answer.classList.remove('hidden');
+        icon.style.transform = 'rotate(180deg)';
+    }
+}
+</script>
+{% endblock %}

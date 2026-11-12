@@ -1,0 +1,59 @@
+{% extends "base_platform.html" %}
+{% block title %}Hasil Ujian{% endblock %}
+{% block content %}
+<div class="max-w-2xl mx-auto px-4 sm:px-6 py-12">
+
+    <!-- Score Card -->
+    <div class="rounded-3xl p-8 text-center mb-6 shadow-xl" style="background:var(--ink)">
+        <div class="text-sm font-medium mb-2" style="color:#98A1AE">{{ result.package_data.title if result.package_data else 'Hasil Ujian' }}</div>
+        <div class="font-display font-bold text-7xl leading-none text-white mb-3">{{ result.total_score }}</div>
+        <div class="text-sm" style="color:#98A1AE">Skor Ujian</div>
+    </div>
+
+    <!-- Section Breakdown -->
+    {% if result.section_breakdown %}
+    <div class="bg-white rounded-2xl border p-6 mb-6" style="border-color:var(--line)">
+        <h3 class="font-display font-semibold text-lg mb-5" style="color:var(--ink)">Detail per Bagian Ujian</h3>
+        <div class="space-y-4">
+            {% for sec_id, sec_data in result.section_breakdown.items() %}
+            <div>
+                <div class="flex justify-between items-center mb-1.5 gap-2">
+                    <span class="text-sm font-medium" style="color:var(--ink)">{{ sec_data.title }}</span>
+                    <span class="text-sm font-semibold flex-shrink-0" style="color:var(--ink)">{{ sec_data.correct }}/{{ sec_data.total }}
+                        <span class="font-display font-bold ml-1" style="color:{% if sec_data.score >= 70 %}var(--ok){% elif sec_data.score >= 50 %}var(--warn){% else %}var(--danger){% endif %}">{{ sec_data.score }}%</span>
+                    </span>
+                </div>
+                <div class="w-full rounded-full h-2" style="background:var(--line-soft)">
+                    <div class="h-2 rounded-full" style="width: {{ sec_data.score }}%; background:{% if sec_data.score >= 70 %}var(--ok){% elif sec_data.score >= 50 %}var(--warn){% else %}var(--danger){% endif %}"></div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Actions -->
+    <div class="space-y-3">
+        {% if has_premium %}
+        <a href="/exam/review/{{ result.pkey }}"
+            class="flex items-center justify-center gap-2 w-full font-semibold py-4 rounded-2xl text-white transition shadow-sm"
+            style="background:#7C3AED">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+            Review Jawaban &amp; Pembahasan
+        </a>
+        {% else %}
+        <div class="rounded-2xl p-5 text-center" style="background:var(--brand-soft); border:1px solid #C9D8F3">
+            <div class="text-sm mb-3" style="color:var(--brand-ink)">
+                <svg class="w-4 h-4 inline-block mr-1 -mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                Upgrade ke Premium untuk melihat pembahasan detail setiap soal
+            </div>
+            {% if result.package_data %}
+            <a href="/checkout/{{ result.fk_package_id }}/PREMIUM" class="inline-block text-sm font-semibold px-5 py-2.5 rounded-xl text-white transition" style="background:#7C3AED">Upgrade Premium</a>
+            {% endif %}
+        </div>
+        {% endif %}
+        <a href="/peserta/riwayat" class="block w-full text-center text-sm py-3 transition" style="color:var(--muted)">← Kembali ke riwayat</a>
+    </div>
+
+</div>
+{% endblock %}

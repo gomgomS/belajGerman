@@ -1,0 +1,27 @@
+{
+  "package": "ITP",
+  "section": "reading",
+  "question_mode": "grouped",
+  "title": "Understanding Transition Questions",
+  "content_text": "<p><em>Questions 1-2 refer to the following passage.</em></p><p><br></p><p>Throughout history, sailors have developed many traditional stories about the mysteries of the ocean. One well-known figure in maritime folklore is Davy Jones, who is often associated with the dangers of the sea. Stories about this mysterious character reflect the fears sailors experienced when traveling across deep and unpredictable waters.</p><p><br></p><p>Different cultures have created their own legends about the ocean. Some stories describe mysterious sea creatures, while others tell of supernatural beings believed to influence the fate of sailors. These traditional tales were passed down through generations and became an important part of maritime culture.</p><p><br></p><p>The ocean can also cause serious natural disasters. Underwater earthquakes, volcanic eruptions, and landslides can displace large amounts of water and generate tsunamis. These powerful waves may travel across entire ocean basins before reaching coastal areas, where they can cause severe flooding and destruction.</p><p><br></p><p>The final stages of a tsunami can be particularly dangerous. Powerful currents may carry debris inland and then pull objects back toward the sea. Even after the water begins to recede, damaged buildings, roads, and infrastructure can leave communities vulnerable. These events demonstrate the destructive effects of tsunamis on coastal areas.</p>",
+  "questions": [
+    {
+      "question_text": "The paragraph preceding this passage most likely discusses",
+      "option_a": "the destructive effects of tsunamis on coastal communities",
+      "option_b": "the history of modern ocean transportation",
+      "option_c": "a different traditional story from the sea",
+      "option_d": "methods for predicting underwater earthquakes",
+      "correct_answer": "C",
+      "explanation": "The phrase \"preceding this passage\" asks what the paragraph before this text most likely discusses. The first sentence introduces Davy Jones as a figure in maritime folklore, which suggests that the previous paragraph was already about traditional sea stories. Option C stays on that topic by naming a different traditional story from the sea. Options A and D shift to tsunamis, and option B introduces modern ocean transportation."
+    },
+    {
+      "question_text": "The paragraph following this passage most likely discusses",
+      "option_a": "the origins of ancient maritime legends",
+      "option_b": "the destructive effects of tsunamis on coastal areas",
+      "option_c": "the life of sailors in the nineteenth century",
+      "option_d": "the discovery of new ocean species",
+      "correct_answer": "B",
+      "explanation": "The phrase \"following this passage\" asks what the next paragraph most likely discusses. The last sentence of the passage states that these events demonstrate the destructive effects of tsunamis on coastal areas. The paragraph that follows would therefore develop that closing idea. Option B restates that topic. Options A and C return to maritime legends or sailors, and option D introduces a new subject about ocean species."
+    }
+  ]
+}

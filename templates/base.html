@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}{{ data.name }} — {{ data.tagline }}{% endblock %}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='v2/platform.output.css') }}">
+    <style>
+      /* BelajDeutsch design system — landing shell */
+      :root{
+        --bg:#F5F6F9; --surface:#FFFFFF; --ink:#171A21; --muted:#5B6472; --faint:#98A1AE;
+        --line:#E4E7EC; --line-soft:#EDF0F4;
+        --brand:#1D4ED8; --brand-strong:#1E40AF; --brand-soft:#EFF4FF; --brand-ink:#1E3A8A;
+        --danger:#D92D20; --ok:#12805C; --warn:#B54708;
+      }
+      body.lnd{ background:var(--surface); color:var(--ink);
+        font-family:'IBM Plex Sans','Segoe UI',system-ui,sans-serif; font-size:14.5px; line-height:1.6; }
+      .lnd h1,.lnd h2,.lnd h3,.lnd h4,.font-display{ font-family:'Barlow','Arial Narrow',sans-serif; letter-spacing:-.005em; }
+      .lnd button{ font-family:'Barlow','Arial Narrow',sans-serif; }
+      /* lapisan tema: satukan halaman lama ke palet baru */
+      .lnd .bg-blue-600{ background-color:var(--brand) !important; }
+      .lnd .hover\:bg-blue-700:hover{ background-color:var(--brand-strong) !important; }
+      .lnd .text-blue-600{ color:var(--brand) !important; }
+      .lnd .text-blue-700{ color:var(--brand-ink) !important; }
+      .lnd .text-blue-100{ color:#C7D6F5 !important; }
+      .lnd .text-blue-200{ color:#A9C0EE !important; }
+      .lnd .text-blue-300{ color:#8FB0EC !important; }
+      .lnd .bg-blue-50{ background-color:var(--brand-soft) !important; }
+      .lnd .hover\:bg-blue-50:hover{ background-color:var(--brand-soft) !important; }
+      .lnd .hover\:bg-blue-100:hover{ background-color:#DCE7FB !important; }
+      .lnd .hover\:text-blue-600:hover{ color:var(--brand) !important; }
+      .lnd .border-blue-200{ border-color:#C9D8F3 !important; }
+      .lnd .focus\:ring-blue-500:focus{ --tw-ring-color:var(--brand) !important; }
+      .lnd .border-gray-200{ border-color:var(--line) !important; }
+      .lnd .border-gray-100{ border-color:var(--line-soft) !important; }
+      .lnd .bg-gray-50{ background-color:#F7F8FA !important; }
+      .lnd .bg-gray-100{ background-color:#EFF1F4 !important; }
+      .lnd .hover\:bg-gray-50:hover{ background-color:#F3F5F8 !important; }
+      .lnd .text-gray-500{ color:var(--muted) !important; }
+      .lnd .text-gray-400{ color:var(--faint) !important; }
+      .lnd .text-gray-600{ color:#4A5361 !important; }
+      .lnd .text-gray-700{ color:#333B47 !important; }
+      .lnd .text-gray-800{ color:#242933 !important; }
+      .lnd .text-gray-900{ color:var(--ink) !important; }
+      .lnd .rounded-xl{ border-radius:10px !important; }
+      .lnd .rounded-2xl{ border-radius:12px !important; }
+      .lnd .shadow-sm{ box-shadow:0 1px 2px rgba(23,26,33,.05) !important; }
+      .lnd .shadow-xl{ box-shadow:0 12px 40px rgba(23,26,33,.14) !important; }
+    </style>
+    {% block head %}{% endblock %}
+</head>
+
+<body class="lnd bg-white text-gray-800">
+
+    <!-- Navbar -->
+    <nav class="sticky top-0 z-40 bg-white/95 backdrop-blur" style="border-bottom:1px solid var(--line)">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+
+                <!-- Logo -->
+                <a href="/" class="flex items-center gap-2.5">
+                    <div class="w-8 h-8 rounded-lg flex items-center justify-center shadow-sm" style="background:var(--brand)">
+                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                        </svg>
+                    </div>
+                    <span class="font-display font-bold text-lg tracking-tight" style="color:var(--ink)">Belaj<span style="color:var(--brand)">Deutsch</span></span>
+                </a>
+
+                <!-- Desktop Nav -->
+                <div class="hidden md:flex items-center gap-7">
+                    <a href="/" class="text-sm font-medium transition {% if request.path == '/' %}font-semibold{% endif %}" style="color:var(--muted)">Beranda</a>
+                    <a href="/catalog" class="text-sm font-medium transition {% if '/catalog' in request.path %}font-semibold{% endif %}" style="color:var(--muted)">Katalog Ujian</a>
+                    <a href="/tentang" class="text-sm font-medium transition {% if '/tentang' in request.path %}font-semibold{% endif %}" style="color:var(--muted)">Tentang</a>
+                    <a href="/faq" class="text-sm font-medium transition {% if '/faq' in request.path %}font-semibold{% endif %}" style="color:var(--muted)">FAQ</a>
+                </div>
+
+                <!-- Auth Buttons -->
+                <div class="hidden md:flex items-center gap-3">
+                    {% if session.get('session_id') %}
+                    <span class="text-sm font-medium" style="color:var(--muted)">{{ session.get('full_name', '') }}</span>
+                    <a href="/dashboard" class="text-sm px-4 py-2 rounded-lg font-medium transition" style="background:var(--brand-soft); color:var(--brand-ink)">Dasbor</a>
+                    <a href="/logout" class="text-sm transition" style="color:var(--muted)">Keluar</a>
+                    {% else %}
+                    <a href="/login" class="text-sm font-medium transition" style="color:var(--muted)">Masuk</a>
+                    <a href="/register" class="text-sm px-4 py-2 rounded-lg font-semibold text-white transition shadow-sm"
+                        style="background:var(--brand)">
+                        Daftar Gratis
+                    </a>
+                    {% endif %}
+                </div>
+
+                <!-- Mobile menu button -->
+                <button id="mobile-menu-btn" class="md:hidden p-2 rounded-lg" style="color:var(--muted)">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Mobile menu -->
+            <div id="mobile-menu" class="hidden md:hidden pb-4 pt-3 space-y-1" style="border-top:1px solid var(--line-soft)">
+                <a href="/" class="block px-3 py-2 text-sm font-medium rounded-lg" style="color:var(--ink)">Beranda</a>
+                <a href="/catalog" class="block px-3 py-2 text-sm font-medium rounded-lg" style="color:var(--ink)">Katalog Ujian</a>
+                <a href="/tentang" class="block px-3 py-2 text-sm font-medium rounded-lg" style="color:var(--ink)">Tentang</a>
+                <a href="/faq" class="block px-3 py-2 text-sm font-medium rounded-lg" style="color:var(--ink)">FAQ</a>
+                <div class="flex gap-2 pt-2 mt-2" style="border-top:1px solid var(--line-soft)">
+                    {% if session.get('session_id') %}
+                    <a href="/dashboard" class="flex-1 text-center text-sm text-white py-2 rounded-lg font-semibold" style="background:var(--brand)">Dasbor</a>
+                    <a href="/logout" class="flex-1 text-center text-sm py-2 rounded-lg font-medium" style="border:1px solid var(--line); color:var(--muted)">Keluar</a>
+                    {% else %}
+                    <a href="/login" class="flex-1 text-center text-sm py-2 rounded-lg font-medium" style="border:1px solid var(--line); color:var(--ink)">Masuk</a>
+                    <a href="/register" class="flex-1 text-center text-sm text-white py-2 rounded-lg font-semibold" style="background:var(--brand)">Daftar</a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    {% block content %}
+    {% endblock %}
+
+    <!-- Footer -->
+    <footer style="background:var(--ink)">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-8 mb-10">
+                <!-- Brand -->
+                <div class="md:col-span-2">
+                    <div class="flex items-center gap-2.5 mb-4">
+                        <div class="w-8 h-8 rounded-lg flex items-center justify-center" style="background:var(--brand)">
+                            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                            </svg>
+                        </div>
+                        <span class="font-display font-bold text-lg text-white">Belaj<span style="color:#7B9BE8">Deutsch</span></span>
+                    </div>
+                    <p class="text-sm leading-relaxed max-w-xs" style="color:#98A1AE">
+                        Platform latihan ujian bahasa Jerman dengan soal berkualitas tinggi dan pembahasan detail.
+                    </p>
+                </div>
+                <!-- Links -->
+                <div>
+                    <div class="text-sm font-semibold mb-4 uppercase tracking-wider" style="color:#C6CBD2">Platform</div>
+                    <ul class="space-y-2">
+                        <li><a href="/catalog" class="text-sm transition" style="color:#98A1AE">Katalog Ujian</a></li>
+                        <li><a href="/register" class="text-sm transition" style="color:#98A1AE">Daftar Gratis</a></li>
+                        <li><a href="/login" class="text-sm transition" style="color:#98A1AE">Masuk</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <div class="text-sm font-semibold mb-4 uppercase tracking-wider" style="color:#C6CBD2">Info</div>
+                    <ul class="space-y-2">
+                        <li><a href="/tentang" class="text-sm transition" style="color:#98A1AE">Tentang Kami</a></li>
+                        <li><a href="/faq" class="text-sm transition" style="color:#98A1AE">FAQ</a></li>
+                        <li><a href="/kontak" class="text-sm transition" style="color:#98A1AE">Kontak</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="pt-6 flex flex-col sm:flex-row justify-between items-center gap-3" style="border-top:1px solid #2C333C">
+                <div class="text-sm" style="color:#98A1AE">&copy; 2026 BelajDeutsch. Hak cipta dilindungi.</div>
+                <div class="text-sm" style="color:#98A1AE">Goethe-Zertifikat &bull; telc &bull; TestDaF</div>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        const mobileMenuBtn = document.getElementById('mobile-menu-btn');
+        const mobileMenu    = document.getElementById('mobile-menu');
+        if (mobileMenuBtn) {
+            mobileMenuBtn.addEventListener('click', () => mobileMenu.classList.toggle('hidden'));
+        }
+    </script>
+    {% block scripts %}{% endblock %}
+</body>
+
+</html>

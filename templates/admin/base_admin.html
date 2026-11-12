@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Dasbor{% endblock %} — BelajDeutsch</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='v2/platform.output.css') }}">
+    <style>
+      /* ── BelajDeutsch admin design system ─────────────────────────
+         Tipografi: Barlow (derivat DIN 1451 — huruf standar Jerman)
+         untuk judul/nav/tombol; IBM Plex Sans untuk teks & tabel.
+         Palet: tinta pekat, abu dingin, biru brand, merah lencana. */
+      :root{
+        --bg:#F5F6F9; --surface:#FFFFFF; --ink:#171A21; --muted:#5B6472; --faint:#98A1AE;
+        --line:#E4E7EC; --line-soft:#EDF0F4;
+        --brand:#1D4ED8; --brand-strong:#1E40AF; --brand-soft:#EFF4FF; --brand-ink:#1E3A8A;
+        --danger:#D92D20; --ok:#12805C; --warn:#B54708;
+      }
+      body.adm{ background:var(--bg); color:var(--ink);
+        font-family:'IBM Plex Sans','Segoe UI',system-ui,sans-serif; font-size:14px; line-height:1.55; }
+      .adm h1,.adm h2,.adm h3,.adm h4,.font-display{ font-family:'Barlow','Arial Narrow',sans-serif; }
+      .adm button{ font-family:'Barlow','Arial Narrow',sans-serif; }
+
+      /* ── Navigasi samping ── */
+      .side-group{ font-family:'Barlow'; font-size:10.5px; font-weight:600; letter-spacing:.14em;
+        text-transform:uppercase; color:var(--faint); padding:14px 12px 5px; }
+      .side-item{ position:relative; display:flex; align-items:center; gap:11px; padding:7.5px 11px;
+        border-radius:8px; color:#414B58; font-family:'Barlow'; font-weight:500; font-size:13.5px;
+        transition:background .15s, color .15s; }
+      .side-item svg{ width:17px; height:17px; opacity:.72; flex-shrink:0; }
+      .side-item:hover{ background:#F1F3F7; color:var(--ink); text-decoration:none; }
+      .side-item.active{ background:var(--brand-soft); color:var(--brand-ink); font-weight:600; }
+      .side-item.active svg{ opacity:1; }
+      .side-item.active::before{ content:""; position:absolute; left:0; top:7px; bottom:7px;
+        width:3px; border-radius:3px; background:var(--brand); }
+      .side-badge{ margin-left:auto; background:var(--danger); color:#fff;
+        font-family:'IBM Plex Sans'; font-size:10.5px; font-weight:600; border-radius:999px; padding:1px 7px; }
+
+      /* ── Kepala halaman ── */
+      .adm .page-title{ font-size:21px; font-weight:600; letter-spacing:-.01em; color:var(--ink); }
+      .adm .page-sub{ font-size:12.5px; color:var(--muted); margin-top:1px; }
+
+      /* ── Tabel ── */
+      .adm-table{ width:100%; border-collapse:collapse; }
+      .adm-table th{ font-family:'Barlow'; font-size:10.5px; letter-spacing:.08em; text-transform:uppercase;
+        color:var(--faint); font-weight:600; text-align:left; padding:10px 20px;
+        border-bottom:1px solid var(--line); }
+      .adm-table td{ padding:12px 20px; font-size:13px; border-bottom:1px solid var(--line-soft); vertical-align:middle; }
+      .adm-table tr:last-child td{ border-bottom:none; }
+      .adm-table tbody tr:hover{ background:#F8FAFD; }
+
+      /* ── Filter pil ── */
+      .adm-filter{ display:inline-block; padding:7px 14px; border-radius:8px; border:1px solid var(--line);
+        font-size:13px; font-weight:500; color:#4A5361; background:var(--surface); transition:all .15s; }
+      .adm-filter:hover{ background:#F3F5F8; text-decoration:none; }
+      .adm-filter.is-active{ background:var(--ink); color:#fff; border-color:var(--ink); }
+
+      /* ── Lencana status ── */
+      .pill{ display:inline-block; font-size:11px; font-weight:600; border-radius:999px; padding:2.5px 10px; }
+      .pill.ok{ background:#E7F5EF; color:var(--ok); }
+      .pill.warn{ background:#FDF1E2; color:var(--warn); }
+      .pill.err{ background:#FDEBE9; color:var(--danger); }
+      .pill.neutral{ background:#EFF1F4; color:#4A5361; }
+      .pill.brand{ background:var(--brand-soft); color:var(--brand-ink); }
+
+      /* ── Lapisan tema: menyatukan halaman lama ke palet baru ── */
+      .adm .bg-blue-600{ background-color:var(--brand) !important; }
+      .adm .hover\:bg-blue-700:hover{ background-color:var(--brand-strong) !important; }
+      .adm .text-blue-600{ color:var(--brand) !important; }
+      .adm .text-blue-700{ color:var(--brand-ink) !important; }
+      .adm .text-blue-800{ color:var(--brand-ink) !important; }
+      .adm .border-blue-600{ border-color:var(--brand) !important; }
+      .adm .focus\:ring-blue-500:focus{ --tw-ring-color:var(--brand) !important; }
+      .adm .border-gray-200{ border-color:var(--line) !important; }
+      .adm .border-gray-100{ border-color:var(--line-soft) !important; }
+      .adm .divide-gray-100 > :not([hidden]) ~ :not([hidden]){ border-color:var(--line-soft) !important; }
+      .adm .divide-gray-50 > :not([hidden]) ~ :not([hidden]){ border-color:#F2F4F7 !important; }
+      .adm .bg-gray-50{ background-color:#F7F8FA !important; }
+      .adm .bg-gray-100{ background-color:#EFF1F4 !important; }
+      .adm .hover\:bg-gray-50:hover{ background-color:#F3F5F8 !important; }
+      .adm .hover\:bg-gray-100:hover{ background-color:#EBEEF2 !important; }
+      .adm .hover\:bg-gray-200:hover{ background-color:#E6E9EE !important; }
+      .adm .text-gray-500{ color:var(--muted) !important; }
+      .adm .text-gray-400{ color:var(--faint) !important; }
+      .adm .text-gray-600{ color:#4A5361 !important; }
+      .adm .text-gray-900{ color:var(--ink) !important; }
+      .adm .text-gray-800{ color:#242933 !important; }
+      .adm .rounded-xl{ border-radius:10px !important; }
+      .adm .rounded-2xl{ border-radius:12px !important; }
+      .adm .shadow-sm{ box-shadow:0 1px 2px rgba(23,26,33,.05) !important; }
+      .adm .shadow-xl,.adm .shadow-2xl{ box-shadow:0 12px 40px rgba(23,26,33,.16) !important; }
+      .adm .bg-black\/50{ background-color:rgba(18,21,28,.45) !important; }
+    </style>
+    {% block head %}{% endblock %}
+</head>
+<body class="adm bg-gray-50 text-gray-800">
+
+<div class="flex h-screen overflow-hidden">
+
+    <!-- Sidebar -->
+    <aside id="sidebar" class="w-64 flex-shrink-0 flex flex-col transition-all duration-300 bg-white" style="border-right:1px solid var(--line)">
+
+        <!-- Logo -->
+        <div class="px-5 pt-5 pb-3">
+            <a href="/dashboard" class="flex items-center gap-3">
+                <div class="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0" style="background:var(--brand)">
+                    <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                    </svg>
+                </div>
+                <div class="min-w-0">
+                    <div class="font-display font-bold text-[15px] leading-tight" style="color:var(--ink)">Belaj<span style="color:var(--brand)">Deutsch</span></div>
+                    <div class="text-[11px]" style="color:var(--faint)">{{ {'super_admin': 'Admin', 'expert': 'Guru', 'peserta': 'Peserta'}.get(session.get('role', ''), session.get('role', '')) }}</div>
+                </div>
+            </a>
+        </div>
+
+        <!-- Navigation -->
+        <nav class="flex-1 overflow-y-auto px-3 pb-3">
+
+            <a href="/dashboard" class="side-item {% if request.path in ['/dashboard', '/dashboard/admin', '/dashboard/expert'] %}active{% endif %}">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+                Dasbor
+            </a>
+
+            {% if session.get('role') in ['super_admin', 'expert'] %}
+            <div class="side-group">Pekerjaan</div>
+            <a href="/expert/question-bank" class="side-item {% if '/question-bank' in request.path %}active{% endif %}">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                Bank Soal
+            </a>
+            <a href="/expert/exam-package" class="side-item {% if '/exam-package' in request.path %}active{% endif %}">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
+                Paket Ujian
+            </a>
+            {% endif %}
+
+            {% if session.get('role') == 'super_admin' %}
+            <div class="side-group">Orang</div>
+            <a href="/dashboard/admin/users" class="side-item {% if '/users' in request.path %}active{% endif %}">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+                Pengguna
+            </a>
+            <a href="/dashboard/admin/orders" class="side-item {% if '/orders' in request.path %}active{% endif %}">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+                Pembayaran
+                {% if pending_orders %}
+                <span class="side-badge">{{ pending_orders }}</span>
+                {% endif %}
+            </a>
+
+            <div class="side-group">Pengaturan</div>
+            <a href="/dashboard/admin/settings" class="side-item {% if '/settings' in request.path %}active{% endif %}">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                Pengaturan
+            </a>
+            {% endif %}
+
+        </nav>
+
+        <!-- User Info -->
+        <div class="px-4 py-4" style="border-top:1px solid var(--line)">
+            <div class="flex items-center gap-3">
+                <div class="w-9 h-9 rounded-full flex items-center justify-center font-display font-bold text-sm flex-shrink-0"
+                    style="background:var(--brand-soft); color:var(--brand-ink)">
+                    {{ session.get('full_name', 'U')[0].upper() }}
+                </div>
+                <div class="min-w-0 flex-1">
+                    <div class="text-[13px] font-medium truncate" style="color:var(--ink)">{{ session.get('full_name', '') }}</div>
+                    <div class="text-[11px] truncate" style="color:var(--faint)">{{ {'super_admin': 'Admin', 'expert': 'Guru', 'peserta': 'Peserta'}.get(session.get('role', ''), session.get('role', '')) }}</div>
+                </div>
+                <a href="/logout" title="Keluar" class="flex-shrink-0 transition" style="color:var(--faint)">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+                    </svg>
+                </a>
+            </div>
+        </div>
+
+    </aside>
+
+    <!-- Main content -->
+    <div class="flex-1 flex flex-col min-w-0 overflow-hidden">
+
+        <!-- Top header -->
+        <header class="bg-white px-6 py-3 flex items-center justify-between flex-shrink-0" style="border-bottom:1px solid var(--line)">
+            <div class="flex items-center gap-3 min-w-0">
+                <button id="sidebar-toggle" class="transition" style="color:var(--muted)">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+                    </svg>
+                </button>
+                <div class="min-w-0">
+                    <h1 class="page-title truncate">{% block page_title %}Dasbor{% endblock %}</h1>
+                    <p class="page-sub truncate">{% block page_subtitle %}{% endblock %}</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-3 shrink-0">
+                {% block header_actions %}{% endblock %}
+            </div>
+        </header>
+
+        <!-- Page content -->
+        <main class="flex-1 overflow-y-auto p-6">
+            {% block breadcrumb %}{% endblock %}
+            {% block content %}{% endblock %}
+        </main>
+
+    </div>
+
+</div>
+
+<script>
+    const sidebarToggle = document.getElementById('sidebar-toggle');
+    const sidebar       = document.getElementById('sidebar');
+    if (sidebarToggle) {
+        sidebarToggle.addEventListener('click', () => {
+            sidebar.classList.toggle('hidden');
+        });
+    }
+</script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

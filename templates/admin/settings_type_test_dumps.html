@@ -1,0 +1,141 @@
+{% extends "admin/base_admin.html" %}
+
+{% block title %}Contoh Soal — {{ type_test.label }}{% endblock %}
+{% block page_title %}Contoh Soal — {{ type_test.label }}{% endblock %}
+{% block page_subtitle %}Contoh soal untuk tombol “Ambil dari contoh” di Bank Soal{% endblock %}
+
+{% block breadcrumb %}
+<nav class="flex items-center gap-1.5 text-xs text-gray-400 mb-3 flex-wrap">
+    <a href="/dashboard/admin" class="hover:text-blue-600 transition">Dasbor</a>
+    <svg class="w-3 h-3 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+    <a href="/dashboard/admin/settings" class="hover:text-blue-600 transition">Pengaturan</a>
+    <svg class="w-3 h-3 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+    <a href="/dashboard/admin/settings/test-type" class="hover:text-blue-600 transition">Bagian Ujian</a>
+    <svg class="w-3 h-3 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+    <span class="text-gray-600 font-medium">{{ type_test.label }}</span>
+</nav>
+{% endblock %}
+
+{% block content %}
+{% if error %}
+<div class="mb-3 px-3 py-2 rounded-lg border border-red-200 bg-red-50 text-sm text-red-700">{{ error }}</div>
+{% elif ok %}
+<div class="mb-3 px-3 py-2 rounded-lg border border-green-200 bg-green-50 text-sm text-green-700">{{ ok }}</div>
+{% endif %}
+
+<div class="grid grid-cols-1 xl:grid-cols-5 gap-4">
+
+    <div class="xl:col-span-2 bg-white rounded-xl border border-gray-200 p-4 h-fit">
+        <h3 class="font-semibold text-gray-900 text-sm mb-3">Tambah Contoh Soal</h3>
+        <form method="POST" action="/dashboard/admin/settings/test-type/{{ type_test.pkey }}/dumps" class="space-y-3">
+            <div>
+                <label class="block text-xs font-semibold text-gray-600 mb-1">Bentuk soal</label>
+                <select name="question_mode"
+                    class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50 focus:bg-white">
+                    {% for key, label in jenis_labels %}
+                    <option value="{{ key }}">{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label class="block text-xs font-semibold text-gray-600 mb-1">JSON <span class="text-red-500">*</span></label>
+                <textarea name="dump_json" rows="16" required
+                    class="w-full px-3 py-2 border border-purple-200 rounded-lg text-xs font-mono bg-purple-50/40 focus:bg-white focus:outline-none focus:ring-2 focus:ring-purple-400 resize-y leading-relaxed"
+                    placeholder='[{"question_text":"...","option_a":"...","option_b":"...","option_c":"...","option_d":"...","correct_answer":"A","explanation":"..."}]'></textarea>
+                <p class="text-[11px] text-gray-400 mt-1 leading-relaxed">
+                    Satu objek atau array. Array = beberapa contoh sekaligus.<br>
+                    <strong>Mandiri</strong>: <code class="bg-gray-100 px-1 rounded">question_text, option_a–d, correct_answer, explanation</code><br>
+                    <strong>Kelompok</strong>: <code class="bg-gray-100 px-1 rounded">title, content_text, questions[]</code><br>
+                    <strong>Richtig/Falsch</strong>: tanpa option; <code class="bg-gray-100 px-1 rounded">correct_answer</code> A = Richtig, B = Falsch<br>
+                    <strong>Lückentext</strong>: <code class="bg-gray-100 px-1 rounded">content_text</code> berisi [1], [2], …; tiap soal <code class="bg-gray-100 px-1 rounded">gap_no, option_a–d, correct_answer, explanation</code>
+                </p>
+            </div>
+            <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 rounded-lg text-sm transition">Simpan Contoh</button>
+        </form>
+    </div>
+
+    <div class="xl:col-span-3 space-y-4">
+        {% for mode, mode_label in jenis_labels %}
+        {% set mode_dumps = dumps | selectattr('jenis', 'equalto', mode) | list %}
+        <div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
+            <div class="px-3 py-2 bg-gray-50 border-b border-gray-100 flex items-center gap-2">
+                <h3 class="font-semibold text-gray-900 text-sm">{{ mode_label }}</h3>
+                <span class="text-[10px] text-gray-400">{{ mode_dumps | length }} contoh</span>
+            </div>
+            {% if mode_dumps %}
+            <div class="divide-y divide-gray-100">
+                {% for d in mode_dumps %}
+                <div class="px-3 py-2 flex items-center gap-2 hover:bg-gray-50 transition">
+                    <span class="w-5 h-5 bg-blue-600 text-white text-[10px] font-bold rounded-full flex items-center justify-center shrink-0">{{ loop.index }}</span>
+                    <div class="flex-1 min-w-0 text-xs text-gray-800 truncate">{{ d.title }}</div>
+                    {% if d.question_mode == 'grouped' %}
+                    <span class="text-[10px] text-gray-400 shrink-0">{{ d.question_count }} soal</span>
+                    {% endif %}
+                    <textarea id="dump-src-{{ d.pkey }}" class="hidden">{{ d.dump_pretty }}</textarea>
+                    <button type="button" onclick="openDumpModal('{{ d.pkey }}', '{{ mode }}')"
+                        class="text-[11px] text-blue-600 hover:underline font-medium shrink-0">Ubah</button>
+                    <form method="POST" action="/dashboard/admin/settings/test-type/{{ type_test.pkey }}/dumps/{{ d.pkey }}/delete"
+                        onsubmit="return confirm('Hapus contoh ini?')">
+                        <button type="submit" class="text-[11px] text-red-500 hover:underline font-medium shrink-0">Hapus</button>
+                    </form>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p class="px-3 py-4 text-xs text-gray-400 text-center">Belum ada contoh {{ mode_label | lower }} — tambahkan satu agar guru bisa memulai darinya</p>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+
+</div>
+
+<div id="dump-modal" class="hidden fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-xl shadow-2xl w-full max-w-3xl p-4 max-h-[90vh] overflow-y-auto">
+        <div class="flex items-center justify-between mb-3">
+            <h3 class="font-semibold text-gray-900">Ubah Contoh Soal</h3>
+            <button type="button" onclick="closeDumpModal()" class="text-gray-400 hover:text-gray-600">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+            </button>
+        </div>
+        <form id="dump-form" method="POST" class="space-y-3">
+            <div>
+                <label class="block text-xs font-semibold text-gray-600 mb-1">Bentuk soal</label>
+                <select name="question_mode" id="dump-mode"
+                    class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50 focus:bg-white">
+                    {% for key, label in jenis_labels %}
+                    <option value="{{ key }}">{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <textarea name="dump_json" id="dump-json" rows="20" required
+                class="w-full px-3 py-2 border border-purple-200 rounded-lg text-xs font-mono bg-purple-50/40 focus:bg-white focus:outline-none focus:ring-2 focus:ring-purple-400 resize-y leading-relaxed"></textarea>
+            <div class="flex gap-2">
+                <button type="submit" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 rounded-lg text-sm transition">Simpan</button>
+                <button type="button" onclick="closeDumpModal()"
+                    class="px-4 py-2 border border-gray-200 text-gray-600 rounded-lg text-sm hover:bg-gray-50 transition">Batal</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function openDumpModal(dumpPkey, mode) {
+    document.getElementById('dump-form').action =
+        '/dashboard/admin/settings/test-type/{{ type_test.pkey }}/dumps/' + dumpPkey + '/update';
+    document.getElementById('dump-mode').value = mode;
+    document.getElementById('dump-json').value = document.getElementById('dump-src-' + dumpPkey).value;
+    document.getElementById('dump-modal').classList.remove('hidden');
+}
+
+function closeDumpModal() {
+    document.getElementById('dump-modal').classList.add('hidden');
+}
+
+document.getElementById('dump-modal').addEventListener('click', function(e) {
+    if (e.target === this) closeDumpModal();
+});
+</script>
+{% endblock %}

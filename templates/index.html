@@ -1,0 +1,232 @@
+{% extends 'base.html' %}
+{% block title %}{{ data.name }} — {{ data.tagline }}{% endblock %}
+
+{% block head %}
+<style>
+    .hero-gradient { background: linear-gradient(135deg, #1e40af 0%, #312e81 100%); }
+    .feature-card:hover { transform: translateY(-4px); }
+    .test-card { border-top: 4px solid; }
+    .test-card.blue  { border-color: #3b82f6; }
+    .test-card.indigo{ border-color: #6366f1; }
+    .test-card.purple{ border-color: #a855f7; }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- ════════════════════════════════════════════
+     HERO
+════════════════════════════════════════════ -->
+<section class="hero-gradient text-white relative overflow-hidden">
+    <div class="absolute inset-0 opacity-10">
+        <div class="absolute top-10 left-10 w-72 h-72 bg-white rounded-full blur-3xl"></div>
+        <div class="absolute bottom-10 right-10 w-96 h-96 bg-blue-300 rounded-full blur-3xl"></div>
+    </div>
+    <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 md:py-32">
+        <div class="max-w-3xl">
+            <div class="inline-flex items-center gap-2 bg-white/10 border border-white/20 text-white text-sm font-medium px-4 py-1.5 rounded-full mb-6 backdrop-blur-sm">
+                <span class="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
+                Lebih dari 1.000 soal latihan tersedia
+            </div>
+            <h1 class="text-4xl sm:text-5xl md:text-6xl font-extrabold leading-tight mb-6 tracking-tight">
+                Raih Sertifikat<br>
+                <span class="text-blue-300">Bahasa Jermanmu</span>
+            </h1>
+            <p class="text-lg md:text-xl text-blue-100 mb-10 leading-relaxed max-w-xl">
+                Simulasi ujian bahasa Jerman yang realistis — Goethe-Zertifikat, telc, dan TestDaF. Soal berkualitas, timer akurat, skor instan, dan pembahasan detail dari guru berpengalaman.
+            </p>
+            <div class="flex flex-wrap gap-4">
+                <a href="/register"
+                   class="inline-flex items-center gap-2 bg-white text-blue-700 hover:bg-blue-50 font-bold px-7 py-3.5 rounded-xl shadow-lg transition text-sm sm:text-base">
+                    Mulai Gratis Sekarang
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                    </svg>
+                </a>
+                <a href="/catalog"
+                   class="inline-flex items-center gap-2 border-2 border-white/40 text-white hover:border-white hover:bg-white/10 font-semibold px-7 py-3.5 rounded-xl transition text-sm sm:text-base">
+                    Lihat Katalog Ujian
+                </a>
+            </div>
+        </div>
+
+        <!-- Stats row -->
+        <div class="mt-16 grid grid-cols-2 md:grid-cols-4 gap-6 max-w-2xl">
+            <div class="bg-white/10 backdrop-blur rounded-xl p-4 text-center border border-white/20">
+                <div class="text-2xl font-extrabold text-white">1.000+</div>
+                <div class="text-xs text-blue-200 mt-1 font-medium">Soal Latihan</div>
+            </div>
+            <div class="bg-white/10 backdrop-blur rounded-xl p-4 text-center border border-white/20">
+                <div class="text-2xl font-extrabold text-white">3</div>
+                <div class="text-xs text-blue-200 mt-1 font-medium">Jenis Ujian</div>
+            </div>
+            <div class="bg-white/10 backdrop-blur rounded-xl p-4 text-center border border-white/20">
+                <div class="text-2xl font-extrabold text-white">100%</div>
+                <div class="text-xs text-blue-200 mt-1 font-medium">Format Resmi</div>
+            </div>
+            <div class="bg-white/10 backdrop-blur rounded-xl p-4 text-center border border-white/20">
+                <div class="text-2xl font-extrabold text-white">24/7</div>
+                <div class="text-xs text-blue-200 mt-1 font-medium">Akses Kapanpun</div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ════════════════════════════════════════════
+     FITUR
+════════════════════════════════════════════ -->
+<section id="fitur" class="py-20 bg-gray-50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="text-center mb-14">
+            <p class="text-sm font-semibold text-blue-600 uppercase tracking-widest mb-2">Fitur Unggulan</p>
+            <h2 class="text-3xl md:text-4xl font-extrabold text-gray-900 mb-4">
+                Semua yang Kamu Butuhkan untuk Persiapan Ujian Bahasa Jerman
+            </h2>
+            <p class="text-gray-500 max-w-xl mx-auto">
+                Kami merancang platform ini khusus untuk memastikan persiapanmu semaksimal mungkin.
+            </p>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {% for f in data.features %}
+            <div class="feature-card bg-white rounded-2xl p-7 shadow-sm hover:shadow-md transition duration-300 border border-gray-100">
+                <div class="text-4xl mb-4">{{ f.icon }}</div>
+                <h3 class="text-lg font-bold text-gray-900 mb-2">{{ f.title }}</h3>
+                <p class="text-sm text-gray-500 leading-relaxed">{{ f.desc }}</p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<!-- ════════════════════════════════════════════
+     JENIS UJIAN
+════════════════════════════════════════════ -->
+<section id="ujian" class="py-20 bg-white">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="text-center mb-14">
+            <p class="text-sm font-semibold text-blue-600 uppercase tracking-widest mb-2">Jenis Ujian</p>
+            <h2 class="text-3xl md:text-4xl font-extrabold text-gray-900 mb-4">Tersedia 3 Jenis Tes</h2>
+            <p class="text-gray-500 max-w-lg mx-auto">Pilih jenis ujian yang sesuai kebutuhanmu dan mulai simulasi kapanpun.</p>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-7">
+            {% for t in data.test_types %}
+            <div class="test-card {{ t.color }} bg-white rounded-2xl p-8 shadow-sm hover:shadow-lg transition border border-gray-100">
+                <div class="mb-4">
+                    <span class="inline-block px-3 py-1 rounded-full text-xs font-bold
+                        {% if t.color == 'blue' %}bg-blue-100 text-blue-700{% elif t.color == 'indigo' %}bg-indigo-100 text-indigo-700{% else %}bg-purple-100 text-purple-700{% endif %}">
+                        {{ t.code }}
+                    </span>
+                </div>
+                <h3 class="text-xl font-extrabold text-gray-900 mb-2">{{ t.title }}</h3>
+                <p class="text-sm text-gray-500 mb-5 leading-relaxed">{{ t.desc }}</p>
+                <ul class="space-y-2">
+                    {% for s in t.sections %}
+                    <li class="flex items-center gap-2 text-sm text-gray-600">
+                        <svg class="w-4 h-4 text-green-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                        </svg>
+                        {{ s }}
+                    </li>
+                    {% endfor %}
+                </ul>
+                <a href="/catalog" class="mt-7 block text-center text-sm font-semibold
+                    {% if t.color == 'blue' %}text-blue-600 hover:text-blue-800{% elif t.color == 'indigo' %}text-indigo-600 hover:text-indigo-800{% else %}text-purple-600 hover:text-purple-800{% endif %}
+                    transition">
+                    Lihat Paket {{ t.title }} &rarr;
+                </a>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<!-- ════════════════════════════════════════════
+     CTA PRICING TEASER
+════════════════════════════════════════════ -->
+<section class="py-20 bg-gray-50">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="text-center mb-12">
+            <p class="text-sm font-semibold text-blue-600 uppercase tracking-widest mb-2">Paket</p>
+            <h2 class="text-3xl md:text-4xl font-extrabold text-gray-900 mb-4">Harga Terjangkau, Fitur Lengkap</h2>
+            <p class="text-gray-500 max-w-md mx-auto">Mulai dari ujian simulasi dasar hingga pembahasan lengkap setiap soal.</p>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- Basic -->
+            <div class="bg-white rounded-2xl p-8 border border-gray-200 shadow-sm">
+                <div class="text-base font-bold text-gray-900 mb-1">Basic</div>
+                <div class="text-3xl font-extrabold text-gray-900 mb-4">Gratis <span class="text-base font-normal text-gray-400">/ujian*</span></div>
+                <ul class="space-y-3 mb-7">
+                    <li class="flex items-start gap-2 text-sm text-gray-600">
+                        <svg class="w-4 h-4 text-green-500 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                        Simulasi ujian penuh (semua seksi)
+                    </li>
+                    <li class="flex items-start gap-2 text-sm text-gray-600">
+                        <svg class="w-4 h-4 text-green-500 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                        Skor prediksi langsung
+                    </li>
+                    <li class="flex items-start gap-2 text-sm text-gray-600">
+                        <svg class="w-4 h-4 text-green-500 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                        Auto-save jawaban
+                    </li>
+                    <li class="flex items-start gap-2 text-sm text-gray-400">
+                        <svg class="w-4 h-4 text-gray-300 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                        Pembahasan detail tiap soal
+                    </li>
+                </ul>
+                <a href="/register" class="block w-full text-center bg-gray-100 hover:bg-gray-200 text-gray-800 font-semibold py-3 rounded-xl transition text-sm">
+                    Mulai Sekarang
+                </a>
+                <p class="text-xs text-gray-400 mt-3 text-center">*Harga tergantung paket yang dipilih di katalog</p>
+            </div>
+            <!-- Premium -->
+            <div class="bg-blue-600 rounded-2xl p-8 shadow-xl relative overflow-hidden">
+                <div class="absolute top-4 right-4 bg-yellow-400 text-yellow-900 text-xs font-extrabold px-2.5 py-0.5 rounded-full">POPULER</div>
+                <div class="text-base font-bold text-blue-100 mb-1">Premium</div>
+                <div class="text-3xl font-extrabold text-white mb-4">Lihat Katalog <span class="text-base font-normal text-blue-300">/paket</span></div>
+                <ul class="space-y-3 mb-7">
+                    <li class="flex items-start gap-2 text-sm text-blue-100">
+                        <svg class="w-4 h-4 text-green-300 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                        Semua fitur Basic
+                    </li>
+                    <li class="flex items-start gap-2 text-sm text-blue-100">
+                        <svg class="w-4 h-4 text-green-300 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                        Pembahasan detail setiap soal
+                    </li>
+                    <li class="flex items-start gap-2 text-sm text-blue-100">
+                        <svg class="w-4 h-4 text-green-300 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                        Review semua jawaban setelah ujian
+                    </li>
+                    <li class="flex items-start gap-2 text-sm text-blue-100">
+                        <svg class="w-4 h-4 text-green-300 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                        Analisis kelemahan per seksi
+                    </li>
+                </ul>
+                <a href="/catalog" class="block w-full text-center bg-white text-blue-700 hover:bg-blue-50 font-bold py-3 rounded-xl transition text-sm shadow-md">
+                    Pilih Paket Premium
+                </a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ════════════════════════════════════════════
+     CTA BOTTOM
+════════════════════════════════════════════ -->
+<section class="hero-gradient py-20 text-center text-white">
+    <div class="max-w-2xl mx-auto px-4">
+        <h2 class="text-3xl md:text-4xl font-extrabold mb-5">Siap Mulai Latihan Ujian Jerman?</h2>
+        <p class="text-blue-200 mb-9 text-base leading-relaxed">
+            Bergabunglah sekarang, daftar gratis, dan mulai simulasi ujian pertamamu hari ini.
+        </p>
+        <a href="/register"
+            class="inline-flex items-center gap-2 bg-white text-blue-700 hover:bg-blue-50 font-bold px-9 py-4 rounded-xl shadow-xl transition text-base">
+            Daftar Gratis Sekarang
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+            </svg>
+        </a>
+    </div>
+</section>
+
+{% endblock %}

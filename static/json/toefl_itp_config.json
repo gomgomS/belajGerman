@@ -1,0 +1,77 @@
+{
+  "test_type": "Deutsch Prüfung",
+  "sections": [
+    {
+      "key"                 : "hoeren",
+      "label"               : "Hören (Hörverstehen)",
+      "section_type"        : "hoeren",
+      "default_passage_mode": "flexible",
+      "sub_types": [
+        {
+          "key"          : "kurze_gespraeche",
+          "label"        : "Kurze Gespräche",
+          "description"  : "Dialog pendek sehari-hari, 1 soal per dialog",
+          "passage_mode" : "single",
+          "content_type" : "audio"
+        },
+        {
+          "key"          : "lange_gespraeche",
+          "label"        : "Längere Gespräche / Interviews",
+          "description"  : "Percakapan / wawancara panjang, beberapa soal untuk 1 audio",
+          "passage_mode" : "grouped",
+          "content_type" : "audio"
+        },
+        {
+          "key"          : "durchsagen",
+          "label"        : "Durchsagen & Vorträge",
+          "description"  : "Pengumuman publik atau ceramah, beberapa soal untuk 1 audio",
+          "passage_mode" : "grouped",
+          "content_type" : "audio"
+        }
+      ]
+    },
+    {
+      "key"                 : "lesen",
+      "label"               : "Lesen (Leseverstehen)",
+      "section_type"        : "lesen",
+      "default_passage_mode": "grouped",
+      "sub_types": [
+        {
+          "key"          : "kurze_texte",
+          "label"        : "Kurze Texte / Anzeigen",
+          "description"  : "Pemberitahuan pendek / iklan, 1 soal mandiri",
+          "passage_mode" : "single",
+          "content_type" : "text"
+        },
+        {
+          "key"          : "lesetext",
+          "label"        : "Lesetext / Artikel",
+          "description"  : "Artikel bacaan panjang, beberapa soal per bacaan",
+          "passage_mode" : "grouped",
+          "content_type" : "text"
+        }
+      ]
+    },
+    {
+      "key"                 : "schreiben",
+      "label"               : "Schreiben (Schriftlicher Ausdruck)",
+      "section_type"        : "schreiben",
+      "default_passage_mode": "grouped",
+      "sub_types": []
+    },
+    {
+      "key"                 : "sprechen",
+      "label"               : "Sprechen (Mündlicher Ausdruck)",
+      "section_type"        : "sprechen",
+      "default_passage_mode": "grouped",
+      "sub_types": []
+    },
+    {
+      "key"                 : "struktur",
+      "label"               : "Wissenschaftssprachliche Strukturen (Grammatik)",
+      "section_type"        : "struktur",
+      "default_passage_mode": "single",
+      "sub_types": []
+    }
+  ]
+}

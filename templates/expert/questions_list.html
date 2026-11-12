@@ -1,0 +1,787 @@
+{% extends "admin/base_admin.html" %}
+
+{% block title %}Bank Soal{% endblock %}
+{% block page_title %}Bank Soal{% endblock %}
+{% block page_subtitle %}Perpustakaan soal — buat di sini, lalu pakai di Paket Ujian{% endblock %}
+
+{% block header_actions %}
+<div class="flex items-center gap-2">
+    <button type="button" onclick="setBulkView('json')"
+        class="inline-flex items-center gap-2 bg-white border border-purple-200 text-purple-700 hover:bg-purple-50 text-sm font-semibold px-4 py-2.5 rounded-xl transition">
+        Impor Soal
+    </button>
+    <a href="/expert/question-bank/new"
+        class="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-4 py-2.5 rounded-xl transition shadow-sm">
+        + Soal Baru
+    </a>
+</div>
+{% endblock %}
+
+{% block breadcrumb %}
+<nav class="flex items-center gap-1.5 text-xs text-gray-400 mb-4 flex-wrap">
+    <a href="/dashboard/expert" class="hover:text-blue-600 transition">Dasbor</a>
+    <svg class="w-3 h-3 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+    <span class="text-gray-600 font-medium">Bank Soal</span>
+</nav>
+{% endblock %}
+
+{% block content %}
+{% set fs = filter_section or '' %}
+{% set fm = filter_mode or '' %}
+{% set pg = pagination or {} %}
+{% set cur_page = pg.page or 1 %}
+{% set total_pages = pg.total_pages or 1 %}
+{% set per_page = pg.per_page or 10 %}
+{% set shown_total = filter_total or (passages|length) %}
+{% set pp_opts = per_page_options or [10, 20, 50, 100] %}
+{% macro bank_href(section='', mode='', page=0, per_page=0) -%}
+/expert/question-bank{%- if section or mode or (page and page > 1) or (per_page and per_page != 10) -%}?{%- endif -%}
+{%- if section -%}section={{ section }}{%- endif -%}
+{%- if section and mode -%}&{%- endif -%}
+{%- if mode -%}mode={{ mode }}{%- endif -%}
+{%- if (section or mode) and page and page > 1 -%}&{%- endif -%}
+{%- if page and page > 1 -%}page={{ page }}{%- endif -%}
+{%- if (section or mode or (page and page > 1)) and per_page and per_page != 10 -%}&{%- endif -%}
+{%- if per_page and per_page != 10 -%}per_page={{ per_page }}{%- endif -%}
+{%- endmacro %}
+
+<div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 mb-4">
+    <div class="flex flex-col lg:flex-row lg:items-center gap-3 justify-between">
+        <div class="flex flex-wrap items-center gap-2">
+            <span class="text-xs font-semibold text-gray-500 uppercase tracking-wide mr-1">Bagian Ujian</span>
+            <a href="{{ bank_href(mode=fm, per_page=per_page) }}"
+                class="text-xs font-semibold px-3 py-1.5 rounded-lg {% if not fs %}bg-gray-900 text-white{% else %}bg-gray-100 text-gray-600 hover:bg-gray-200{% endif %}">Semua</a>
+            {% for opt in bank_sections %}
+            <a href="{{ bank_href(section=opt.key, mode=fm, per_page=per_page) }}"
+                class="text-xs font-semibold px-3 py-1.5 rounded-lg {% if fs == opt.key %}bg-blue-600 text-white{% else %}bg-gray-100 text-gray-600 hover:bg-gray-200{% endif %}">
+                {{ opt.label }}
+            </a>
+            {% endfor %}
+        </div>
+        <div class="flex flex-wrap items-center gap-2">
+            <span class="text-xs font-semibold text-gray-500 uppercase tracking-wide mr-1">Bentuk</span>
+            <a href="{{ bank_href(section=fs, per_page=per_page) }}"
+                class="text-xs font-semibold px-3 py-1.5 rounded-lg {% if not fm %}bg-gray-900 text-white{% else %}bg-gray-100 text-gray-600 hover:bg-gray-200{% endif %}">Semua</a>
+            <a href="{{ bank_href(section=fs, mode='single', per_page=per_page) }}"
+                class="text-xs font-semibold px-3 py-1.5 rounded-lg {% if fm == 'single' %}bg-amber-500 text-white{% else %}bg-gray-100 text-gray-600 hover:bg-gray-200{% endif %}">Mandiri</a>
+            <a href="{{ bank_href(section=fs, mode='grouped', per_page=per_page) }}"
+                class="text-xs font-semibold px-3 py-1.5 rounded-lg {% if fm == 'grouped' %}bg-blue-600 text-white{% else %}bg-gray-100 text-gray-600 hover:bg-gray-200{% endif %}">Kelompok</a>
+        </div>
+    </div>
+</div>
+
+<div id="bulk-json-panel" class="hidden fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" onclick="if (event.target === this) setBulkView('list')">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-3xl p-5 max-h-[90vh] overflow-y-auto">
+        <div class="flex items-center justify-between mb-3">
+            <h3 class="font-semibold text-gray-900">Impor Soal</h3>
+            <button type="button" onclick="setBulkView('list')" class="text-gray-400 hover:text-gray-600">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+            </button>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-3">
+            <div>
+                <label class="block text-xs font-semibold text-gray-600 mb-1">Bagian Ujian <span class="text-red-500">*</span></label>
+                <select id="bulk-test-type" onchange="bulkSelectionChanged()"
+                    class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-400 bg-gray-50 focus:bg-white">
+                    <option value="">-- Pilih bagian ujian --</option>
+                    {% for opt in bank_sections %}
+                    <option value="{{ opt.key }}">{{ opt.label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label class="block text-xs font-semibold text-gray-600 mb-1">Bentuk Soal <span class="text-red-500">*</span></label>
+                <select id="bulk-mode" onchange="bulkSelectionChanged()"
+                    class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-400 bg-gray-50 focus:bg-white">
+                    <option value="">-- Pilih bentuk soal --</option>
+                    <option value="single">Soal Mandiri</option>
+                    <option value="grouped">Kelompok Soal</option>
+                    <option value="rf_single">Richtig/Falsch — Mandiri</option>
+                    <option value="rf_grouped">Richtig/Falsch — Kelompok</option>
+                    <option value="cloze">Lückentext (Pilihan Ganda)</option>
+                    <option value="cloze_select">Lückentext — Pilihan di Teks (dropdown)</option>
+                    <option value="cloze_input">Lückentext — Ketik Jawaban (isian)</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-xs font-semibold text-gray-600 mb-1">Jumlah contoh</label>
+                <input type="number" id="bulk-dump-count" min="1" value="1" disabled
+                    class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-400 bg-gray-50 focus:bg-white disabled:opacity-50">
+                <p id="bulk-dump-available" class="text-[11px] text-gray-400 mt-1">Pilih bagian ujian &amp; bentuk dulu</p>
+            </div>
+        </div>
+        <p class="text-xs text-gray-500 mb-2">
+            Bagian ujian &amp; bentuk di atas dipakai untuk semua soal yang diimpor.
+            <strong>Mandiri</strong>: array soal. <strong>Kelompok</strong>: array kelompok, masing-masing punya
+            <code class="bg-gray-100 px-1 rounded">title</code>, <code class="bg-gray-100 px-1 rounded">content_text</code>,
+            <code class="bg-gray-100 px-1 rounded">questions[]</code>.
+            <code class="bg-gray-100 px-1 rounded">audio_url</code> dan <code class="bg-gray-100 px-1 rounded">option_a_image</code>–<code class="bg-gray-100 px-1 rounded">option_d_image</code> opsional.
+        </p>
+        <textarea id="bulk-json-textarea" rows="18"
+            class="w-full px-3 py-2.5 border border-purple-200 rounded-xl text-xs font-mono bg-purple-50/40 focus:bg-white focus:outline-none focus:ring-2 focus:ring-purple-400 resize-y leading-relaxed"
+            placeholder='Mandiri: [{"question_text":"...","option_a":"...","option_b":"...","option_c":"...","option_d":"...","correct_answer":"A","explanation":"..."}]&#10;Kelompok: [{"title":"...","content_text":"...","questions":[...]}]'></textarea>
+        <div class="flex flex-wrap gap-2 mt-2">
+            <button type="button" id="btn-bulk-import" onclick="bulkJsonImport()" disabled
+                class="px-4 py-1.5 bg-purple-600 hover:bg-purple-700 text-white text-xs font-semibold rounded-lg transition disabled:opacity-40 disabled:cursor-not-allowed">
+                ↓ Import ke Bank Soal
+            </button>
+            <button type="button" id="btn-bulk-dump" onclick="bulkJsonDump()" disabled
+                class="px-4 py-1.5 bg-white hover:bg-gray-50 text-purple-700 border border-purple-200 text-xs font-semibold rounded-lg transition disabled:opacity-40 disabled:cursor-not-allowed">
+                Ambil dari contoh
+            </button>
+            <button type="button" onclick="bulkJsonCopy()"
+                class="px-4 py-1.5 bg-white hover:bg-gray-50 text-gray-600 border border-gray-200 text-xs font-semibold rounded-lg transition ml-auto">
+                Salin
+            </button>
+        </div>
+        <p id="bulk-json-status" class="hidden text-xs font-medium mt-2"></p>
+    </div>
+</div>
+
+{% if shown_total %}
+<div class="bg-white rounded-2xl shadow-sm border border-gray-100 px-4 py-3 mb-4 flex flex-col lg:flex-row lg:items-center gap-3 justify-between">
+    <label class="inline-flex items-center gap-2.5 text-sm text-gray-700 cursor-pointer select-none">
+        <span class="w-9 h-9 rounded-lg bg-gray-50 border border-gray-200 flex items-center justify-center">
+            <input type="checkbox" id="select-all-passages" class="w-4 h-4 accent-blue-600 cursor-pointer"
+                onchange="toggleSelectAll(this.checked)">
+        </span>
+        <span>
+            <span class="font-medium">Pilih halaman ini</span>
+            <span class="block text-xs text-gray-400" id="selected-count">0 dipilih</span>
+        </span>
+    </label>
+    <div class="flex flex-wrap items-center gap-2">
+        <form method="GET" action="/expert/question-bank" class="inline-flex items-center gap-1.5 mr-1">
+            {% if fs %}<input type="hidden" name="section" value="{{ fs }}">{% endif %}
+            {% if fm %}<input type="hidden" name="mode" value="{{ fm }}">{% endif %}
+            <label class="text-xs text-gray-500">Tampil</label>
+            <select name="per_page" onchange="this.form.submit()"
+                class="text-xs font-semibold px-2 py-1.5 rounded-lg border border-gray-200 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                {% for n in pp_opts %}
+                <option value="{{ n }}" {% if n == per_page %}selected{% endif %}>{{ n }}</option>
+                {% endfor %}
+            </select>
+            <span class="text-xs text-gray-400">/ halaman</span>
+        </form>
+        <span class="text-xs text-gray-400">{{ shown_total }} item{% if total_pages > 1 %} · {{ cur_page }}/{{ total_pages }}{% endif %}</span>
+        <form id="bulk-delete-form" method="POST" action="/expert/question-bank/delete-selected"
+            onsubmit="return confirmDeleteSelected()">
+            <input type="hidden" name="section" value="{{ fs }}">
+            <input type="hidden" name="mode" value="{{ fm }}">
+            <input type="hidden" name="page" value="{{ cur_page }}">
+            <input type="hidden" name="per_page" value="{{ per_page }}">
+            <button type="submit" id="btn-delete-selected" disabled
+                class="text-xs font-semibold px-3 py-1.5 rounded-lg border border-red-200 text-red-600 hover:bg-red-50 disabled:opacity-40 disabled:cursor-not-allowed transition">
+                Hapus terpilih
+            </button>
+        </form>
+        <form method="POST" action="/expert/question-bank/delete-all"
+            onsubmit="return confirm('Hapus SEMUA {{ shown_total }} item di filter ini? Soal ikut terhapus dari paket yang memakainya. Tindakan ini tidak bisa dibatalkan.')">
+            <input type="hidden" name="section" value="{{ fs }}">
+            <input type="hidden" name="mode" value="{{ fm }}">
+            <input type="hidden" name="per_page" value="{{ per_page }}">
+            <button type="submit"
+                class="text-xs font-semibold px-3 py-1.5 rounded-lg border border-red-300 bg-red-50 text-red-700 hover:bg-red-100 transition">
+                Hapus semua
+            </button>
+        </form>
+    </div>
+</div>
+{% endif %}
+
+<div id="passages-list">
+    {% if passages %}
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-x-auto">
+        <table class="w-full text-sm">
+            <thead class="bg-gray-50 border-b border-gray-100 text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                <tr>
+                    <th class="w-10 px-3 py-3"></th>
+                    <th class="px-3 py-3 text-left">Judul</th>
+                    <th class="px-3 py-3 text-left">Bagian</th>
+                    <th class="px-3 py-3 text-left">Bentuk</th>
+                    <th class="px-3 py-3 text-left">Konten</th>
+                    <th class="px-3 py-3 text-center">Soal</th>
+                    <th class="px-3 py-3 text-left">Status</th>
+                    <th class="px-3 py-3 text-right">Aksi</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-50">
+                {% for passage in passages %}
+                <tr class="hover:bg-gray-50 transition">
+                    <td class="px-3 py-3 text-center">
+                        <input type="checkbox" name="passage_pkey" value="{{ passage.pkey }}"
+                            form="bulk-delete-form" class="passage-check w-4 h-4 accent-blue-600 cursor-pointer"
+                            onchange="updateSelectedCount()">
+                    </td>
+                    <td class="px-3 py-3 max-w-xs">
+                        <a href="/expert/question-bank/{{ passage.pkey }}" class="font-medium text-gray-900 hover:text-blue-600 block truncate">{{ passage.title }}</a>
+                    </td>
+                    <td class="px-3 py-3 text-gray-600 whitespace-nowrap">
+                        {% if passage.section_key %}{{ section_labels.get(passage.section_key, passage.section_key|upper) }}{% else %}<span class="text-gray-400">-</span>{% endif %}
+                    </td>
+                    <td class="px-3 py-3 whitespace-nowrap">
+                        {% if passage.question_mode == 'single' %}
+                        <span class="text-xs bg-amber-100 text-amber-700 font-semibold px-1.5 py-0.5 rounded">Mandiri</span>
+                        {% else %}
+                        <span class="text-xs bg-blue-100 text-blue-700 font-semibold px-1.5 py-0.5 rounded">Kelompok</span>
+                        {% endif %}
+                        {% if passage.answer_type == 'rf' %}
+                        <span class="text-xs bg-indigo-100 text-indigo-700 font-semibold px-1.5 py-0.5 rounded">Richtig/Falsch</span>
+                        {% elif passage.answer_type == 'cloze' %}
+                        <span class="text-xs bg-purple-100 text-purple-700 font-semibold px-1.5 py-0.5 rounded">Lückentext</span>
+                        {% endif %}
+                    </td>
+                    <td class="px-3 py-3 whitespace-nowrap">
+                        <span class="text-xs font-semibold px-1.5 py-0.5 rounded bg-gray-100 text-gray-600">{{ 'AUDIO' if passage.audio_url else 'TEKS' }}</span>
+                    </td>
+                    <td class="px-3 py-3 text-center text-gray-600">{{ passage.question_count or 0 }}</td>
+                    <td class="px-3 py-3 whitespace-nowrap">
+                        <span class="text-xs font-semibold px-2 py-0.5 rounded-full {% if passage.status == 'PUBLISHED' %}bg-green-100 text-green-700{% else %}bg-gray-100 text-gray-500{% endif %}">{{ passage.status }}</span>
+                    </td>
+                    <td class="px-3 py-3">
+                        <div class="flex items-center justify-end gap-1.5">
+                            <button type="button" onclick="openBankPreview('{{ passage.pkey }}')"
+                                class="text-xs text-violet-700 border border-violet-200 hover:bg-violet-50 px-2.5 py-1 rounded-lg font-medium transition">
+                                Pratinjau
+                            </button>
+                            <a href="/expert/question-bank/{{ passage.pkey }}"
+                                class="text-xs text-blue-600 border border-blue-200 hover:bg-blue-50 px-2.5 py-1 rounded-lg font-medium transition">
+                                Edit
+                            </a>
+                            <form method="POST" action="/expert/question-bank/{{ passage.pkey }}/delete" onsubmit="return confirm('Hapus item ini dan semua soalnya? Soal ikut terlepas dari paket.')">
+                                <input type="hidden" name="section" value="{{ fs }}">
+                                <input type="hidden" name="mode" value="{{ fm }}">
+                                <input type="hidden" name="page" value="{{ cur_page }}">
+                                <input type="hidden" name="per_page" value="{{ per_page }}">
+                                <button type="submit" class="text-xs text-red-600 border border-red-200 hover:bg-red-50 px-2.5 py-1 rounded-lg font-medium transition">
+                                    Hapus
+                                </button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="py-16 text-center bg-white rounded-2xl shadow-sm border border-gray-100">
+        <h3 class="text-lg font-semibold text-gray-700 mb-2">
+            {% if fs or fm %}Tidak ada soal untuk filter ini{% else %}Bank soal masih kosong{% endif %}
+        </h3>
+        <p class="text-gray-500 text-sm mb-6">
+            {% if fs or fm %}
+            Coba hapus filter, atau buat soal baru untuk bagian ujian / bentuk ini.
+            {% else %}
+            Mulai dari Soal Baru, atau impor dari contoh.
+            {% endif %}
+        </p>
+        <div class="flex items-center justify-center gap-3 flex-wrap">
+            {% if fs or fm %}
+            <a href="/expert/question-bank" class="inline-flex items-center gap-2 bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 font-semibold px-6 py-3 rounded-xl transition">
+                Hapus filter
+            </a>
+            {% endif %}
+            <a href="/expert/question-bank/new" class="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-3 rounded-xl transition">
+                + Soal Baru
+            </a>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+{% if shown_total and total_pages > 1 %}
+<nav class="mt-5 flex items-center justify-center gap-1 flex-wrap">
+    {% if cur_page > 1 %}
+    <a href="{{ bank_href(section=fs, mode=fm, page=cur_page-1, per_page=per_page) }}"
+        class="px-3 py-1.5 text-xs font-semibold rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50">Sebelumnya</a>
+    {% endif %}
+    {% for n in range(1, total_pages + 1) %}
+        {% if n == cur_page %}
+        <span class="px-3 py-1.5 text-xs font-semibold rounded-lg bg-gray-900 text-white">{{ n }}</span>
+        {% elif n == 1 or n == total_pages or (n >= cur_page - 2 and n <= cur_page + 2) %}
+        <a href="{{ bank_href(section=fs, mode=fm, page=n, per_page=per_page) }}"
+            class="px-3 py-1.5 text-xs font-semibold rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50">{{ n }}</a>
+        {% elif n == cur_page - 3 or n == cur_page + 3 %}
+        <span class="px-2 text-xs text-gray-400">…</span>
+        {% endif %}
+    {% endfor %}
+    {% if cur_page < total_pages %}
+    <a href="{{ bank_href(section=fs, mode=fm, page=cur_page+1, per_page=per_page) }}"
+        class="px-3 py-1.5 text-xs font-semibold rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50">Berikutnya</a>
+    {% endif %}
+</nav>
+{% endif %}
+
+<style>
+#bank-preview-modal .preview-shell {
+    width: 100%;
+    max-width: 1100px;
+    height: 90vh;
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+#bank-preview-split {
+    flex: 1 1 auto;
+    min-height: 0;
+    display: grid;
+    grid-template-columns: 1fr;
+    overflow: hidden;
+}
+#bank-preview-passage,
+#bank-preview-questions {
+    min-height: 0;
+    overflow-y: scroll;
+    -webkit-overflow-scrolling: touch;
+}
+#bank-preview-questions {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+#bank-preview-passage.preview-has-passage {
+    max-height: 32vh;
+}
+@media (min-width: 1024px) {
+    #bank-preview-split.preview-has-passage {
+        grid-template-columns: 1fr 1fr;
+    }
+    #bank-preview-passage.preview-has-passage {
+        max-height: none;
+    }
+}
+</style>
+<div id="bank-preview-modal" class="hidden fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" onclick="if (event.target === this) closeBankPreview()">
+    <div class="preview-shell bg-gray-100 rounded-2xl shadow-2xl">
+        <div class="bg-gray-900 text-white px-5 py-3 flex items-center justify-between" style="flex-shrink:0;">
+            <div>
+                <p class="text-[11px] uppercase tracking-wide text-gray-400">Tampilan siswa</p>
+                <p id="bank-preview-title" class="font-semibold text-sm">Pratinjau soal</p>
+            </div>
+            <button type="button" onclick="closeBankPreview()"
+                class="text-gray-300 hover:text-white text-sm font-semibold px-2 py-1 rounded-lg">Tutup</button>
+        </div>
+        <div class="px-5 py-3 bg-white border-b border-gray-200 flex items-center justify-between gap-2" style="flex-shrink:0;">
+            <div class="flex gap-2">
+                <button type="button" id="preview-tab-siswa" onclick="setPreviewTab('siswa')"
+                    class="px-3 py-1.5 text-xs font-semibold rounded-lg bg-blue-600 text-white">Soal siswa</button>
+                <button type="button" id="preview-tab-pembahasan" onclick="setPreviewTab('pembahasan')"
+                    class="px-3 py-1.5 text-xs font-semibold rounded-lg bg-gray-100 text-gray-600">Pembahasan</button>
+            </div>
+            <p class="text-[11px] text-gray-400">Scroll bacaan dan soal jika teksnya panjang</p>
+        </div>
+        <div id="bank-preview-split">
+            <div id="bank-preview-passage" class="hidden px-5 py-4 border-b lg:border-b-0 lg:border-r border-gray-200 bg-blue-50"></div>
+            <div id="bank-preview-questions" class="px-5 py-4"></div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function passageChecks() {
+    return Array.from(document.querySelectorAll('.passage-check'));
+}
+function updateSelectedCount() {
+    const n = passageChecks().filter(function(el) { return el.checked; }).length;
+    const label = document.getElementById('selected-count');
+    const btn = document.getElementById('btn-delete-selected');
+    if (label) label.textContent = n + ' dipilih';
+    if (btn) btn.disabled = n === 0;
+    const all = document.getElementById('select-all-passages');
+    const boxes = passageChecks();
+    if (all && boxes.length) {
+        all.checked = boxes.every(function(el) { return el.checked; });
+    }
+}
+function toggleSelectAll(on) {
+    passageChecks().forEach(function(el) { el.checked = on; });
+    updateSelectedCount();
+}
+function confirmDeleteSelected() {
+    const n = passageChecks().filter(function(el) { return el.checked; }).length;
+    if (!n) {
+        alert('Pilih soal yang mau dihapus.');
+        return false;
+    }
+    return confirm('Hapus ' + n + ' item terpilih? Soal ikut terlepas dari paket yang memakainya.');
+}
+document.addEventListener('DOMContentLoaded', updateSelectedCount);
+
+const BANK_PREVIEWS = {{ passages | tojson }};
+const BANK_PREVIEW_MAP = {};
+(BANK_PREVIEWS || []).forEach(function(p) {
+    if (p && p.pkey) BANK_PREVIEW_MAP[p.pkey] = p;
+});
+let previewTab = 'siswa';
+let previewPassage = null;
+let previewFocus = 0;
+
+function previewEsc(value) {
+    return String(value || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+}
+
+function previewHtml(value) {
+    const s = String(value || '').trim();
+    if (!s) return '<p class="text-gray-400 text-sm">Tidak ada teks</p>';
+    if (/<[a-z][\s\S]*>/i.test(s)) return s;
+    return '<p>' + previewEsc(s).replace(/\n/g, '</p><p>') + '</p>';
+}
+
+function optionRow(letter, text, correct, showKey, image, hideLetter) {
+    const isCorrect = showKey && String(correct || '').toUpperCase() === letter;
+    const box = isCorrect
+        ? 'border-green-300 bg-green-50'
+        : 'border-gray-200 bg-white';
+    const mark = isCorrect
+        ? '<span class="ml-auto text-[11px] font-semibold text-green-700 shrink-0">Kunci</span>'
+        : '';
+    const body = /<[a-z][\s\S]*>/i.test(String(text || '')) ? String(text || '') : previewEsc(text);
+    const img = image
+        ? '<img src="' + String(image).replace(/"/g, '&quot;') + '" alt="" class="rounded-lg border border-gray-200 mb-1" style="max-height:112px; max-width:200px; width:auto; height:auto">'
+        : '';
+    return '<div class="flex items-start gap-3 p-3 rounded-xl border ' + box + '">' +
+        (hideLetter ? '' : '<span class="font-bold text-sm text-gray-500 shrink-0">' + letter + '.</span>') +
+        '<div class="min-w-0">' + img + '<span class="text-sm text-gray-700">' + body + '</span></div>' + mark +
+        '</div>';
+}
+
+function renderBankPreview() {
+    const passageBox = document.getElementById('bank-preview-passage');
+    const questionBox = document.getElementById('bank-preview-questions');
+    const split = document.getElementById('bank-preview-split');
+    const titleEl = document.getElementById('bank-preview-title');
+    const p = previewPassage || {};
+    if (titleEl) titleEl.textContent = p.title || 'Pratinjau soal';
+    const showKey = previewTab === 'pembahasan';
+    const questions = p.questions || [];
+    const hasPassage = !!(p.audio_url || p.content_text);
+
+    let passageHtml = '';
+    if (p.audio_url) {
+        passageHtml += '<div class="bg-yellow-50 border border-yellow-200 rounded-2xl p-4 mb-3">' +
+            '<div class="text-sm font-semibold text-yellow-800 mb-2">Audio — ' + previewEsc(p.title || '') + '</div>' +
+            '<audio controls class="w-full" src="' + String(p.audio_url).replace(/"/g, '&quot;') + '"></audio></div>';
+    }
+    if (p.content_text) {
+        passageHtml += '<div class="text-xs font-bold uppercase tracking-wide text-blue-700 mb-2">Bacaan</div>' +
+            '<div class="text-sm text-gray-800 leading-relaxed prose prose-sm max-w-none">' + previewHtml(p.content_text) + '</div>';
+    }
+    if (passageBox) {
+        passageBox.innerHTML = passageHtml;
+        passageBox.classList.toggle('hidden', !hasPassage);
+        passageBox.classList.toggle('preview-has-passage', hasPassage);
+        passageBox.scrollTop = 0;
+    }
+    if (split) {
+        split.classList.toggle('preview-has-passage', hasPassage);
+    }
+
+    let html = '';
+    if (!questions.length) {
+        html = '<p class="text-sm text-gray-400">Belum ada soal di item ini.</p>';
+    }
+    questions.forEach(function(q, idx) {
+        html += '<div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4" id="preview-q-' + idx + '">' +
+            '<div class="flex items-start gap-3 mb-3">' +
+            '<span class="w-7 h-7 bg-blue-600 text-white text-xs font-bold rounded-full flex items-center justify-center shrink-0">' + (idx + 1) + '</span>' +
+            '<div class="text-sm text-gray-800 leading-relaxed prose prose-sm max-w-none">' + previewHtml(q.question_text) + '</div></div>' +
+            '<div class="space-y-2 sm:ml-10">' +
+            (q.answer_text
+                ? optionRow('✍️', '<strong>Jawaban benar:</strong> ' + previewEsc(q.answer_text), '✍️', showKey, '', true)
+                : q.answer_type === 'rf'
+                ? optionRow('A', q.option_a, q.correct_answer, showKey, '', true) +
+                  optionRow('B', q.option_b, q.correct_answer, showKey, '', true)
+                : optionRow('A', q.option_a, q.correct_answer, showKey, q.option_a_image) +
+                  optionRow('B', q.option_b, q.correct_answer, showKey, q.option_b_image) +
+                  optionRow('C', q.option_c, q.correct_answer, showKey, q.option_c_image) +
+                  optionRow('D', q.option_d, q.correct_answer, showKey, q.option_d_image)) +
+            '</div>';
+        if (showKey) {
+            html += '<div class="sm:ml-10 mt-3 rounded-xl border border-amber-200 bg-amber-50 p-3">' +
+                '<p class="text-xs font-bold uppercase tracking-wide text-amber-700 mb-2">Pembahasan</p>' +
+                '<div class="text-sm text-gray-800 leading-relaxed prose prose-sm max-w-none">' + previewHtml(q.explanation) + '</div></div>';
+        }
+        html += '</div>';
+    });
+    if (questionBox) {
+        questionBox.innerHTML = html;
+        questionBox.scrollTop = 0;
+    }
+    const tabS = document.getElementById('preview-tab-siswa');
+    const tabP = document.getElementById('preview-tab-pembahasan');
+    if (tabS && tabP) {
+        if (showKey) {
+            tabP.className = 'px-3 py-1.5 text-xs font-semibold rounded-lg bg-blue-600 text-white';
+            tabS.className = 'px-3 py-1.5 text-xs font-semibold rounded-lg bg-gray-100 text-gray-600';
+        } else {
+            tabS.className = 'px-3 py-1.5 text-xs font-semibold rounded-lg bg-blue-600 text-white';
+            tabP.className = 'px-3 py-1.5 text-xs font-semibold rounded-lg bg-gray-100 text-gray-600';
+        }
+    }
+    if (typeof previewFocus === 'number' && questionBox) {
+        const target = document.getElementById('preview-q-' + previewFocus);
+        if (target) {
+            questionBox.scrollTop = Math.max(0, target.offsetTop - 8);
+        }
+    }
+}
+
+function setPreviewTab(tab) {
+    previewTab = tab === 'pembahasan' ? 'pembahasan' : 'siswa';
+    renderBankPreview();
+}
+
+function openBankPreview(pkey, focusIndex) {
+    previewPassage = BANK_PREVIEW_MAP[pkey] || null;
+    previewFocus = (typeof focusIndex === 'number') ? focusIndex : 0;
+    previewTab = 'siswa';
+    const modal = document.getElementById('bank-preview-modal');
+    if (modal) modal.classList.remove('hidden');
+    renderBankPreview();
+}
+
+function closeBankPreview() {
+    const modal = document.getElementById('bank-preview-modal');
+    if (modal) modal.classList.add('hidden');
+    previewPassage = null;
+}
+
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        closeBankPreview();
+        setBulkView('list');
+    }
+});
+
+function setBulkView(view) {
+    const jsonPanel = document.getElementById('bulk-json-panel');
+    if (jsonPanel) jsonPanel.classList.toggle('hidden', view !== 'json');
+}
+
+const DUMP_COUNTS = {{ dump_counts | tojson }};
+
+function bulkSelection() {
+    return {
+        testType: document.getElementById('bulk-test-type').value,
+        mode    : document.getElementById('bulk-mode').value,
+    };
+}
+
+function bulkSelectionChanged() {
+    const sel       = bulkSelection();
+    const ready     = !!(sel.testType && sel.mode);
+    const available = ready ? ((DUMP_COUNTS[sel.testType] || {})[sel.mode] || 0) : 0;
+    const countEl   = document.getElementById('bulk-dump-count');
+    const availEl   = document.getElementById('bulk-dump-available');
+
+    document.getElementById('btn-bulk-import').disabled = !ready;
+    document.getElementById('btn-bulk-dump').disabled   = !available;
+    countEl.disabled = !available;
+    countEl.max      = available || 1;
+    if (available) {
+        countEl.value = Math.min(Math.max(parseInt(countEl.value, 10) || 1, 1), available);
+    }
+    availEl.textContent = !ready
+        ? 'Pilih bagian ujian & bentuk dulu'
+        : (available ? ('Tersedia ' + available + ' contoh') : 'Belum ada contoh untuk pilihan ini');
+}
+
+function bulkJsonDump() {
+    const sel       = bulkSelection();
+    const available = (DUMP_COUNTS[sel.testType] || {})[sel.mode] || 0;
+    const countEl   = document.getElementById('bulk-dump-count');
+    const limit     = Math.min(Math.max(parseInt(countEl.value, 10) || 1, 1), available);
+    countEl.value   = limit;
+    const url = '/expert/question-bank/dump-templates?test_type=' + encodeURIComponent(sel.testType) +
+        '&mode=' + encodeURIComponent(sel.mode) + '&limit=' + limit;
+    fetch(url)
+        .then(r => r.json())
+        .then(data => {
+            if (data.status !== 'OK') {
+                bulkJsonStatus(data.message || 'Gagal memuat contoh', false);
+                return;
+            }
+            document.getElementById('bulk-json-textarea').value = JSON.stringify(data.items || [], null, 2);
+            bulkJsonStatus((data.items || []).length + ' contoh dimuat', true);
+        })
+        .catch(() => bulkJsonStatus('Koneksi bermasalah, coba lagi', false));
+}
+
+function bulkJsonCopy() {
+    const el = document.getElementById('bulk-json-textarea');
+    el.select();
+    document.execCommand('copy');
+}
+
+function bulkJsonStatus(text, ok) {
+    const el = document.getElementById('bulk-json-status');
+    el.textContent = text || '';
+    el.className = 'text-xs font-medium mt-2 ' + (ok ? 'text-green-600' : 'text-red-600');
+    el.classList.toggle('hidden', !text);
+}
+
+function jsonNormalizeQuotes(raw) {
+    return String(raw || '')
+        .replace(/^\uFEFF/, '')
+        .replace(/[\u201C\u201D\u201E\u2033]/g, '"')
+        .replace(/[\u2018\u2019\u201A\u2032]/g, "'");
+}
+
+function jsonUnescapeLoose(value) {
+    return String(value)
+        .replace(/\\n/g, '\n')
+        .replace(/\\t/g, '\t')
+        .replace(/\\"/g, '"')
+        .replace(/\\\\/g, '\\');
+}
+
+function splitTopLevelObjects(text) {
+    const items = [];
+    let depth = 0;
+    let start = -1;
+    for (let i = 0; i < text.length; i++) {
+        const ch = text[i];
+        if (ch === '{') {
+            if (depth === 0) start = i;
+            depth += 1;
+        } else if (ch === '}') {
+            depth -= 1;
+            if (depth === 0 && start >= 0) {
+                items.push(text.slice(start, i + 1));
+                start = -1;
+            }
+        }
+    }
+    return items;
+}
+
+function braceDepthAt(text, index) {
+    let depth = 0;
+    for (let i = 0; i < index; i++) {
+        if (text[i] === '{') depth += 1;
+        else if (text[i] === '}') depth -= 1;
+    }
+    return depth;
+}
+
+function jsonParseLooseObject(raw) {
+    const text = jsonNormalizeQuotes(raw).trim();
+    const keyRe = /"([a-zA-Z0-9_]+)"\s*:\s*/g;
+    const matches = [];
+    let m;
+    while ((m = keyRe.exec(text)) !== null) {
+        if (braceDepthAt(text, m.index) === 1) {
+            matches.push({ key: m[1], valueStart: m.index + m[0].length, keyStart: m.index });
+        }
+    }
+    if (!matches.length) throw new Error('Tidak ada field JSON yang dikenali');
+    const obj = {};
+    for (let i = 0; i < matches.length; i++) {
+        const end = (i + 1 < matches.length)
+            ? matches[i + 1].keyStart
+            : Math.max(text.lastIndexOf('}'), text.length);
+        let rawVal = text.slice(matches[i].valueStart, end).trim().replace(/,?\s*$/, '');
+        if (rawVal.charAt(0) === '"' && rawVal.charAt(rawVal.length - 1) === '"') {
+            rawVal = jsonUnescapeLoose(rawVal.slice(1, -1));
+        }
+        obj[matches[i].key] = rawVal;
+    }
+    return hydrateQuestions(obj);
+}
+
+function hydrateQuestions(obj) {
+    if (!obj || typeof obj !== 'object') return obj;
+    const raw = obj.questions;
+    if (Array.isArray(raw)) return obj;
+    if (typeof raw !== 'string' || !raw.trim()) return obj;
+    const chunks = splitTopLevelObjects(raw);
+    if (!chunks.length) return obj;
+    obj.questions = chunks.map(function(chunk) {
+        try { return JSON.parse(chunk); }
+        catch (_) { return jsonParseLooseObject(chunk); }
+    });
+    return obj;
+}
+
+function normalizeImportList(data) {
+    if (Array.isArray(data)) return data.filter(function(item) { return item && typeof item === 'object'; });
+    if (data && typeof data === 'object') return [data];
+    return [];
+}
+
+function parseBulkImportJson(raw) {
+    const text = jsonNormalizeQuotes(raw).trim();
+    if (!text) throw new Error('JSON kosong');
+    try {
+        return normalizeImportList(JSON.parse(text));
+    } catch (_) {}
+
+    const chunks = splitTopLevelObjects(text);
+    if (!chunks.length) throw new Error('Tidak ada objek soal');
+    return chunks.map(function(chunk) {
+        try { return hydrateQuestions(JSON.parse(chunk)); }
+        catch (_) { return jsonParseLooseObject(chunk); }
+    });
+}
+
+function bulkJsonImport() {
+    const sel = bulkSelection();
+    if (!sel.testType || !sel.mode) {
+        bulkJsonStatus('Pilih bagian ujian dan bentuk dulu', false);
+        return;
+    }
+    const raw = document.getElementById('bulk-json-textarea').value.trim();
+    if (!raw) {
+        bulkJsonStatus('JSON kosong', false);
+        return;
+    }
+    let items;
+    try {
+        items = parseBulkImportJson(raw);
+    } catch (e) {
+        bulkJsonStatus('JSON tidak valid: ' + e.message, false);
+        return;
+    }
+    if (!items.length) {
+        bulkJsonStatus('Tidak ada soal di JSON', false);
+        return;
+    }
+
+    fetch('/expert/question-bank/import-json', {
+        method : 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body   : JSON.stringify({
+            json         : JSON.stringify(items),
+            test_type    : sel.testType,
+            question_mode: sel.mode,
+        })
+    })
+    .then(r => r.json().then(data => ({ http: r.status, data })))
+    .then(({ data }) => {
+        if (data.status !== 'OK') {
+            bulkJsonStatus(data.message || 'Impor gagal', false);
+            return;
+        }
+        const errNote = (data.errors && data.errors.length)
+            ? ' | ' + data.errors.join(' · ')
+            : '';
+        const hasErrors = !!(data.errors && data.errors.length);
+        bulkJsonStatus(
+            'Tersimpan ' + data.created_questions + ' soal (' + data.created_passages + ' passage)' + errNote,
+            !hasErrors
+        );
+        if (!hasErrors) {
+            setTimeout(() => { window.location.href = '/expert/question-bank'; }, 900);
+        }
+    })
+    .catch(() => bulkJsonStatus('Koneksi bermasalah, coba lagi', false));
+}
+</script>
+{% endblock %}

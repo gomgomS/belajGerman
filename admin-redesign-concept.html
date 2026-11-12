@@ -1,0 +1,643 @@
+<title>Konsep Redesign Admin Panel</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Konsep Redesign Admin Panel — dokumen proposal.
+   Layout: satu kolom maks 1120px + bilah bab menempel di atas.
+   Rasa: rekayasa Jerman — kertas putih dingin, tinta pekat, merah Bauhaus
+   sebagai aksen, biru struktural, kuning sebagai stabilo. */
+:root {
+  --bg: #F2F3F5; --surface: #FFFFFF; --ink: #15181D; --muted: #5A6270;
+  --line: #DCE0E6; --accent: #C2342A; --accent-soft: #FBE9E7;
+  --blue: #2C56B0; --blue-soft: #E8EEF9; --mark: #E9B10E;
+  --ok: #1E7A4A; --warn: #A66A00;
+  --shadow: 0 1px 2px rgba(21,24,29,.06), 0 8px 24px rgba(21,24,29,.07);
+  font-family: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #111318; --surface: #1A1E24; --ink: #E8EAED; --muted: #99A1AC;
+    --line: #2C333C; --accent: #E4574A; --accent-soft: #3A2220;
+    --blue: #7B9BE8; --blue-soft: #20293C; --ok: #4CB98C; --warn: #D1A04A;
+    --shadow: 0 1px 2px rgba(0,0,0,.4), 0 10px 28px rgba(0,0,0,.35);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #111318; --surface: #1A1E24; --ink: #E8EAED; --muted: #99A1AC;
+  --line: #2C333C; --accent: #E4574A; --accent-soft: #3A2220;
+  --blue: #7B9BE8; --blue-soft: #20293C; --ok: #4CB98C; --warn: #D1A04A;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--bg); color: var(--ink);
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  font-size: 15px; line-height: 1.62;
+}
+body::before {
+  content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px);
+  z-index: 10; background: var(--bg);
+}
+h1, h2, h3, h4 { font-family: "Barlow", "Arial Narrow", sans-serif; text-wrap: balance; margin: 0; }
+p { margin: 0 0 .9em; }
+a { color: var(--blue); text-decoration: none; }
+a:hover { text-decoration: underline; }
+.topbar {
+  position: sticky; top: env(safe-area-inset-top, 0px); z-index: 9;
+  background: var(--bg); border-bottom: 1px solid var(--line);
+  display: flex; align-items: center; gap: 14px;
+  padding: 10px 0; margin: 0 0 8px;
+}
+.brandmark { display: flex; align-items: center; gap: 9px; font-family: "Barlow"; font-weight: 700; letter-spacing: .02em; white-space: nowrap; }
+.brandmark .sq { width: 20px; height: 20px; background: var(--accent); display: inline-grid; grid-template-columns: 1fr 1fr; gap: 2px; padding: 3px; }
+.brandmark .sq i { background: var(--bg); display: block; }
+.topnav { display: flex; gap: 2px; overflow-x: auto; scrollbar-width: none; min-width: 0; }
+.topnav::-webkit-scrollbar { display: none; }
+.topnav a { color: var(--muted); font-size: 12.5px; font-weight: 500; padding: 4px 9px; border-radius: 999px; white-space: nowrap; }
+.topnav a:hover { color: var(--ink); background: var(--surface); text-decoration: none; }
+.doc { max-width: 1120px; margin-inline: auto; }
+.hero { padding: 64px 0 36px; border-bottom: 2px solid var(--ink); }
+.eyebrow { font-family: "IBM Plex Mono", monospace; font-size: 11.5px; letter-spacing: .14em; color: var(--accent); font-weight: 500; margin-bottom: 14px; }
+.hero h1 { font-size: clamp(34px, 6vw, 58px); line-height: 1.02; letter-spacing: -.01em; font-weight: 700; max-width: 15ch; }
+.hero .lead { max-width: 68ch; font-size: 16.5px; margin-top: 20px; color: var(--ink); }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 22px; }
+.chip { font-size: 12px; font-weight: 500; color: var(--muted); border: 1px solid var(--line); background: var(--surface); border-radius: 999px; padding: 5px 12px; }
+.toc { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 10px; padding: 28px 0; }
+.toc a { display: block; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; color: var(--ink); }
+.toc a:hover { border-color: var(--accent); text-decoration: none; }
+.toc .no { font-family: "IBM Plex Mono", monospace; font-size: 11px; color: var(--accent); font-weight: 500; }
+.toc .t { font-family: "Barlow"; font-weight: 600; font-size: 15.5px; display: block; margin-top: 2px; }
+section.ch { padding: 44px 0 12px; border-top: 1px solid var(--line); }
+.ch-no { font-family: "IBM Plex Mono", monospace; font-size: 12px; letter-spacing: .12em; color: var(--accent); font-weight: 500; }
+section.ch h2 { font-size: clamp(24px, 3.4vw, 34px); margin: 6px 0 14px; letter-spacing: -.005em; }
+section.ch .intro { max-width: 70ch; color: var(--muted); }
+.cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 12px; margin: 18px 0 26px; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 18px; box-shadow: var(--shadow); }
+.card h3 { font-size: 17px; margin-bottom: 6px; }
+.card p { font-size: 13.8px; color: var(--muted); margin-bottom: 10px; }
+.evidence { font-family: "IBM Plex Mono", monospace; font-size: 11.3px; color: var(--muted); background: var(--bg); border-left: 3px solid var(--line); padding: 7px 10px; border-radius: 0 6px 6px 0; overflow-x: auto; white-space: pre-wrap; }
+.tag { display: inline-block; font-family: "IBM Plex Mono", monospace; font-size: 10.5px; letter-spacing: .06em; font-weight: 500; border-radius: 4px; padding: 2px 7px; margin-bottom: 8px; }
+.tag.struktural { color: var(--accent); background: var(--accent-soft); }
+.tag.kosmetik { color: var(--blue); background: var(--blue-soft); }
+figure.diagram { margin: 22px 0; }
+figure.diagram svg { width: 100%; height: auto; display: block; color: var(--ink); }
+figure.diagram figcaption { font-size: 12.5px; color: var(--muted); margin-top: 8px; max-width: 70ch; }
+.tablewrap { overflow-x: auto; margin: 16px 0 26px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); }
+table { border-collapse: collapse; width: 100%; font-size: 13.5px; min-width: 640px; }
+th { font-family: "Barlow"; font-weight: 600; text-align: left; font-size: 13px; letter-spacing: .02em; padding: 11px 14px; border-bottom: 2px solid var(--ink); background: var(--surface); }
+td { padding: 10px 14px; border-bottom: 1px solid var(--line); vertical-align: top; }
+tr:last-child td { border-bottom: none; }
+td .old { color: var(--muted); }
+td .new { color: var(--ink); font-weight: 500; }
+.mono { font-family: "IBM Plex Mono", monospace; font-size: 12px; }
+.callout { border-left: 4px solid var(--accent); background: var(--surface); border-radius: 0 12px 12px 0; padding: 16px 18px; margin: 18px 0 26px; box-shadow: var(--shadow); }
+.callout h4 { font-size: 15.5px; margin-bottom: 6px; }
+.callout p { font-size: 13.8px; color: var(--muted); margin: 0; }
+.mark { background: linear-gradient(transparent 45%, var(--mark) 45%, var(--mark) 88%, transparent 88%); padding: 0 1px; }
+.wf { border: 1px solid var(--line); border-radius: 12px; overflow: hidden; background: var(--surface); box-shadow: var(--shadow); margin: 18px 0; }
+.wf-bar { display: flex; align-items: center; gap: 8px; background: var(--bg); border-bottom: 1px solid var(--line); padding: 8px 12px; }
+.wf-bar .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--line); }
+.wf-bar .url { font-family: "IBM Plex Mono", monospace; font-size: 11px; color: var(--muted); background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 3px 10px; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.wf-tag { margin-left: auto; font-family: "IBM Plex Mono", monospace; font-size: 10px; letter-spacing: .1em; color: var(--surface); background: var(--accent); border-radius: 4px; padding: 2px 8px; white-space: nowrap; }
+.wf-body { padding: 16px; }
+.compare { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 18px 0; }
+.compare .lbl { font-family: "IBM Plex Mono", monospace; font-size: 10.5px; letter-spacing: .12em; font-weight: 500; margin-bottom: 8px; }
+.compare .lbl.now { color: var(--muted); }
+.compare .lbl.next { color: var(--accent); }
+.side { background: #14171C; color: #D7DBE0; border-radius: 10px; padding: 14px 12px; font-size: 12.5px; }
+.side .logo { display: flex; align-items: center; gap: 8px; font-family: "Barlow"; font-weight: 700; font-size: 15px; color: #fff; padding: 4px 8px 14px; border-bottom: 1px solid #262B33; margin-bottom: 12px; }
+.side .logo .sq { width: 16px; height: 16px; background: var(--accent); display: inline-grid; grid-template-columns: 1fr 1fr; gap: 2px; padding: 2.5px; }
+.side .logo .sq i { background: #14171C; display: block; }
+.side-group { font-family: "IBM Plex Mono", monospace; font-size: 9.5px; letter-spacing: .14em; color: #77808C; padding: 10px 8px 5px; }
+.side-item { display: flex; align-items: center; gap: 8px; padding: 6.5px 8px; border-radius: 7px; color: #C6CBD2; }
+.side-item .nm { font-weight: 500; }
+.side-item .sub { font-size: 10.5px; color: #77808C; }
+.side-item.on { background: #232933; color: #fff; }
+.badge { margin-left: auto; background: var(--accent); color: #fff; font-family: "IBM Plex Mono", monospace; font-size: 10px; font-weight: 500; border-radius: 999px; padding: 1px 7px; }
+.ghost { margin-left: auto; color: #77808C; font-family: "IBM Plex Mono", monospace; font-size: 10px; }
+.steps { margin: 20px 0; }
+.step { display: grid; grid-template-columns: 44px 1fr; gap: 14px; margin-bottom: 18px; }
+.step .n { font-family: "Barlow"; font-weight: 700; font-size: 21px; width: 40px; height: 40px; border: 2px solid var(--ink); border-radius: 50%; display: grid; place-items: center; background: var(--surface); }
+.step h4 { font-size: 16px; margin: 8px 0 4px; }
+.step p { font-size: 13.5px; color: var(--muted); max-width: 72ch; }
+.field { border: 1px solid var(--line); border-radius: 8px; background: var(--bg); padding: 7px 10px; font-size: 12.5px; color: var(--ink); }
+.field .k { font-size: 10px; letter-spacing: .08em; font-family: "IBM Plex Mono", monospace; color: var(--muted); display: block; margin-bottom: 2px; }
+.field .v { font-weight: 500; }
+.row { display: flex; flex-wrap: wrap; gap: 8px; }
+.btn { display: inline-block; font-size: 12px; font-weight: 600; border-radius: 7px; padding: 6px 12px; }
+.btn.prime { background: var(--accent); color: #fff; }
+.btn.sec { border: 1px solid var(--line); color: var(--ink); background: var(--surface); }
+.btn.ghosty { color: var(--muted); }
+.pill { display: inline-block; font-family: "IBM Plex Mono", monospace; font-size: 10.5px; font-weight: 500; border-radius: 999px; padding: 2px 9px; }
+.pill.ok { color: var(--ok); background: rgba(30,122,74,.12); }
+.pill.warn { color: var(--warn); background: rgba(166,106,0,.12); }
+.pill.acc { color: var(--accent); background: var(--accent-soft); }
+.pill.blu { color: var(--blue); background: var(--blue-soft); }
+.note { font-size: 12.5px; color: var(--muted); }
+ul.tight { margin: 8px 0 14px; padding-left: 20px; }
+ul.tight li { margin-bottom: 5px; font-size: 13.8px; }
+footer { border-top: 2px solid var(--ink); margin-top: 48px; padding: 22px 0 40px; font-size: 12.5px; color: var(--muted); }
+@media (max-width: 780px) {
+  .compare { grid-template-columns: 1fr; }
+  .step { grid-template-columns: 1fr; gap: 8px; }
+  .hero { padding-top: 40px; }
+}
+</style>
+
+<div class="topbar">
+  <span class="brandmark"><span class="sq"><i></i><i></i><i></i><i></i></span>Konsep Redesign Admin Panel</span>
+  <nav class="topnav">
+    <a href="#diagnosa">Diagnosa</a><a href="#istilah">Istilah</a><a href="#arsitektur">Struktur</a><a href="#buat-soal">Buat Soal</a><a href="#paket-ujian">Paket Ujian</a><a href="#skor">Skor</a><a href="#microcopy">Microcopy</a><a href="#fitur">Fitur</a><a href="#roadmap">Roadmap</a><a href="#keputusan">Keputusan</a>
+  </nav>
+</div>
+
+<div class="doc">
+
+<header class="hero">
+  <p class="eyebrow">PROPOSAL DESAIN · V1.0 · NOVEMBER 2026</p>
+  <h1>Konsep Redesign Admin Panel</h1>
+  <p class="lead">Platform ujian bahasa Jerman ini kuat di mesinnya — bank soal, perakit paket, sesi ujian berjeda waktu, sampai umpan balik AI. Tapi panelnya bicara dalam bahasa yang salah: branding ujian bahasa Inggris, istilah teknis yang diperuntukkan pengembang, dan alur kerja yang memaksa guru berpikir seperti basis data. Dokumen ini mengusulkan desain ulang menyeluruh — dari taksonomi istilah, arsitektur informasi, alur buat soal dan rakit paket, sampai kamus microcopy Bahasa Indonesia — berdasarkan audit kode pada 11 November 2026.</p>
+  <div class="chips">
+    <span class="chip">Untuk admin &amp; guru bahasa Jerman</span>
+    <span class="chip">Bahasa Indonesia + istilah ujian Jerman</span>
+    <span class="chip">Basis audit: 7 modul · 30+ template</span>
+  </div>
+</header>
+
+<nav class="toc">
+  <a href="#diagnosa"><span class="no">01</span><span class="t">Diagnosa</span></a>
+  <a href="#istilah"><span class="no">02</span><span class="t">Satu Bahasa: Istilah</span></a>
+  <a href="#arsitektur"><span class="no">03</span><span class="t">Arsitektur Informasi</span></a>
+  <a href="#buat-soal"><span class="no">04</span><span class="t">Alur: Membuat Soal</span></a>
+  <a href="#paket-ujian"><span class="no">05</span><span class="t">Alur: Paket Ujian</span></a>
+  <a href="#skor"><span class="no">06</span><span class="t">Pembayaran, Hasil &amp; Skor</span></a>
+  <a href="#microcopy"><span class="no">07</span><span class="t">Kamus Microcopy</span></a>
+  <a href="#fitur"><span class="no">08</span><span class="t">Fitur Cerdas</span></a>
+  <a href="#roadmap"><span class="no">09</span><span class="t">Roadmap Tiga Fase</span></a>
+  <a href="#keputusan"><span class="no">10</span><span class="t">Keputusan untuk Anda</span></a>
+</nav>
+
+<section class="ch" id="diagnosa">
+  <p class="ch-no">BAB 01</p>
+  <h2>Diagnosa: enam akar masalah</h2>
+  <p class="intro">Semua keluhan “terlalu teknis, membingungkan, lambat” bermuara pada enam hal ini. Empat bersifat struktural (perlu ubah alur/data), dua kosmetik (perbaikan cepat di template).</p>
+  <div class="cards">
+    <div class="card"><span class="tag kosmetik">KOSMETIK</span><h3>Identitas produk menyimpang</h3><p>Seluruh shell masih ber-branding ujian bahasa Inggris di atas produk ujian bahasa Jerman — dari judul tab sampai halaman landing.</p><div class="evidence">base_admin.html → &lt;title&gt;… — English Test Platform&lt;/title&gt; · sidebar logo "EnglishTest" · about.html "Mengenal EnglishTest?"</div></div>
+    <div class="card"><span class="tag struktural">STRUKTURAL</span><h3>Taksonomi istilah bertumpuk</h3><p>Lima kata untuk hal yang serumpun: Nama Tes, Level Tes, Tipe Tes, Seksi, Bagian/Teil — ditambah “jenis” dan “dump” dari sisi data. Guru harus menebak mana yang mana.</p><div class="evidence">halaman level masih bernama settings_tes.html · pesan error level: "Kode tipe tes wajib diisi" · menu lama: "Tipe Tes &amp; Seksi"</div></div>
+    <div class="card"><span class="tag struktural">STRUKTURAL</span><h3>Alur kerja gaya pengembang</h3><p>Untuk mengimpor soal, guru diminta menempel JSON mentah; “contoh soal” berbentuk penyunting JSON 16 baris di Pengaturan, bukan galeri yang bisa dilihat.</p><div class="evidence">questions_list.html → panel "Impor JSON" + tombol "↑ Dump" · settings_type_test_dumps.html → textarea JSON mentah per jenis</div></div>
+    <div class="card"><span class="tag struktural">STRUKTURAL</span><h3>Sisa TOEFL di mesin skor</h3><p>Hasil ujian Jerman diskalakan ke 310–677 (skala TOEFL ITP) dan menyimpan field listening/structure/reading. Peserta ujian Goethe menerima skor berformat ujian yang tidak mereka ikuti.</p><div class="evidence">exam_engine_proc.py → _convert_to_toefl_itp (310–677) · koleksi db_toefl_* · stdlib/toefl_scoring.py masih diimpor</div></div>
+    <div class="card"><span class="tag kosmetik">KOSMETIK</span><h3>Microcopy kaku &amp; formal</h3><p>“Cetakan paket baru”, “rakit tes dari bank”, “Ringkasan Expert” — bahasa dokumen teknis, bukan bahasa guru. Sub-label menu 10px nyaris tak terbaca.</p><div class="evidence">sidebar sub "buat &amp; simpan soal" (10px, abu) · tombol "+ Tipe Tes" untuk halaman ber-judul "Level Tes"</div></div>
+    <div class="card"><span class="tag struktural">STRUKTURAL</span><h3>Navigasi dalam &amp; state kosong lemah</h3><p>Membuat satu soal butuh 4+ klik melewati dua halaman pemilih. State kosong hanya satu baris abu tanpa panduan langkah berikutnya.</p><div class="evidence">Bank Soal → + Soal Baru → pilih tipe → pilih jenis → editor · "Bank soal masih kosong" (tanpa tombol aksi)</div></div>
+  </div>
+</section>
+<section class="ch" id="istilah">
+  <p class="ch-no">BAB 02</p>
+  <h2>Satu bahasa: taksonomi &amp; istilah</h2>
+  <p class="intro">Sebelum menggambar layar, samakan dulu kata-katanya. Seluruh sistem mengikuti satu hierarki empat tingkat yang mencerminkan cara guru berpikir tentang ujian — bukan cara basis data menyimpannya.</p>
+
+  <figure class="diagram">
+    <svg viewBox="0 0 960 330" role="img" aria-label="Hierarki taksonomi empat tingkat: Nama Tes, lalu Level, lalu Bagian Ujian, lalu Bentuk Soal, dengan contoh isi tiap tingkat">
+      <defs><marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="currentColor"/></marker></defs>
+      <g font-family="Barlow, sans-serif">
+        <rect x="20" y="16" width="200" height="48" rx="9" fill="none" stroke="currentColor" stroke-width="1.6"/>
+        <text x="120" y="36" text-anchor="middle" font-size="14.5" font-weight="700" fill="currentColor">NAMA TES</text>
+        <text x="120" y="52" text-anchor="middle" font-size="10.5" fill="currentColor" opacity=".62">merek ujian</text>
+        <rect x="260" y="16" width="200" height="48" rx="9" fill="none" stroke="currentColor" stroke-width="1.6"/>
+        <text x="360" y="36" text-anchor="middle" font-size="14.5" font-weight="700" fill="currentColor">LEVEL</text>
+        <text x="360" y="52" text-anchor="middle" font-size="10.5" fill="currentColor" opacity=".62">tingkat CEFR</text>
+        <rect x="500" y="16" width="200" height="48" rx="9" fill="none" stroke="currentColor" stroke-width="1.6"/>
+        <text x="600" y="36" text-anchor="middle" font-size="14.5" font-weight="700" fill="currentColor">BAGIAN UJIAN</text>
+        <text x="600" y="52" text-anchor="middle" font-size="10.5" fill="currentColor" opacity=".62">kompetensi diuji</text>
+        <rect x="740" y="16" width="200" height="48" rx="9" fill="none" stroke="currentColor" stroke-width="1.6"/>
+        <text x="840" y="36" text-anchor="middle" font-size="14.5" font-weight="700" fill="currentColor">BENTUK SOAL</text>
+        <text x="840" y="52" text-anchor="middle" font-size="10.5" fill="currentColor" opacity=".62">format pertanyaan</text>
+        <line x1="222" y1="40" x2="254" y2="40" stroke="currentColor" stroke-width="1.6" marker-end="url(#ar)"/>
+        <line x1="462" y1="40" x2="494" y2="40" stroke="currentColor" stroke-width="1.6" marker-end="url(#ar)"/>
+        <line x1="702" y1="40" x2="734" y2="40" stroke="currentColor" stroke-width="1.6" marker-end="url(#ar)"/>
+      </g>
+      <g font-family="IBM Plex Sans, sans-serif" font-size="12">
+        <g>
+          <rect x="20" y="92" width="200" height="30" rx="6" fill="var(--surface)" stroke="var(--line)"/><text x="120" y="111" text-anchor="middle" fill="currentColor">Goethe-Zertifikat</text>
+          <rect x="20" y="132" width="200" height="30" rx="6" fill="var(--surface)" stroke="var(--line)"/><text x="120" y="151" text-anchor="middle" fill="currentColor">telc Deutsch</text>
+          <rect x="20" y="172" width="200" height="30" rx="6" fill="var(--surface)" stroke="var(--line)"/><text x="120" y="191" text-anchor="middle" fill="currentColor">TestDaF</text>
+        </g>
+        <g>
+          <rect x="260" y="92" width="200" height="30" rx="6" fill="var(--surface)" stroke="var(--line)"/><text x="360" y="111" text-anchor="middle" fill="currentColor">A1 · Start Deutsch 1</text>
+          <rect x="260" y="132" width="200" height="30" rx="6" fill="var(--surface)" stroke="var(--line)"/><text x="360" y="151" text-anchor="middle" fill="currentColor">A2 · Start Deutsch 2</text>
+          <rect x="260" y="172" width="200" height="30" rx="6" fill="var(--surface)" stroke="var(--line)"/><text x="360" y="191" text-anchor="middle" fill="currentColor">B1 · Zertifikat</text>
+          <rect x="260" y="212" width="200" height="30" rx="6" fill="var(--surface)" stroke="var(--line)"/><text x="360" y="231" text-anchor="middle" fill="currentColor">B2 · Goethe-Zertifikat</text>
+        </g>
+        <g>
+          <rect x="500" y="92" width="200" height="30" rx="6" fill="var(--surface)" stroke="var(--line)"/><text x="600" y="111" text-anchor="middle" fill="currentColor">Hören</text>
+          <rect x="500" y="132" width="200" height="30" rx="6" fill="var(--surface)" stroke="var(--line)"/><text x="600" y="151" text-anchor="middle" fill="currentColor">Lesen</text>
+          <rect x="500" y="172" width="200" height="30" rx="6" fill="var(--surface)" stroke="var(--line)"/><text x="600" y="191" text-anchor="middle" fill="currentColor">Schreiben</text>
+          <rect x="500" y="212" width="200" height="30" rx="6" fill="var(--surface)" stroke="var(--line)"/><text x="600" y="231" text-anchor="middle" fill="currentColor">Sprechen</text>
+          <rect x="500" y="252" width="200" height="30" rx="6" fill="var(--surface)" stroke="var(--accent)" stroke-width="1.4"/><text x="600" y="271" text-anchor="middle" fill="currentColor">Sprachbausteine *</text>
+        </g>
+        <g>
+          <rect x="740" y="92" width="200" height="30" rx="6" fill="var(--surface)" stroke="var(--line)"/><text x="840" y="111" text-anchor="middle" fill="currentColor">Pilihan Ganda (mandiri)</text>
+          <rect x="740" y="132" width="200" height="30" rx="6" fill="var(--surface)" stroke="var(--line)"/><text x="840" y="151" text-anchor="middle" fill="currentColor">Kelompok Soal (teks/audio)</text>
+          <rect x="740" y="172" width="200" height="30" rx="6" fill="var(--surface)" stroke="var(--line)"/><text x="840" y="191" text-anchor="middle" fill="currentColor">Richtig / Falsch</text>
+          <rect x="740" y="212" width="200" height="30" rx="6" fill="var(--surface)" stroke="var(--line)"/><text x="840" y="231" text-anchor="middle" fill="currentColor">Lückentext (teks rumpang)</text>
+          <rect x="740" y="252" width="200" height="30" rx="6" fill="var(--surface)" stroke="var(--accent)" stroke-width="1.4"/><text x="840" y="271" text-anchor="middle" fill="currentColor">Menjodohkan (Zuordnung) *</text>
+        </g>
+      </g>
+      <text x="20" y="314" font-family="IBM Plex Mono, monospace" font-size="11" fill="currentColor" opacity=".6">* usulan tambahan — belum ada di sistem saat ini (Sprachbausteine khas telc; menjodohkan dipakai di Goethe A1–B1)</text>
+    </svg>
+    <figcaption>Empat tingkat taksonomi. Merah = butir yang diusulkan ditambahkan. “Bentuk Soal” menggantikan “jenis”; audio bukan bentuk tersendiri — ia melekat pada soal atau kelompok soal (sistem sudah benar soal ini).</figcaption>
+  </figure>
+
+  <div class="tablewrap"><table>
+    <thead><tr><th style="width:26%">Istilah sekarang</th><th style="width:24%">Usulan</th><th>Alasan</th></tr></thead>
+    <tbody>
+      <tr><td class="old">Tipe Tes (untuk Hören/Lesen/…)</td><td class="new">Bagian Ujian</td><td>Hören dan kawan-kawan adalah bagian dari satu ujian; “tipe tes” salah tingkat dan bentrok dengan “Level”.</td></tr>
+      <tr><td class="old">Seksi</td><td class="new">Bagian Ujian</td><td>Satu kata konsisten di UI, template, dan pesan error; “seksi” ambigu dan canggung dibaca.</td></tr>
+      <tr><td class="old">Bagian / Teil (anak seksi)</td><td class="new">Sub-bagian · Teil 1, Teil 2</td><td>“Teil” dipertahankan karena muncul di naskah ujian asli — guru dan peserta mengenalnya.</td></tr>
+      <tr><td class="old">Level Tes</td><td class="new">Level</td><td>Cukup dan bersih; contoh nilai tetap “Goethe-Zertifikat A1 (Start Deutsch 1)”.</td></tr>
+      <tr><td class="old">Jenis soal</td><td class="new">Bentuk Soal</td><td>“Bentuk” menggambarkan format; “jenis” sudah terpakai untuk banyak hal lain.</td></tr>
+      <tr><td class="old">Dump / Dump JSON</td><td class="new">Contoh Soal</td><td>Guru memikirkan “contoh”, bukan “dump”. JSON hanyalah cara penyimpanan — sembunyikan.</td></tr>
+      <tr><td class="old">Expert (label peran)</td><td class="new">Guru</td><td>Menamai orangnya. “Expert” tetap sebagai nilai role di basis data, hanya label UI yang berubah.</td></tr>
+      <tr><td class="old">Impor JSON</td><td class="new">Impor Soal</td><td>Menamai hasil, bukan format. JSON tetap diterima di balik layar; templat .csv/.xlsx ditambah (Bab 08).</td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="callout">
+    <h4>Istilah Jerman yang dipertahankan — dengan arti di kemunculan pertama</h4>
+    <p><span class="mono">Hören</span> (mendengar) · <span class="mono">Lesen</span> (membaca) · <span class="mono">Schreiben</span> (menulis) · <span class="mono">Sprechen</span> (berbicara) · <span class="mono">Sprachbausteine</span> (struktur bahasa, khas telc) · <span class="mono">Lückentext</span> (teks rumpang) · <span class="mono">Richtig/Falsch</span> (benar/salah) · <span class="mono">Teil</span> (bagian kecil ujian) · <span class="mono">Bestehen</span> (lulus). Ini bahasa kerja guru dan peserta mereka — mengalihbahasakannya justru membingungkan saat menyiapkan ujian resmi.</p>
+  </div>
+</section>
+
+<section class="ch" id="arsitektur">
+  <p class="ch-no">BAB 03</p>
+  <h2>Arsitektur informasi</h2>
+  <p class="intro">Menu dikelompokkan menurut pekerjaan harian — bukan menurut modul di kode. Pekerjaan inti (soal, paket, hasil) naik ke atas; pengaturan yang jarang disentuh turun dan diringkas.</p>
+
+  <div class="compare">
+    <div>
+      <p class="lbl now">SEKARANG — 7 ITEM, CAMPUR PERAN</p>
+      <div class="side">
+        <div class="logo"><span class="sq"><i></i><i></i><i></i><i></i></span>EnglishTest</div>
+        <div class="side-group">ADMIN</div>
+        <div class="side-item"><span class="nm">Dashboard</span></div>
+        <div class="side-item"><span class="nm">Manajemen Pengguna</span></div>
+        <div class="side-item"><span class="nm">Konfirmasi Pembayaran</span></div>
+        <div class="side-item"><span class="nm">Pengaturan</span></div>
+        <div class="side-group">KONTEN</div>
+        <div class="side-item"><span class="nm">Ringkasan Expert</span></div>
+        <div class="side-item"><span class="nm">Bank Soal<br><span class="sub">buat &amp; simpan soal (10px)</span></span></div>
+        <div class="side-item"><span class="nm">Paket Ujian<br><span class="sub">rakit tes dari bank (10px)</span></span></div>
+      </div>
+    </div>
+    <div>
+      <p class="lbl next">USULAN — 8 ITEM, BERDASARKAN PEKERJAAN</p>
+      <div class="side">
+        <div class="logo"><span class="sq"><i></i><i></i><i></i><i></i></span>[Nama Produk]†</div>
+        <div class="side-group">PEKERJAAN</div>
+        <div class="side-item on"><span class="nm">Bank Soal</span><span class="ghost">1.240</span></div>
+        <div class="side-item"><span class="nm">Paket Ujian</span><span class="ghost">18</span></div>
+        <div class="side-item"><span class="nm">Hasil &amp; Analisis</span></div>
+        <div class="side-group">ORANG</div>
+        <div class="side-item"><span class="nm">Pengguna</span></div>
+        <div class="side-item"><span class="nm">Pembayaran</span><span class="badge">3</span></div>
+        <div class="side-group">PENGATURAN</div>
+        <div class="side-item"><span class="nm">Data Ujian</span></div>
+        <div class="side-item"><span class="nm">Paket Langganan</span></div>
+      </div>
+    </div>
+  </div>
+  <p class="note">† Nama produk final adalah Keputusan #4 (Bab 10). Angka pada menu adalah jumlah item — dibaca sekilas tanpa membuka halaman.</p>
+
+  <ul class="tight">
+    <li><strong>Dasbor hilang dari menu.</strong> Logo/klik nama produk kembali ke Dasbor — satu tempat yang semua orang tahu. Halaman “Ringkasan Guru” melebur ke Dasbor yang menyesuaikan peran.</li>
+    <li><strong>Badge “3” di Pembayaran</strong> = order menunggu konfirmasi. Hari ini admin harus membuka halaman untuk mengetahui antreannya.</li>
+    <li><strong>Sub-label 10px dihapus.</strong> Nama menu sudah menjelaskan; bantuan kontekstual pindah ke dalam halaman.</li>
+    <li><strong>Hasil &amp; Analisis</strong> naik jadi menu kelas satu: hasil peserta, umpan balik AI, dan statistik kesulitan soal (Bab 06 &amp; 08) — data yang hari ini terkubur di riwayat peserta.</li>
+  </ul>
+
+  <div class="callout">
+    <h4>Tampilan per peran</h4>
+    <p><strong>Guru</strong> hanya melihat grup Pekerjaan + Hasil — tanpa grup Orang dan Pengaturan. <strong>Admin</strong> melihat semuanya. <strong>Peserta</strong> tetap tidak memakai shell ini (sudah benar hari ini: katalog, riwayat, dan sesi ujian punya halaman sendiri). Pola privilege <span class="mono">@middleware_privilege(roles=[...])</span> yang ada sudah cukup — tidak perlu ubah backend.</p>
+  </div>
+</section>
+<section class="ch" id="buat-soal">
+  <p class="ch-no">BAB 04</p>
+  <h2>Alur 1: membuat soal</h2>
+  <p class="intro">Hari ini: Bank Soal → + Soal Baru → halaman pilih tipe → halaman pilih jenis → editor — dua halaman perantara untuk keputusan yang bisa diambil dalam satu pandangan. Usulan: satu wizard empat langkah di satu halaman, dengan pratinjau sebagai peserta sebelum disimpan.</p>
+
+  <figure class="diagram">
+    <svg viewBox="0 0 960 175" role="img" aria-label="Wizard empat langkah: konteks soal, bentuk soal, tulis soal, pratinjau, dengan loop simpan dan buat lagi kembali ke langkah tulis">
+      <defs><marker id="ar2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="currentColor"/></marker></defs>
+      <g font-family="Barlow, sans-serif">
+        <rect x="16" y="20" width="200" height="58" rx="9" fill="none" stroke="currentColor" stroke-width="1.6"/>
+        <text x="116" y="44" text-anchor="middle" font-size="14" font-weight="700" fill="currentColor">1 · Konteks Soal</text>
+        <text x="116" y="62" text-anchor="middle" font-size="10.5" fill="currentColor" opacity=".62">nama tes → level → bagian</text>
+        <rect x="264" y="20" width="200" height="58" rx="9" fill="none" stroke="currentColor" stroke-width="1.6"/>
+        <text x="364" y="44" text-anchor="middle" font-size="14" font-weight="700" fill="currentColor">2 · Bentuk Soal</text>
+        <text x="364" y="62" text-anchor="middle" font-size="10.5" fill="currentColor" opacity=".62">5 kartu + mini pratinjau</text>
+        <rect x="512" y="20" width="200" height="58" rx="9" fill="none" stroke="currentColor" stroke-width="1.6"/>
+        <text x="612" y="44" text-anchor="middle" font-size="14" font-weight="700" fill="currentColor">3 · Tulis Soal</text>
+        <text x="612" y="62" text-anchor="middle" font-size="10.5" fill="currentColor" opacity=".62">editor + simpan otomatis</text>
+        <rect x="760" y="20" width="184" height="58" rx="9" fill="none" stroke="var(--accent)" stroke-width="1.8"/>
+        <text x="852" y="44" text-anchor="middle" font-size="14" font-weight="700" fill="currentColor">4 · Pratinjau</text>
+        <text x="852" y="62" text-anchor="middle" font-size="10.5" fill="currentColor" opacity=".62">sebagai peserta + periksa</text>
+        <line x1="218" y1="49" x2="260" y2="49" stroke="currentColor" stroke-width="1.6" marker-end="url(#ar2)"/>
+        <line x1="466" y1="49" x2="508" y2="49" stroke="currentColor" stroke-width="1.6" marker-end="url(#ar2)"/>
+        <line x1="714" y1="49" x2="756" y2="49" stroke="currentColor" stroke-width="1.6" marker-end="url(#ar2)"/>
+        <path d="M 852 80 L 852 130 L 612 130 L 612 84" fill="none" stroke="currentColor" stroke-width="1.3" stroke-dasharray="5 4" marker-end="url(#ar2)"/>
+        <text x="732" y="124" text-anchor="middle" font-size="11" font-family="IBM Plex Mono, monospace" fill="currentColor" opacity=".66">“Simpan &amp; buat lagi”</text>
+      </g>
+    </svg>
+    <figcaption>Wizard buat soal. Kotak merah = langkah yang tidak ada hari ini: pratinjau dari sudut pandang peserta. Garis putus-putus = loop untuk guru yang mengetik banyak soal sekaligus.</figcaption>
+  </figure>
+
+  <div class="steps">
+    <div class="step"><div class="n">1</div><div>
+      <h4>Konteks soal — tiga pilihan berjenjang</h4>
+      <p>Nama Tes → Level → Bagian Ujian, bertingkat otomatis (memilih “Goethe-Zertifikat” menyaring Level ke A1–C2; memilih “B1” menyaring bagian ke Hören/Lesen/Schreiben/Sprechen). Sistem mengingat pilihan terakhir tiap guru — kebanyakan soal dibuat dalam rentang konteks yang sama.</p>
+      <div class="row">
+        <div class="field" style="flex:1;min-width:150px"><span class="k">NAMA TES</span><span class="v">Goethe-Zertifikat</span></div>
+        <div class="field" style="flex:1;min-width:150px"><span class="k">LEVEL</span><span class="v">B1 · Zertifikat</span></div>
+        <div class="field" style="flex:1;min-width:150px"><span class="k">BAGIAN UJIAN</span><span class="v">Lesen</span></div>
+      </div>
+    </div></div>
+
+    <div class="step"><div class="n">2</div><div>
+      <h4>Bentuk soal — kartu dengan mini pratinjau</h4>
+      <p>Lima kartu menggantikan dua halaman pemilih. Tiap kartu menampilkan gambaran bentuknya (sketsa opsi, garis rumpang, panah menjodohkan) sehingga guru memilih tanpa membaca definisi panjang.</p>
+      <div class="row">
+        <span class="pill blu">Pilihan Ganda · mandiri</span>
+        <span class="pill blu">Kelompok Soal · teks/audio</span>
+        <span class="pill blu">Richtig / Falsch</span>
+        <span class="pill blu">Lückentext</span>
+        <span class="pill acc">Menjodohkan · baru</span>
+      </div>
+      <p class="note">“Audio” bukan pilihan di sini — centang “soal bersuara” muncul di langkah 3 untuk bentuk apa pun, sesuai perilaku sistem hari ini (audio melekat pada soal/kelompok).</p>
+    </div></div>
+
+    <div class="step"><div class="n">3</div><div>
+      <h4>Tulis soal — editor satu bentuk, bukan semua tombol</h4>
+      <p>Form menyesuaikan bentuk yang dipilih. Contoh untuk Lückentext: teks dengan rumpang bernomor, panel opsi mengikuti rumpang yang sedang diklik, pembahasan per rumpang.</p>
+      <div class="wf">
+        <div class="wf-bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="url">panel-admin/bank-soal/buat — langkah 3/4</span><span class="wf-tag">USULAN</span></div>
+        <div class="wf-body">
+          <div class="row" style="justify-content:space-between;align-items:center;margin-bottom:10px">
+            <span class="pill ok">Draf tersimpan otomatis · 12:04</span>
+            <span class="mono" style="font-size:11px;color:var(--muted)">Lückentext · Lesen · B1</span>
+          </div>
+          <div class="field" style="margin-bottom:8px"><span class="k">TEKS BACAAN — KLIK “+ RUMPANG” ATAU SELEKSI KATA</span><span class="v">Meine Schwester Anna wohnt in <span class="pill acc">1</span> kleinen Wohnung in Köln. Jeden Morgen fährt sie mit <span class="pill acc">2</span> Fahrrad zur Arbeit …</span></div>
+          <div class="row" style="margin-bottom:10px">
+            <span class="btn sec">+ Rumpang</span><span class="btn ghosty">Hapus rumpang 2</span>
+          </div>
+          <div class="row">
+            <div class="field" style="flex:1;min-width:120px;border-color:var(--accent)"><span class="k">RUMPANG 1 — OPSI</span><span class="v">A) einer &nbsp; B) einem &nbsp; C) eins &nbsp; D) ein</span></div>
+            <div class="field" style="flex:1;min-width:120px"><span class="k">JAWABAN</span><span class="v">A · einer</span></div>
+            <div class="field" style="flex:1.2;min-width:150px"><span class="k">PEMBAHASAN</span><span class="v">“in einer Wohnung” — datif femenin</span></div>
+          </div>
+          <div class="row" style="margin-top:10px;align-items:center">
+            <span class="btn sec">🎧 Tambah / ganti audio</span>
+            <span class="note">mp3, wav, ogg, m4a — maks 20 MB (sama seperti hari ini)</span>
+            <span class="btn prime" style="margin-left:auto">Lanjut: Pratinjau →</span>
+          </div>
+        </div>
+      </div>
+    </div></div>
+
+    <div class="step"><div class="n">4</div><div>
+      <h4>Pratinjau &amp; simpan — lihat sebagai peserta, periksa otomatis</h4>
+      <p>Kiri: soal persis seperti yang akan dilihat peserta di sesi ujian. Kanan: daftar periksa otomatis — semua opsi terisi, pembahasan ada, panjang teks wajar untuk levelnya. Guru menyimpan dengan yakin, bukan dengan harapan.</p>
+      <div class="row">
+        <span class="pill ok">✔ 4 opsi terisi di 2 rumpang</span>
+        <span class="pill ok">✔ pembahasan lengkap</span>
+        <span class="pill warn">⚠ 96 kata — teks B1 sebaiknya ≤ 90 kata (tetap bisa disimpan)</span>
+      </div>
+      <div class="row" style="margin-top:10px">
+        <span class="btn prime">Simpan ke Bank Soal</span>
+        <span class="btn sec">Simpan &amp; buat lagi</span>
+        <span class="btn ghosty">Simpan sebagai draf</span>
+      </div>
+    </div></div>
+  </div>
+
+  <div class="callout">
+    <h4>Mulai dari Contoh Soal — galeri, bukan JSON</h4>
+    <p>Perpustakaan “dump” yang ada hari ini berisi data yang tepat dengan antarmuka yang salah. Usulan: tombol <strong>“Mulai dari contoh”</strong> di langkah 2 membuka galeri kartu contoh (terfilter otomatis per bagian + bentuk) — guru melihat pratinjau, klik <em>pakai</em>, dan editor terisi. Penyuntingan JSON mentah tetap tersedia bagi admin di Pengaturan → Data Ujian, di bawah label “Lanjutan”.</p>
+  </div>
+</section>
+
+<section class="ch" id="paket-ujian">
+  <p class="ch-no">BAB 05</p>
+  <h2>Alur 2: merakit paket ujian</h2>
+  <p class="intro">Model dasarnya sudah benar — metadata paket, struktur bagian (+ Teil), isi dari Bank Soal, lalu terbit. Yang diubah: semuanya dalam satu layar dua panel, dengan daftar periksa terbit agar paket kosong/ timpang tidak pernah sampai terbit.</p>
+
+  <figure class="diagram">
+    <svg viewBox="0 0 960 165" role="img" aria-label="Alur status paket: Draf, Pratinjau, Terbit, Arsip, dengan cabang tarik kembali dari Terbit ke Pratinjau">
+      <defs><marker id="ar3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="currentColor"/></marker></defs>
+      <g font-family="Barlow, sans-serif">
+        <rect x="20" y="26" width="150" height="46" rx="9" fill="none" stroke="currentColor" stroke-width="1.5"/>
+        <text x="95" y="55" text-anchor="middle" font-size="14" font-weight="700" fill="currentColor">Draf</text>
+        <rect x="240" y="26" width="150" height="46" rx="9" fill="none" stroke="currentColor" stroke-width="1.5"/>
+        <text x="315" y="55" text-anchor="middle" font-size="14" font-weight="700" fill="currentColor">Pratinjau</text>
+        <rect x="460" y="26" width="150" height="46" rx="9" fill="none" stroke="var(--accent)" stroke-width="1.8"/>
+        <text x="535" y="55" text-anchor="middle" font-size="14" font-weight="700" fill="currentColor">Terbit</text>
+        <rect x="680" y="26" width="150" height="46" rx="9" fill="none" stroke="currentColor" stroke-width="1.5" stroke-dasharray="6 4"/>
+        <text x="755" y="55" text-anchor="middle" font-size="14" font-weight="700" fill="currentColor">Arsip</text>
+        <line x1="172" y1="49" x2="236" y2="49" stroke="currentColor" stroke-width="1.5" marker-end="url(#ar3)"/>
+        <line x1="392" y1="49" x2="456" y2="49" stroke="currentColor" stroke-width="1.5" marker-end="url(#ar3)"/>
+        <line x1="612" y1="49" x2="676" y2="49" stroke="currentColor" stroke-width="1.5" marker-end="url(#ar3)"/>
+        <path d="M 535 74 L 535 122 L 315 122 L 315 76" fill="none" stroke="currentColor" stroke-width="1.3" stroke-dasharray="5 4" marker-end="url(#ar3)"/>
+        <text x="425" y="116" text-anchor="middle" font-size="11" font-family="IBM Plex Mono, monospace" fill="currentColor" opacity=".66">tarik kembali (unpublish)</text>
+      </g>
+    </svg>
+    <figcaption>Alur status paket. “Terbit” adalah status yang dijaga daftar periksa; “tarik kembali” mengembalikan paket ke Pratinjau tanpa menghapus hasil peserta yang sudah mengerjakan (perilaku unpublish saat ini dipertahankan).</figcaption>
+  </figure>
+
+  <div class="wf">
+    <div class="wf-bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="url">panel-admin/paket-ujian/goethe-b1-simulasi-03 — perakit</span><span class="wf-tag">USULAN</span></div>
+    <div class="wf-body">
+      <div class="row" style="justify-content:space-between;align-items:center;margin-bottom:12px">
+        <div>
+          <div style="font-family:Barlow;font-weight:700;font-size:17px">Goethe-Zertifikat B1 · Simulasi 03</div>
+          <span class="mono" style="font-size:11px;color:var(--muted)">B1 · Goethe-Zertifikat · <span class="pill warn">PRATINJAU</span></span>
+        </div>
+        <span class="btn sec">Sunting info &amp; harga</span>
+      </div>
+      <div class="compare" style="margin-top:4px">
+        <div>
+          <p class="lbl next" style="color:var(--blue)">PANEL KIRI — STRUKTUR</p>
+          <div class="field" style="margin-bottom:6px"><span class="k">HÖREN · 40 MENIT</span><span class="v">Teil 1 — 8 soal PG · Teil 2 — 5 soal R/F</span></div>
+          <div class="field" style="margin-bottom:6px;border-color:var(--accent)"><span class="k">LESEN · 65 MENIT</span><span class="v">Lückentext 96 kata · 6 rumpang</span></div>
+          <div class="field" style="margin-bottom:6px"><span class="k">SCHREIBEN · 60 MENIT</span><span class="v">kosong</span></div>
+          <div class="field" style="margin-bottom:8px"><span class="k">SPRECHEN · 15 MENIT</span><span class="v">kosong</span></div>
+          <span class="btn sec">+ Tambah Bagian Ujian</span>
+          <p class="note" style="margin:10px 0 0">Total: 4 bagian · 140 menit · 19 soal — durasi dihitung otomatis dari bagian.</p>
+        </div>
+        <div>
+          <p class="lbl next">PANEL KANAN — ISI BAGIAN TERPILIH (LESEN)</p>
+          <div class="field" style="margin-bottom:6px"><span class="k">DARI BANK SOAL</span><span class="v">“Wohnung in Köln” · Lückentext · 6 soal · dipakai 3×</span></div>
+          <div class="field" style="margin-bottom:8px"><span class="k">&nbsp;</span><span class="v">“Brief an die Redaktion” · Kelompok · 5 soal · baru</span></div>
+          <div class="row" style="margin-bottom:12px"><span class="btn sec">+ Ambil dari Bank Soal</span><span class="btn ghosty">Lepas</span></div>
+          <p class="lbl next" style="color:var(--accent)">DAFTAR PERIKSA SEBELUM TERBIT</p>
+          <div class="row" style="margin-bottom:6px"><span class="pill ok">✔ tiap bagian berisi</span><span class="pill warn">⚠ Schreiben &amp; Sprechen kosong</span></div>
+          <div class="row"><span class="pill ok">✔ durasi 140 menit</span><span class="pill warn">⚠ harga tier belum diisi</span></div>
+          <div class="row" style="margin-top:12px"><span class="btn prime" style="opacity:.55">Terbitkan (aktif setelah periksa lolos)</span><span class="btn sec">Pratinjau sebagai peserta</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <ul class="tight">
+    <li><strong>Panel pemilih bank jadi laci samping</strong> di halaman yang sama — filter otomatis level + bagian + bentuk, plus tanda “sudah dipakai di paket X” (peta pemakaian ini sudah ada datanya di Bank Soal hari ini).</li>
+    <li><strong>Sub-bagian Teil</strong> tetap opsional, seperti sekarang — sebagian guru menggunakannya untuk meniru naskah ujian resmi, sebagian tidak.</li>
+    <li><strong>“Pratinjau sebagai peserta”</strong> membuka sesi ujian percobaan dengan timer palsu — cara tercepat menemukan soal yang salah sebelum peserta sungguhan menemukannya.</li>
+  </ul>
+</section>
+<section class="ch" id="skor">
+  <p class="ch-no">BAB 06</p>
+  <h2>Pembayaran, hasil &amp; skor</h2>
+  <p class="intro">Dua layar admin yang paling sering dibuka dan paling sedikit berkembang. Perubahannya kecil tapi terasa setiap hari.</p>
+
+  <div class="cards">
+    <div class="card"><span class="tag kosmetik">PEMBAYARAN</span><h3>Antrean order yang bisa diputuskan sekali lihat</h3>
+      <ul class="tight">
+        <li>Bukti transfer tampil sebagai gambar pratinjau (klik untuk perbesar) — tidak buka tab baru.</li>
+        <li>Lencana waktu tunggu: <span class="pill warn">menunggu 26 jam</span> — order tua tidak lolos dari pandangan.</li>
+        <li>“Tolak” meminta alasan; alasan tampil di halaman order peserta. “Konfirmasi” berganti nama <strong>“Terima Pembayaran”</strong> — jelas apa yang terjadi.</li>
+      </ul>
+    </div>
+    <div class="card"><span class="tag struktural">HASIL &amp; SKOR</span><h3>Skor berbahasa Goethe, bukan TOEFL</h3>
+      <ul class="tight">
+        <li>Hasil per bagian: persen + jumlah benar — <span class="mono">Hören 78% · 18/23</span>.</li>
+        <li>Estimasi level CEFR dari AI (sudah ada: <span class="mono">level_estimate</span> “B1”) naik jadi headline hasil.</li>
+        <li>Skala 310–677 dan field listening/structure/reading tetap disimpan (kompatibilitas data lama) tapi tidak lagi ditampilkan.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="wf">
+    <div class="wf-bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="url">panel-admin/hasil — kartu hasil peserta</span><span class="wf-tag">USULAN</span></div>
+    <div class="wf-body">
+      <div class="row" style="justify-content:space-between;align-items:center;margin-bottom:10px">
+        <div><strong style="font-family:Barlow">Dewi Lestari</strong> <span class="note">— Goethe-Zertifikat B1 · Simulasi 03 · 09 Nov 2026</span></div>
+        <span class="pill ok">Lulus · ambang 60%</span>
+      </div>
+      <div class="row">
+        <div class="field" style="flex:1;min-width:130px"><span class="k">HÖREN</span><span class="v">78% · 18/23</span></div>
+        <div class="field" style="flex:1;min-width:130px"><span class="k">LESEN</span><span class="v">64% · 16/25</span></div>
+        <div class="field" style="flex:1;min-width:130px"><span class="k">SCHREIBEN</span><span class="v">70% · 7/10</span></div>
+        <div class="field" style="flex:1;min-width:130px"><span class="k">SPRECHEN</span><span class="v">60% · 6/10</span></div>
+        <div class="field" style="flex:1;min-width:150px;border-color:var(--accent)"><span class="k">ESTIMASI LEVEL (AI)</span><span class="v">B1 — mapan</span></div>
+      </div>
+      <p class="note" style="margin:10px 0 0">Ringkasan umpan balik AI: <em>kuat di Hören</em> · <em>perlu latihan kata kerja pisah</em> — <a href="#skor">lihat jawaban</a></p>
+    </div>
+  </div>
+</section>
+
+<section class="ch" id="microcopy">
+  <p class="ch-no">BAB 07</p>
+  <h2>Kamus microcopy</h2>
+  <p class="intro">Empat aturan menulis, lalu tabel alih bahasa untuk semua string yang ditemukan di audit. Aturannya menjaga konsistensi saat string baru ditulis nanti.</p>
+  <ul class="tight">
+    <li><strong>Menu = benda pendek; tombol = kata kerja hasil.</strong> “Bank Soal” / “Simpan”, “Terbitkan”, “Lepas” — bukan “Manajemen…”, “Proses…”, “Submit”.</li>
+    <li><strong>Sebut hasilnya, bukan mekanismenya.</strong> “Impor Soal”, bukan “Impor JSON”; “Ambil dari contoh”, bukan “Dump”.</li>
+    <li><strong>Istilah Jerman dipertahankan</strong>, arti ditulis sekali pada kemunculan pertama (Bab 02).</li>
+    <li><strong>State kosong = judul + satu kalimat bantuan + satu tombol.</strong> Bukan satu baris abu yang menggantung.</li>
+  </ul>
+
+  <div class="tablewrap"><table>
+    <thead><tr><th style="width:38%">Sekarang (verbatim dari kode)</th><th style="width:38%">Usulan</th><th>Di mana</th></tr></thead>
+    <tbody>
+      <tr><td class="old">“Manajemen Pengguna”</td><td class="new">“Pengguna”</td><td>Sidebar</td></tr>
+      <tr><td class="old">“Konfirmasi Pembayaran”</td><td class="new">“Pembayaran” + lencana jumlah antrean</td><td>Sidebar</td></tr>
+      <tr><td class="old">“Ringkasan Expert”</td><td class="new">“Dasbor” — menyesuaikan peran (Guru/Admin)</td><td>Sidebar</td></tr>
+      <tr><td class="old">“Bank Soal — buat &amp; simpan soal” (sub 10px)</td><td class="new">“Bank Soal” (sub-label dihapus)</td><td>Sidebar</td></tr>
+      <tr><td class="old">“Paket Ujian — rakit tes dari bank”</td><td class="new">“Paket Ujian”</td><td>Sidebar</td></tr>
+      <tr><td class="old">“+ Tipe Tes”</td><td class="new">“+ Bagian Ujian” / “+ Level” sesuai halaman</td><td>Pengaturan</td></tr>
+      <tr><td class="old">“Dump JSON (n)” · “↑ Dump” · “Jumlah dump”</td><td class="new">“Contoh Soal (n)” · “Ambil dari contoh” · “Jumlah contoh”</td><td>Pengaturan &amp; Bank Soal</td></tr>
+      <tr><td class="old">“Impor JSON”</td><td class="new">“Impor Soal” (JSON &amp; templat tabel)</td><td>Bank Soal</td></tr>
+      <tr><td class="old">“Seksi Berikutnya →” · “Selesai &amp; Lihat Skor →”</td><td class="new">“Bagian Berikutnya” · “Selesai &amp; Lihat Hasil”</td><td>Sesi ujian peserta</td></tr>
+      <tr><td class="old">“Hapus tipe {{code}} beserta cetakan seksinya?”</td><td class="new">“Hapus level {{code}}? Soal yang memakainya tidak ikut terhapus.”</td><td>Dialog hapus</td></tr>
+      <tr><td class="old">“Kode tipe tes wajib diisi”</td><td class="new">“Kode level wajib diisi.”</td><td>Validasi form</td></tr>
+      <tr><td class="old">“Suspend” / “Aktifkan”</td><td class="new">“Tangguhkan” / “Aktifkan kembali”</td><td>Pengguna</td></tr>
+      <tr><td class="old">placeholder “mis. Teil … / Structure”</td><td class="new">“mis. Teil 1” — “Structure” adalah sisa TOEFL</td><td>Perakit paket</td></tr>
+      <tr><td class="old">“Belum ada level tes”</td><td class="new">“Belum ada level. Tambahkan yang pertama — mis. Goethe-Zertifikat A1 (Start Deutsch 1).” + tombol “+ Level”</td><td>State kosong</td></tr>
+      <tr><td class="old">“Bank soal masih kosong”</td><td class="new">“Bank soal masih kosong. Buat soal pertama, atau mulai dari Contoh Soal.” + 2 tombol</td><td>State kosong</td></tr>
+      <tr><td class="old">“Tidak ada soal untuk filter ini”</td><td class="new">“Tidak ada soal yang cocok. Kurangi filter, atau hapus semuanya.” + “Hapus filter”</td><td>State kosong</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section class="ch" id="fitur">
+  <p class="ch-no">BAB 08</p>
+  <h2>Fitur cerdas — urutan prioritas</h2>
+  <p class="intro">Setiap fitur diikat ke pekerjaan yang memperlambat guru hari ini. P0 dibangun bersama redesign; P1 setelah alur baru stabil; P2 adalah pembeda jangka panjang.</p>
+  <div class="cards">
+    <div class="card"><span class="pill acc">P0</span><h3>Pencarian global — Ctrl+K</h3><p>Cari soal, paket, peserta, dan order dari layar mana pun; hasil dikelompokkan per jenis, tiga teratas tiap kelompok. Hari ini: mencari satu soal = membuka Bank Soal dan memilah filter.</p></div>
+    <div class="card"><span class="pill acc">P0</span><h3>Galeri Contoh Soal</h3><p>Pengganti visual untuk “dump” (Bab 04). Data &amp; endpoint sudah ada (<span class="mono">/dump-templates</span>) — hanya tampilannya yang baru.</p></div>
+    <div class="card"><span class="pill acc">P0</span><h3>Pratinjau sebagai peserta</h3><p>Di editor soal dan perakit paket. Kesalahan format ditemukan admin, bukan peserta berbayar.</p></div>
+    <div class="card"><span class="pill blu">P1</span><h3>Impor massal via tabel</h3><p>Unduh templat .csv/.xlsx dengan baris contoh; unggah; validasi baris demi baris dengan pesan Indonesia yang jelas (“baris 4: opsi C kosong”). JSON tetap diterima untuk pengguna lanjutan.</p></div>
+    <div class="card"><span class="pill blu">P1</span><h3>Statistik soal</h3><p>Dipakai di N paket; % peserta menjawab benar — bahan soal mana yang terlalu mudah/sulit. Datanya sudah tersimpan di hasil ujian, tinggal diagregasi.</p></div>
+    <div class="card"><span class="pill blu">P1</span><h3>Duplikat &amp; aksi massal</h3><p>Pilih beberapa soal → duplikasi ke level lain, pindah bagian, hapus. Sudah ada tunasnya di Bank Soal (hapus massal).</p></div>
+    <div class="card"><span class="pill ok">P2</span><h3>Asisten draf soal (AI)</h3><p>Infrastruktur Gemini/OpenAI untuk umpan balik sudah hidup. Guru memasukkan topik + level → draf Lückentext/kelompok soal lengkap dengan pembahasan → guru menyunting. Manusia tetap pemilik akhir soal.</p></div>
+    <div class="card"><span class="pill ok">P2</span><h3>Pemeriksa kesesuaian level</h3><p>Perkiraan tingkat bacaan vs level dituju (“teks ini condong A2, Anda memilih B1”) — melanjutkan peringatan jumlah kata di Bab 04.</p></div>
+    <div class="card"><span class="pill ok">P2</span><h3>Rekam audio di browser</h3><p>Untuk soal Hören/Sprechen: rekam langsung dari mikrofon editor, tanpa aplikasi perekam terpisah. Batas unggah 20 MB yang ada sudah memadai.</p></div>
+  </div>
+</section>
+
+<section class="ch" id="roadmap">
+  <p class="ch-no">BAB 09</p>
+  <h2>Roadmap tiga fase</h2>
+  <p class="intro">Diurut agar tiap fase terasa sebagai kemajuan yang berdiri sendiri, dan fase awal tidak menyentuh logika bisnis — hanya template dan label.</p>
+  <div class="cards">
+    <div class="card">
+      <span class="tag kosmetik">FASE 1 · 1–2 MINGGU</span><h3>Bersih &amp; jelas</h3>
+      <ul class="tight">
+        <li>Rebrand shell &amp; landing ganda bahasa: <span class="mono">base_admin.html, base_platform.html, index/about</span></li>
+        <li>Sapuan taksonomi + microcopy: semua template admin/expert, <span class="mono">SETTINGS_MENU</span>, pesan error di <span class="mono">app_settings_proc.py</span></li>
+        <li>State kosong baru (judul + bantuan + tombol); sidebar regroup + lencana pembayaran</li>
+        <li>Rapi-rapi: <span class="mono">settings_tes.html → settings_level.html</span> (route lama redirect), key ganda <span class="mono">db_test_name</span> di model.py, blueprint <span class="mono">company_profile</span> tidak terdaftar</li>
+      </ul>
+    </div>
+    <div class="card">
+      <span class="tag struktural">FASE 2 · 3–4 MINGGU</span><h3>Alur buat soal</h3>
+      <ul class="tight">
+        <li>Wizard 4 langkah satu halaman: <span class="mono">question_new.html + question_editor.html</span> → satu aliran, <span class="mono">question_bank_blueprint.py</span> rutenya disusun ulang</li>
+        <li>Galeri Contoh Soal menggantikan panel Dump di UI guru (endpoint <span class="mono">dump-templates</span> dipakai ulang)</li>
+        <li>Pratinjau peserta + simpan otomatis draf; impor .csv/.xlsx di samping JSON</li>
+        <li>Backend nyaris tak berubah — skema passage/question yang ada sudah sesuai</li>
+      </ul>
+    </div>
+    <div class="card">
+      <span class="tag struktural">FASE 3 · 1–2 BULAN</span><h3>Paket, skor &amp; AI</h3>
+      <ul class="tight">
+        <li>Perakit paket satu layar + daftar periksa terbit: <span class="mono">package_builder.html, exam_package_blueprint.py</span></li>
+        <li>Skor CEFR-native: <span class="mono">exam_engine_proc.submit_exam</span> menulis field baru di samping data lama (jangan hapus — kompatibilitas)</li>
+        <li>Halaman Hasil &amp; Analisis; antrean pembayaran versi baru</li>
+        <li>Pencarian global; asisten draf soal AI</li>
+      </ul>
+    </div>
+  </div>
+  <div class="callout">
+    <h4>Jangan refactor di sela-sela</h4>
+    <p>Kode aplikasi ini memakai pola MVC kustom yang sehat. Usulan ini sengaja tidak mengganti nama koleksi <span class="mono">db_toefl_*</span> maupun format respons API — perubahan tampilan dan alur saja. Preseden bagusnya sudah ada: route lama <span class="mono">/settings/tes</span> kini me-redirect ke <span class="mono">/settings/level</span> tanpa memutus tautan siapa pun.</p>
+  </div>
+</section>
+
+<section class="ch" id="keputusan">
+  <p class="ch-no">BAB 10</p>
+  <h2>Keputusan untuk Anda</h2>
+  <p class="intro">Lima hal yang tidak bisa (dan tidak seharusnya) diputuskan desainer sendiri. Tiap butir disertai rekomendasi.</p>
+  <div class="cards">
+    <div class="card"><h3>1 · Satu model harga, bukan dua</h3><p>Hari ini paket menjual dua tier (basic/premium) sementara Paket Langganan mendefinisikan empat (Free–Premium) dengan kredit AI. Rekomendasi: langganan menjadi gerbang akses + kredit AI; paket ujian menjadi konten yang dibuka langganan. Field lama tetap disimpan selama transisi.</p></div>
+    <div class="card"><h3>2 · Bentuk soal Menjodohkan (Zuordnung)</h3><p>Dipakai di Goethe A1–B1 (Hören/Lesen). Butuh skema pasangan kiri–kanan dan koreksi otomatis. Rekomendasi: setujui di Fase 2 agar skema datanya ikut dirancang sekali jalan.</p></div>
+    <div class="card"><h3>3 · Sprachbausteine (telc)</h3><p>Bagian ujian tersendiri, atau sekadar bentuk soal di bawah Lesen? Rekomendasi: bagian tersendiri — agar templat durasi dan laporan hasil sejajar dengan format resmi telc.</p></div>
+    <div class="card"><h3>4 · Nama produk</h3><p>“EnglishTest” harus berganti di seluruh shell, landing, dan judul tab. Tanpa keputusan nama, Fase 1 memakai penanda sementara. Ini satu-satunya keputusan yang menghalangi seluruh rebrand.</p></div>
+    <div class="card"><h3>5 · Nasib skor TOEFL</h3><p>Angka 310–677 tetap disimpan tapi disembunyikan dari tampilan, atau dihapus bertahap? Rekomendasi: sembunyikan sekarang, hapus dalam migrasi jauh setelah tidak ada laporan yang bergantung padanya.</p></div>
+  </div>
+</section>
+
+<footer>
+  Disusun berdasarkan audit kode 11 November 2026 — 7 blueprint terdaftar di <span class="mono">server.py</span>, 30+ template Jinja2, skema koleksi di <span class="mono">slapz102_core/model.py</span>. Semua kutipan microcopy diambil verbatim dari template. Proposal desain v1.0 — siap dibahas dan diubah.
+</footer>
+</div>

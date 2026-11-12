@@ -1,0 +1,2975 @@
+{% extends "admin/base_admin.html" %}
+
+{# ── Audio upload widget macro ─────────────────────────────────────────────
+   field_id  : unique id for the hidden <input name="audio_url">
+   current   : existing URL (for edit mode preview)
+────────────────────────────────────────────────────────────────────────── #}
+{% macro render_audio_upload_widget(field_id, current='') %}
+<div class="audio-upload-widget" data-field-id="{{ field_id }}">
+
+    {# Hidden file picker #}
+    <input type="file" id="{{ field_id }}-file-picker" accept=".mp3,.wav,.ogg,.m4a,.aac,.flac,audio/*"
+        class="hidden" onchange="audioWidgetPickFile(this)">
+
+    {# URL text input #}
+    <div class="flex gap-2 mb-2">
+        <input type="text" name="audio_url" id="{{ field_id }}"
+            value="{{ current }}"
+            oninput="audioWidgetUrlChanged(this)"
+            class="flex-1 px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50 focus:bg-white transition font-mono"
+            placeholder="/static/audio/namafile.mp3">
+        <button type="button"
+            onclick="document.getElementById('{{ field_id }}-file-picker').click()"
+            class="shrink-0 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-xl transition flex items-center gap-1.5">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
+            </svg>
+            Upload
+        </button>
+    </div>
+
+    {# Progress bar — hidden by default #}
+    <div id="{{ field_id }}-progress" class="hidden mb-2">
+        <div class="w-full bg-gray-100 rounded-full h-1.5 overflow-hidden">
+            <div id="{{ field_id }}-progress-bar" class="bg-blue-500 h-1.5 rounded-full transition-all duration-300" style="width:0%"></div>
+        </div>
+        <p id="{{ field_id }}-progress-label" class="text-xs text-blue-600 mt-1">Mengupload...</p>
+    </div>
+
+    {# Status message #}
+    <div id="{{ field_id }}-status" class="hidden text-xs font-medium mb-2"></div>
+
+    {# Preview player #}
+    <div id="{{ field_id }}-preview" class="{% if not current %}hidden{% endif %} bg-gray-50 rounded-xl p-3 border border-gray-200">
+        <audio controls class="w-full" style="height:36px;" id="{{ field_id }}-audio">
+            {% if current %}<source src="{{ current }}">{% endif %}
+        </audio>
+    </div>
+
+</div>
+{% endmacro %}
+
+{# ── Option image widget: hidden URL input + upload button + thumbnail ── #}
+{% macro render_option_image(name, field_id, current='') %}
+<div class="shrink-0 flex items-center gap-1.5">
+    <input type="hidden" name="{{ name }}" id="{{ field_id }}" value="{{ current }}">
+    <input type="file" id="{{ field_id }}-picker" accept="image/jpeg,image/png,image/gif,image/webp"
+        class="hidden" onchange="optionImagePick(this, '{{ field_id }}')">
+    <img id="{{ field_id }}-preview" src="{{ current }}" alt=""
+        class="{% if not current %}hidden{% endif %} w-10 h-10 object-cover rounded-lg border border-gray-200">
+    <button type="button" onclick="document.getElementById('{{ field_id }}-picker').click()"
+        class="px-2.5 py-2 border border-gray-200 rounded-xl text-xs font-semibold text-gray-600 hover:bg-gray-50 transition">
+        Gambar
+    </button>
+    <button type="button" id="{{ field_id }}-remove" onclick="optionImageSet('{{ field_id }}', '')"
+        class="{% if not current %}hidden{% endif %} text-xs text-red-500 hover:text-red-700 font-medium">Hapus</button>
+</div>
+{% endmacro %}
+
+{# ── Richtig/Falsch: opsi tetap A = Richtig, B = Falsch. C/D tetap dirender (kosong)
+     karena JS impor/edit mengisi keempat input berdasarkan id. ─────────────── #}
+{% macro rf_hidden_options(name_prefix, id_prefix, id_suffix='') %}
+{% for key, value in [('a', 'Richtig'), ('b', 'Falsch'), ('c', ''), ('d', '')] %}
+<input type="hidden" name="{{ name_prefix }}option_{{ key }}" id="{{ id_prefix }}{{ key }}{{ id_suffix }}" value="{{ value }}">
+{% endfor %}
+<p class="text-xs text-gray-500 bg-gray-50 border border-gray-100 rounded-xl px-3 py-2.5">
+    Soal <strong>Richtig / Falsch</strong> — peserta memilih salah satu. Tulis pernyataannya di teks pertanyaan (boleh dengan gambar).
+</p>
+{% endmacro %}
+
+{% macro rf_answer_key(radio_name, current='', id_prefix='') %}
+<div class="grid grid-cols-2 gap-2">
+    {% for opt, label in [('A', 'Richtig'), ('B', 'Falsch')] %}
+    <label class="flex flex-col items-center gap-1 cursor-pointer py-3 border-2 border-gray-200 rounded-xl hover:border-blue-400 has-[:checked]:border-blue-600 has-[:checked]:bg-blue-50 transition">
+        <input type="radio" name="{{ radio_name }}" value="{{ opt }}" {% if id_prefix %}id="{{ id_prefix }}{{ opt }}"{% endif %}
+            {% if current == opt or (not current and loop.first) %}checked{% endif %} class="sr-only">
+        <span class="text-sm font-extrabold text-gray-700">{{ label }}</span>
+    </label>
+    {% endfor %}
+</div>
+{% endmacro %}
+
+{% set answer_type = answer_type|default('mc') %}
+{% set requested_mode = requested_mode|default('') %}
+{% set return_to = return_to|default('') %}
+{% set cloze_answer_mode = cloze_answer_mode|default('mc') %}
+{% set cloze_input = answer_type == 'cloze' and cloze_answer_mode == 'input' %}
+{% set q_mode = passage.question_mode if passage else (requested_mode if requested_mode in ['single', 'grouped'] else 'grouped') %}
+{% set lock_mode = (passage.question_mode if passage else requested_mode) if (passage or requested_mode in ['single', 'grouped']) else '' %}
+
+{% block title %}{% if passage %}Edit — {{ passage.title }}{% elif q_mode == 'single' %}Buat Soal Mandiri{% elif requested_mode == 'grouped' %}Buat Kelompok Soal{% else %}Buat Soal Baru{% endif %}{% if answer_type == 'rf' %} (Richtig/Falsch){% elif answer_type == 'cloze' %} (Lückentext){% endif %}{% endblock %}
+{% block page_title %}{% if passage %}Edit Soal{% elif q_mode == 'single' %}Buat Soal Mandiri{% elif requested_mode == 'grouped' %}Buat Kelompok Soal{% else %}Buat Soal Baru{% endif %}{% if answer_type == 'rf' %} — Richtig/Falsch{% elif answer_type == 'cloze' %} — Lückentext{% endif %}{% endblock %}
+{% block page_subtitle %}{% if passage %}{{ passage.title }}{% elif q_mode == 'single' %}Satu pertanyaan berdiri sendiri{% elif requested_mode == 'grouped' %}Satu bacaan/audio + banyak pertanyaan{% else %}Pilih bentuk soal di Bank Soal{% endif %}{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='libs/quill/quill.snow.css') }}">
+<style>
+    .ql-container { min-height: 180px; font-family: 'Poppins', sans-serif; font-size: 14px; }
+    .ql-editor    { min-height: 180px; }
+
+    /* Fix: prevent Tailwind's italic utility from enlarging Quill toolbar's italic button */
+    .ql-snow .ql-toolbar button.ql-italic { font-style: normal; font-size: 13px; line-height: 1; }
+    .ql-snow .ql-toolbar button           { width: 26px; height: 26px; padding: 3px; }
+    .ql-snow .ql-toolbar button svg       { width: 16px; height: 16px; }
+
+    .mode-btn.active { background:#2563EB; color:#fff; border-color:#2563EB; }
+    .mode-btn        { background:#fff; color:#374151; border-color:#D1D5DB; }
+
+    /* Animate card reveal in single mode */
+    .sq-card { animation: fadeSlideIn .18s ease; }
+    @keyframes fadeSlideIn { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:none; } }
+
+    /* Images inserted via Quill should not overflow their container */
+    .ql-editor img { max-width: 100%; height: auto; border-radius: 8px; margin: 4px 0; }
+
+    /* Compact Quill for modal — override the global 180px min-height */
+    .ql-modal .ql-container,
+    .ql-modal .ql-editor { min-height: 110px; }
+
+    /* ── BelajDeutsch refinements ─────────────────────────────────────────── */
+    .ql-container, .ql-editor { font-family:'IBM Plex Sans','Segoe UI',sans-serif !important; }
+    .ql-snow .ql-toolbar { border-bottom:1px solid var(--line) !important; background:#F8FAFC;
+        border-radius:10px 10px 0 0; }
+    .ql-snow .ql-container { border-radius:0 0 10px 10px; }
+    #main-grid h3, #main-grid h4, #top-bar h3, #top-bar h4, .sq-card h4 {
+        font-family:'Barlow','Arial Narrow',sans-serif; letter-spacing:.005em; }
+    #passage-panel h3, #questions-panel h3 { font-size:15.5px; font-weight:600; }
+    #top-bar p.text-sm.font-semibold { font-family:'Barlow',sans-serif; font-size:15px; }
+    .mode-btn, .sub-type-btn { border-radius:9px !important; }
+    .mode-btn.active { background:var(--brand) !important; border-color:var(--brand) !important; }
+    #save-passage-btn {
+        background:var(--brand) !important; color:#fff !important;
+        font-family:'Barlow',sans-serif !important; font-weight:600; letter-spacing:.01em;
+        border-radius:10px !important; box-shadow:0 4px 14px rgba(29,78,216,.24);
+        transition:all .15s;
+    }
+    #save-passage-btn:hover { background:var(--brand-strong) !important; transform:translateY(-1px); }
+    #passage-panel .bg-white, #questions-panel .bg-white, .sq-card {
+        box-shadow:0 1px 2px rgba(23,26,33,.04) !important; }
+
+    /* ── Compact context bar + unified single card ──────────────────────── */
+    .ctx-chip{ display:inline-flex; align-items:center; gap:6px; font-family:'Barlow',sans-serif;
+        font-size:12px; font-weight:600; padding:5px 11px; border-radius:8px; border:1px solid var(--line); }
+    .ctx-chip svg{ width:13px; height:13px; flex-shrink:0; }
+    .qe-eyebrow{ font-family:'Barlow',sans-serif; font-size:10.5px; font-weight:600;
+        letter-spacing:.12em; text-transform:uppercase; color:var(--faint); }
+    .qe-label{ font-family:'Barlow',sans-serif; font-size:11px; font-weight:600;
+        letter-spacing:.08em; text-transform:uppercase; color:var(--muted); }
+    .sq-opt-row{ display:flex; align-items:center; gap:8px; }
+    .opt-key{ cursor:pointer; flex-shrink:0; position:relative; }
+    .opt-key-badge{ width:32px; height:32px; border-radius:9px; border:1.5px solid var(--line);
+        background:var(--surface); font-family:'Barlow',sans-serif; font-weight:700; font-size:13px;
+        color:var(--muted); display:flex; align-items:center; justify-content:center; transition:all .15s; }
+    .opt-key:hover .opt-key-badge{ border-color:var(--brand); color:var(--brand-ink); }
+    .opt-key:has(input:checked) .opt-key-badge{ background:var(--brand); border-color:var(--brand);
+        color:#fff; box-shadow:0 3px 10px rgba(29,78,216,.30); }
+    .opt-key:has(input:focus-visible) .opt-key-badge{ outline:2px solid var(--brand); outline-offset:2px; }
+    .sq-audio-body{ padding:14px 16px; }
+    details.sq-audio{ border:1.5px dashed var(--line); border-radius:12px; background:var(--surface); }
+    details.sq-audio summary{ cursor:pointer; padding:12px 16px; font-family:'Barlow',sans-serif;
+        font-weight:600; font-size:13.5px; color:var(--ink); display:flex; align-items:center; gap:8px;
+        list-style:none; }
+    details.sq-audio summary::-webkit-details-marker{ display:none; }
+    details.sq-audio summary svg{ width:15px; height:15px; color:var(--brand); }
+    details.sq-audio[open] summary{ border-bottom:1px solid var(--line-soft); }
+
+    /* ── Builder soal (buat semua sekali simpan) ────────────────────────── */
+    .builder-card{ border:1.5px solid var(--line); border-radius:12px; background:var(--surface); }
+    .builder-card > summary{ list-style:none; cursor:pointer; display:flex; align-items:center; gap:10px;
+        padding:10px 14px; font-family:'Barlow',sans-serif; font-weight:600; font-size:13px; color:var(--ink); }
+    .builder-card > summary::-webkit-details-marker{ display:none; }
+    .builder-card[open] > summary{ border-bottom:1px solid var(--line-soft); }
+    .builder-num{ width:24px; height:24px; border-radius:50%; background:var(--brand); color:#fff;
+        font-size:11.5px; font-weight:700; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+    .builder-snippet{ flex:1; min-width:0; font-family:'IBM Plex Sans',sans-serif; font-weight:400;
+        font-size:12.5px; color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .builder-del{ font-family:'Barlow',sans-serif; font-size:11px; font-weight:600; color:var(--danger);
+        padding:3px 9px; border-radius:6px; transition:background .15s; }
+    .builder-del:hover{ background:#FDEBE9; }
+    .builder-body{ padding:14px; display:flex; flex-direction:column; gap:12px; }
+    .qe-input{ width:100%; border:1.5px solid var(--line); border-radius:10px; padding:9px 12px;
+        font-size:13.5px; font-family:'IBM Plex Sans',sans-serif; background:#F7F8FA;
+        transition:all .15s; resize:vertical; color:var(--ink); }
+    .qe-input:focus{ outline:none; border-color:var(--brand); background:#fff; }
+    #qe-toast{ position:fixed; bottom:20px; right:20px; z-index:60; background:var(--ink); color:#fff;
+        font-size:13px; font-weight:500; padding:11px 18px; border-radius:10px;
+        box-shadow:0 10px 30px rgba(0,0,0,.25); opacity:0; transform:translateY(8px);
+        transition:all .25s; pointer-events:none; max-width:340px; }
+    #qe-toast.show{ opacity:1; transform:none; }
+</style>
+{% endblock %}
+
+{% block breadcrumb %}
+<nav class="flex items-center gap-1.5 text-xs text-gray-400 mb-4 flex-wrap">
+    <a href="/dashboard/expert" class="hover:text-blue-600 transition">Dasbor</a>
+    <svg class="w-3 h-3 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+    <a href="/expert/question-bank" class="hover:text-blue-600 transition">Bank Soal</a>
+    {% if return_to and '/exam-package/' in return_to %}
+    <svg class="w-3 h-3 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+    <a href="{{ return_to }}" class="hover:text-blue-600 transition">Kembali ke Paket</a>
+    {% endif %}
+    {% if passage %}
+    <svg class="w-3 h-3 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+    <span class="text-gray-600 font-medium truncate max-w-xs">{{ passage.title | striptags | truncate(40, True, '…') }}</span>
+    {% else %}
+    <svg class="w-3 h-3 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+    <span class="text-gray-600 font-medium">{% if q_mode == 'single' %}Soal Mandiri{% elif requested_mode == 'grouped' %}Kelompok Soal{% else %}Buat Soal Baru{% endif %}</span>
+    {% endif %}
+</nav>
+{% endblock %}
+
+{% block content %}
+
+{# ── Config-driven top bar ───────────────────────────────────────────────── #}
+{% set cfg = section_config %}
+{% set cfg_mode = cfg.default_passage_mode if cfg else 'flexible' %}
+
+<div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 mb-5" id="top-bar">
+
+    <div class="flex flex-wrap items-center gap-2 mb-3">
+        {% if lock_mode == 'single' or cfg_mode == 'single' %}
+        <span class="ctx-chip" style="background:#FDF6E9; border-color:#F0DFC0; color:var(--warn)">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+            Soal Mandiri{% if answer_type == 'rf' %} · Richtig/Falsch{% endif %}
+        </span>
+        {% elif lock_mode == 'grouped' or cfg_mode == 'grouped' %}
+        <span class="ctx-chip" style="background:var(--brand-soft); border-color:#C9D8F3; color:var(--brand-ink)">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg>
+            Kelompok Soal{% if answer_type == 'rf' %} · Richtig/Falsch{% elif answer_type == 'cloze' %} · Lückentext{% endif %}
+        </span>
+        {% endif %}
+        {% set current_section_key = (current_section_key or '')|lower %}
+        {% if current_section_key %}
+        {% set tt_label = namespace(value=current_section_key|upper) %}
+        {% for opt in bank_section_options %}{% if opt.key == current_section_key %}{% set tt_label.value = opt.label %}{% endif %}{% endfor %}
+        <span class="ctx-chip" style="background:#EFF1F4; border-color:var(--line); color:#4A5361">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
+            {{ tt_label.value }}
+        </span>
+        {% endif %}
+        <div class="flex rounded-lg border overflow-hidden text-xs font-semibold shrink-0 ml-auto" style="border-color:var(--line)">
+            <button type="button" id="btn-view-form" onclick="setInputView('form')"
+                class="px-3 py-1.5 bg-blue-600 text-white transition">Form</button>
+            <button type="button" id="btn-view-json" onclick="setInputView('json')"
+                class="px-3 py-1.5 bg-white text-gray-500 hover:bg-gray-50 transition">JSON</button>
+        </div>
+        {% if passage %}
+        <a href="/expert/question-bank/{{ passage.pkey }}/preview" target="_blank" rel="noopener"
+            class="inline-flex items-center gap-1.5 text-xs font-semibold shrink-0 px-3 py-1.5 rounded-lg transition"
+            style="background:var(--brand-soft); color:var(--brand-ink); border:1px solid #C9D8F3"
+            title="Buka pratinjau tampilan peserta di tab baru">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+            Pratinjau
+        </a>
+        {% endif %}
+        <a href="/expert/question-bank/new" class="text-xs font-medium shrink-0 transition hover:underline" style="color:var(--faint)">Ganti bentuk</a>
+    </div>
+    <p id="input-mode-hint" class="hidden"></p>
+
+    <div id="top-json-panel" class="hidden">
+        <textarea id="top-json-textarea" rows="16"
+            class="w-full px-3 py-2.5 border border-purple-200 rounded-xl text-xs font-mono bg-purple-50/40 focus:bg-white focus:outline-none focus:ring-2 focus:ring-purple-400 resize-y leading-relaxed"
+            placeholder='{"section":"lesen","question_mode":"grouped","title":"...","content_text":"...","questions":[{"question_text":"...","option_a":"...","option_b":"...","option_c":"...","option_d":"...","correct_answer":"C","explanation":"..."}]}'></textarea>
+        <div class="flex flex-wrap gap-2 mt-2">
+            <button type="button" onclick="topJsonImport()"
+                class="px-4 py-1.5 bg-purple-600 hover:bg-purple-700 text-white text-xs font-semibold rounded-lg transition">
+                ↓ Import & Simpan
+            </button>
+            <button type="button" onclick="topJsonDump()"
+                class="px-4 py-1.5 bg-white hover:bg-gray-50 text-purple-700 border border-purple-200 text-xs font-semibold rounded-lg transition">
+                ↑ Form ke JSON (Mandiri)
+            </button>
+            <button type="button" onclick="topJsonDumpGrouped()"
+                class="px-4 py-1.5 bg-white hover:bg-gray-50 text-purple-700 border border-purple-200 text-xs font-semibold rounded-lg transition">
+                ↑ Form ke JSON (Kelompok)
+            </button>
+            <button type="button" onclick="jsonPanelCopy('top-json-textarea')"
+                class="px-4 py-1.5 bg-white hover:bg-gray-50 text-gray-600 border border-gray-200 text-xs font-semibold rounded-lg transition ml-auto">
+                Salin
+            </button>
+        </div>
+        <p id="top-json-status" class="hidden text-xs font-medium mt-2"></p>
+    </div>
+
+    <div id="normal-input-wrap">
+
+    {# Sub-type selector — only shown when section has sub_types (e.g. Listening) #}
+    {% if cfg and cfg.sub_types %}
+    <div class="flex flex-col sm:flex-row sm:items-center gap-3 mb-3 pb-3 border-b border-gray-100">
+        <div class="text-sm font-semibold text-gray-700 shrink-0">Tipe Bagian:</div>
+        <div class="flex flex-wrap gap-2" id="sub-type-btns">
+            {% for st in cfg.sub_types %}
+            <button type="button"
+                data-sub-type="{{ st.key }}"
+                data-passage-mode="{{ st.passage_mode }}"
+                data-content-type="{{ st.content_type }}"
+                data-description="{{ st.description }}"
+                onclick="selectSubType(this)"
+                class="sub-type-btn px-3.5 py-2 rounded-xl border text-sm font-semibold transition
+                    {% if passage and passage.passage_sub_type == st.key %}bg-blue-600 text-white border-blue-600
+                    {% else %}bg-white text-gray-600 border-gray-200 hover:border-blue-400{% endif %}">
+                {{ st.label }}
+            </button>
+            {% endfor %}
+        </div>
+        <p id="sub-type-hint" class="text-xs text-gray-400 italic">
+            {% if passage and passage.passage_sub_type %}
+                {% for st in cfg.sub_types %}{% if st.key == passage.passage_sub_type %}{{ st.description }}{% endif %}{% endfor %}
+            {% else %}
+                Pilih tipe bagian untuk melanjutkan
+            {% endif %}
+        </p>
+    </div>
+    {% endif %}
+
+    {# Mode buttons — hidden when type already chosen from Bank Soal #}
+    <div id="mode-row" class="flex flex-col sm:flex-row sm:items-center gap-3 {% if lock_mode in ['single', 'grouped'] %}hidden{% endif %}">
+        <div class="text-sm font-semibold text-gray-700 shrink-0">Mode Soal:</div>
+        <div class="flex gap-2">
+            <button type="button" id="btn-mode-single" onclick="setQuestionMode('single')"
+                class="mode-btn px-4 py-2 rounded-xl border text-sm font-semibold transition flex items-center gap-2">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+                </svg>
+                Soal Mandiri <span class="text-xs font-normal opacity-70">(1 soal)</span>
+            </button>
+            <button type="button" id="btn-mode-grouped" onclick="setQuestionMode('grouped')"
+                class="mode-btn px-4 py-2 rounded-xl border text-sm font-semibold transition flex items-center gap-2">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"/>
+                </svg>
+                Kelompok Soal <span class="text-xs font-normal opacity-70">(+ bacaan/audio)</span>
+            </button>
+        </div>
+        <p id="mode-hint" class="text-xs text-gray-400 sm:ml-auto"></p>
+    </div>
+
+    </div>{# end #normal-input-wrap #}
+
+</div>
+
+{# ── Main grid — col count is toggled by JS for single mode ─────────────── #}
+<div id="main-grid" class="grid grid-cols-1 xl:grid-cols-5 gap-6">
+
+    <!-- LEFT: Passage / Context Form -->
+    <div class="xl:col-span-2 space-y-4" id="passage-panel">
+
+        <form method="POST" action="{% if passage %}/expert/question-bank/{{ passage.pkey }}/update{% else %}/expert/question-bank/create{% endif %}" id="passage-form" class="space-y-4">
+        <input type="hidden" name="question_mode"    id="question-mode-input"    value="{{ q_mode }}">
+        <input type="hidden" name="answer_type"      value="{{ answer_type }}">
+        <input type="hidden" name="cloze_answer_mode" id="cloze-answer-mode-input" value="{{ cloze_answer_mode if answer_type == 'cloze' else 'mc' }}">
+        <input type="hidden" name="passage_sub_type" id="passage-sub-type-input" value="{{ passage.passage_sub_type if passage else '' }}">
+        <input type="hidden" name="return_to" value="{{ return_to }}">
+
+        {# ── Kartu passage terpadu: Judul → Audio → Teks ──────────────────── #}
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-100" id="content-card">
+            <div class="px-5 pt-4 pb-1">
+                <h3 class="qe-eyebrow" id="panel-title">
+                    {% if q_mode == 'single' %}Soal Mandiri{% elif passage %}Edit Kelompok Soal{% else %}Kelompok Soal Baru{% endif %}
+                </h3>
+            </div>
+            {% if preset_section and not passage %}
+            <input type="hidden" name="section_id" value="{{ preset_section.pkey }}">
+            {% endif %}
+            <input type="hidden" name="section_key" id="section-key-input" value="{{ current_section_key }}">
+
+            <div id="content-fields">
+                <div class="px-5 pt-2 pb-4" id="title-field-wrap">
+                    <label class="qe-label mb-2 block">Judul Passage <span style="color:var(--danger)">*</span></label>
+                    <input type="text" name="title" id="title-input" value="{{ passage.title if passage else '' }}"
+                        class="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50 focus:bg-white transition"
+                        placeholder="Contoh: Teil 1 - Leseverstehen / Alltag in Deutschland">
+                </div>
+
+                <div class="px-5 pb-4" id="audio-url-wrap">
+                    <details class="sq-audio" {% if passage and passage.audio_url %}open{% endif %}>
+                        <summary>
+                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072M12 18.364a9 9 0 000-12.728M12 18.364V5.636M9 9v6"/></svg>
+                            File Audio <span class="text-xs font-normal" style="color:var(--faint)">(opsional — klik untuk buka/tutup)</span>
+                        </summary>
+                        <div class="sq-audio-body">
+                            {{ render_audio_upload_widget('passage-audio-url', passage.audio_url if passage else '') }}
+                        </div>
+                    </details>
+                </div>
+
+                <div id="text-editor-wrap" class="px-5 pb-5">
+                    {% if answer_type == 'cloze' %}
+                    <div class="mb-2 rounded-xl px-3.5 py-3 flex flex-wrap items-center justify-between gap-3" style="background:var(--brand-soft); border:1px solid #C9D8F3">
+                        <p class="text-xs leading-relaxed" style="color:var(--brand-ink)">
+                            <strong>Cara cepat:</strong> blok / pilih kata di teks → klik <strong>Jadikan Rumpang</strong>.
+                            Kata yang kamu pilih otomatis menjadi kunci jawaban, dan nomor rumpang tersusun sendiri —
+                            kamu tinggal menambah 3 pengecoh.
+                        </p>
+                        <div class="flex gap-2 shrink-0">
+                            <button type="button" id="btn-mark-gap" onclick="clozeMarkSelection()" disabled
+                                class="text-xs font-semibold px-3.5 py-1.5 rounded-lg text-white transition disabled:opacity-40 disabled:cursor-not-allowed"
+                                style="background:var(--brand)">
+                                ✂ Jadikan Rumpang
+                            </button>
+                            <button type="button" onclick="insertClozeGap()"
+                                class="text-xs font-semibold px-3 py-1.5 rounded-lg transition"
+                                style="background:#fff; border:1px solid #C9D8F3; color:var(--brand-ink)">
+                                + Sisip [n] kosong
+                            </button>
+                        </div>
+                    </div>
+                    {% endif %}
+                    <div class="flex items-center justify-between mb-2">
+                        <label class="block text-sm font-semibold text-gray-700">{% if answer_type == 'cloze' %}Teks Lückentext{% else %}Isi Teks / Bacaan{% endif %}</label>
+                        <!-- Mode toggle -->
+                        <div class="flex rounded-lg border border-gray-200 overflow-hidden text-xs font-semibold" id="editor-mode-toggle">
+                            <button type="button" id="btn-wysiwyg"
+                                onclick="setEditorMode('wysiwyg')"
+                                class="px-3 py-1.5 bg-blue-600 text-white transition">
+                                WYSIWYG
+                            </button>
+                            <button type="button" id="btn-html"
+                                onclick="setEditorMode('html')"
+                                class="px-3 py-1.5 bg-white text-gray-500 hover:bg-gray-50 transition">
+                                Plain HTML
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- WYSIWYG mode -->
+                    <div id="wysiwyg-wrap">
+                        <div id="quill-passage"></div>
+                    </div>
+
+                    <!-- Plain HTML mode -->
+                    <div id="html-wrap" class="hidden">
+                        <textarea id="html-source" rows="10"
+                            class="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50 focus:bg-white transition resize-y leading-relaxed"
+                            placeholder="Masukkan HTML langsung, misal:&#10;&lt;p&gt;Paragraf pertama...&lt;/p&gt;&#10;&lt;p&gt;Paragraf kedua...&lt;/p&gt;"></textarea>
+                        <p class="text-xs text-gray-400 mt-1.5">
+                            Tip: Gunakan <code class="bg-gray-100 px-1 rounded">&lt;p&gt;</code>, <code class="bg-gray-100 px-1 rounded">&lt;strong&gt;</code>, <code class="bg-gray-100 px-1 rounded">&lt;em&gt;</code>, <code class="bg-gray-100 px-1 rounded">&lt;ol&gt;</code>, <code class="bg-gray-100 px-1 rounded">&lt;ul&gt;</code>.
+                            Klik WYSIWYG untuk preview & edit visual.
+                        </p>
+                    </div>
+
+                    <input type="hidden" name="content_text" id="content-text-input" value="{{ passage.content_text if passage else '' }}">
+                </div>
+            </div> {# end #content-fields #}
+        </div>
+        {# ── end Card B ──────────────────────────────────────────────────── #}
+
+        {# ── Single-mode cards — only visible in single mode ────────────── #}
+        {% set sq = first_question %}
+        <div id="single-question-fields" class="hidden space-y-4">
+
+        {# Audio — dilipat agar hemat ruang #}
+        <details id="sq-audio-wrap" class="sq-audio">
+            <summary>
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072M12 18.364a9 9 0 000-12.728M12 18.364V5.636M9 9v6"/></svg>
+                File Audio <span class="text-xs font-normal" style="color:var(--faint)">(opsional — klik untuk buka/tutup)</span>
+            </summary>
+            <div class="sq-audio-body">
+                {{ render_audio_upload_widget('sq-audio-url', passage.audio_url if passage else '') }}
+            </div>
+        </details>
+        <textarea id="sq-json-textarea" class="hidden"></textarea>
+        <div id="sq-json-panel" class="hidden"></div>
+
+        {# ── Kartu soal terpadu: Pertanyaan → Jawaban (+kunci) → Pembahasan ── #}
+        <div class="sq-card bg-white rounded-2xl shadow-sm border border-gray-100">
+
+            <div class="p-5 pb-4">
+                <h4 class="qe-label mb-3">Teks Pertanyaan <span style="color:var(--danger)">*</span></h4>
+                <div id="quill-sq-question"></div>
+                <input type="hidden" name="sq_question_text" id="sq-question-text-input"
+                    value="{{ sq.question_text if sq else '' }}">
+            </div>
+
+            <div class="px-5 py-4" style="border-top:1px solid var(--line-soft)">
+                <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+                    <h4 class="qe-label">Pilihan Jawaban <span style="color:var(--danger)">*</span></h4>
+                    {% if answer_type != 'rf' %}
+                    <span class="text-[11px]" style="color:var(--faint)">Klik huruf untuk menandai kunci jawaban</span>
+                    {% endif %}
+                </div>
+                {% if answer_type == 'rf' %}
+                {{ rf_hidden_options('sq_', 'sq_option_', '_input') }}
+                <div class="mt-1">
+                    {{ rf_answer_key('sq_correct_answer', sq.correct_answer if sq else '') }}
+                </div>
+                {% else %}
+                <div class="space-y-2">
+                    {% for opt in ['A','B','C','D'] %}
+                    <div class="sq-opt-row">
+                        <label class="opt-key" title="Jadikan {{ opt }} kunci jawaban">
+                            <input type="radio" name="sq_correct_answer" value="{{ opt }}"
+                                {% if sq and sq.correct_answer == opt %}checked{% elif loop.first and not sq %}checked{% endif %}
+                                class="sr-only">
+                            <span class="opt-key-badge">{{ opt }}</span>
+                        </label>
+                        <input type="text" name="sq_option_{{ opt | lower }}"
+                                id="sq_option_{{ opt | lower }}_input"
+                                data-image-field="sq-option-{{ opt | lower }}-image"
+                                value="{{ sq['option_' ~ (opt | lower)] if sq else '' }}"
+                                class="flex-1 min-w-0 px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50 focus:bg-white transition"
+                                placeholder="Opsi {{ opt }} — ketik teks atau Ctrl+V gambar">
+                        {{ render_option_image('sq_option_' ~ (opt | lower) ~ '_image', 'sq-option-' ~ (opt | lower) ~ '-image', (sq['option_' ~ (opt | lower) ~ '_image'] if sq else '') or '') }}
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+
+            <div class="px-5 py-4" style="border-top:1px solid var(--line-soft)">
+                <div class="flex items-center justify-between mb-3">
+                    <h4 class="qe-label">Pembahasan / Penjelasan</h4>
+                    <div class="flex rounded-lg border border-gray-200 overflow-hidden text-xs font-semibold">
+                        <button type="button" id="sq-exp-btn-wysiwyg"
+                            onclick="setSqExpMode('wysiwyg')"
+                            class="px-2.5 py-1 bg-blue-600 text-white transition">WYSIWYG</button>
+                        <button type="button" id="sq-exp-btn-html"
+                            onclick="setSqExpMode('html')"
+                            class="px-2.5 py-1 bg-white text-gray-500 hover:bg-gray-50 transition">Plain HTML</button>
+                    </div>
+                </div>
+                <div id="sq-exp-wysiwyg-wrap" class="ql-modal">
+                    <div id="quill-sq-explanation"></div>
+                </div>
+                <div id="sq-exp-html-wrap" class="hidden">
+                    <textarea id="sq-exp-html-source" rows="6"
+                        class="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50 resize-y leading-relaxed"
+                        placeholder="&lt;p&gt;Pembahasan...&lt;/p&gt;"></textarea>
+                </div>
+                <input type="hidden" name="sq_explanation" id="sq-explanation-input"
+                    value="{{ sq.explanation if sq else '' }}">
+            </div>
+
+        </div>
+        {# ── end kartu soal terpadu ───────────────────────────────────────── #}
+
+        </div>
+        {# ── end #single-question-fields ─────────────────────────────────── #}
+
+        {# Aksi simpan — bar menempel di bawah layar #}
+        <div class="sticky bottom-0 z-20 mt-2 py-3 px-4 rounded-xl flex flex-wrap items-center gap-3"
+            style="background:rgba(255,255,255,.94); backdrop-filter:blur(8px); border:1px solid var(--line)">
+            <button type="submit" id="save-passage-btn"
+                class="flex-1 min-w-[200px] bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-xl text-sm transition shadow-sm">
+                {% if passage %}Simpan Perubahan{% else %}<span id="btn-save-label">{% if q_mode == 'single' %}Simpan Soal Mandiri{% else %}Simpan Kelompok Soal{% endif %}</span>{% endif %}
+            </button>
+            <a href="{% if return_to %}{{ return_to }}{% else %}/expert/question-bank{% endif %}"
+                class="text-sm font-medium whitespace-nowrap transition hover:underline" style="color:var(--muted)">
+                {% if return_to %}Kembali ke paket{% else %}Kembali ke Bank Soal{% endif %}
+            </a>
+        </div>
+
+        </form>
+    </div>
+
+    <!-- Questions Panel -->
+    <div class="xl:col-span-3 space-y-4" id="questions-panel">
+        {% if passage %}
+
+        <!-- Question List -->
+        {% for q in questions %}
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
+            <div class="flex items-center justify-between gap-3 mb-3">
+                <div class="flex items-center gap-2.5 min-w-0">
+                    <div class="w-7 h-7 text-white text-sm font-bold rounded-full flex items-center justify-center flex-shrink-0 font-display" style="background:var(--brand)">{{ loop.index }}</div>
+                    <span class="pill ok shrink-0">Kunci: {{ q.correct_answer }}</span>
+                </div>
+                <div class="flex gap-2 shrink-0">
+                    <button type="button"
+                        data-pkey="{{ q.pkey }}"
+                        data-question="{{ (q | tojson) | forceescape }}"
+                        onclick="openEditQuestion(this)"
+                        class="text-xs text-blue-600 border border-blue-200 hover:bg-blue-50 px-3 py-1.5 rounded-lg font-medium transition">Edit</button>
+                    <form method="POST" action="/expert/question-bank/questions/{{ q.pkey }}/delete" class="inline" onsubmit="return confirm('Hapus soal ini?')">
+                        <input type="hidden" name="passage_pkey" value="{{ passage.pkey }}">
+                        <button type="submit" class="text-xs text-red-600 border border-red-200 hover:bg-red-50 px-3 py-1.5 rounded-lg font-medium transition">Hapus</button>
+                    </form>
+                </div>
+            </div>
+            <div class="text-sm text-gray-800 mb-3 prose prose-sm max-w-none" style="word-break:break-word;">{{ q.question_text | safe }}</div>
+            {% if q.answer_text %}
+            {% set answer_alts = q.answer_text.split(';') | map('trim') | select | list %}
+            <div class="flex items-start gap-2 px-3 py-2 rounded-lg bg-green-50 border border-green-200 text-xs">
+                <span class="font-bold text-green-700 flex-shrink-0">✍️ Jawaban benar:</span>
+                <span class="text-green-800" style="word-break:break-word;">{{ answer_alts[0] }}{% if answer_alts | length > 1 %} <span class="text-green-600 font-normal">(+{{ answer_alts | length - 1 }} varian lain)</span>{% endif %}</span>
+            </div>
+            {% else %}
+            <div class="grid grid-cols-2 gap-2">
+                {% set is_rf = q.answer_type == 'rf' %}
+                {% for opt, label in ([('A', q.option_a), ('B', q.option_b)] if is_rf else [('A', q.option_a), ('B', q.option_b), ('C', q.option_c), ('D', q.option_d)]) %}
+                {% set opt_img = q['option_' ~ (opt | lower) ~ '_image'] %}
+                <div class="flex items-start gap-2 px-3 py-2 rounded-lg {% if q.correct_answer == opt %}bg-green-50 border border-green-200{% else %}bg-gray-50 border border-gray-100{% endif %} text-xs">
+                    {% if not is_rf %}<span class="font-bold {% if q.correct_answer == opt %}text-green-700{% else %}text-gray-500{% endif %} flex-shrink-0">{{ opt }}</span>{% endif %}
+                    <div class="min-w-0">
+                        {% if opt_img %}<img src="{{ opt_img }}" alt="" class="rounded-md border border-gray-200 mb-1" style="max-height:112px; max-width:200px; width:auto; height:auto">{% endif %}
+                        <span class="{% if q.correct_answer == opt %}text-green-800{% else %}text-gray-600{% endif %}">{{ label }}</span>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+        </div>
+        {% endfor %}
+
+        <!-- Add Question Form -->
+        <div class="bg-white rounded-2xl shadow-sm border border-blue-200" id="add-question-panel">
+
+            <div class="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+                <div class="flex items-center gap-2">
+                    <svg class="w-4 h-4 text-blue-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                    <h3 class="font-semibold text-gray-900 text-sm">Tambah Soal Baru</h3>
+                </div>
+                <button type="button" onclick="jsonPanelToggle(addJsonCtx)"
+                    class="inline-flex items-center gap-1.5 text-xs font-semibold text-purple-700 bg-purple-50 hover:bg-purple-100 border border-purple-200 px-3 py-1.5 rounded-lg transition">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"/></svg>
+                    JSON
+                </button>
+            </div>
+
+            {# JSON Import/Export panel #}
+            <div id="add-json-panel" class="hidden border-b border-gray-100 px-5 py-4 bg-purple-50">
+                <p class="text-xs font-semibold text-purple-700 mb-2">Import / Export JSON</p>
+                <textarea id="add-json-textarea" rows="16"
+                    class="w-full px-3 py-2.5 border border-purple-200 rounded-xl text-xs font-mono bg-white focus:outline-none focus:ring-2 focus:ring-purple-400 resize-y leading-relaxed"
+                    placeholder='{"question_text":"...","option_a":"...","option_b":"...","option_c":"...","option_d":"...","correct_answer":"C","explanation":"..."}'></textarea>
+                <div class="flex flex-wrap gap-2 mt-2">
+                    <button type="button" onclick="jsonPanelImport(addJsonCtx)"
+                        class="px-4 py-1.5 bg-purple-600 hover:bg-purple-700 text-white text-xs font-semibold rounded-lg transition">
+                        ↓ Import ke Form
+                    </button>
+                    <button type="button" onclick="jsonPanelDump(addJsonCtx)"
+                        class="px-4 py-1.5 bg-white hover:bg-gray-50 text-purple-700 border border-purple-200 text-xs font-semibold rounded-lg transition">
+                        ↑ Form ke JSON
+                    </button>
+                    <button type="button" onclick="jsonPanelSample(addJsonCtx)"
+                        class="px-4 py-1.5 bg-white hover:bg-gray-50 text-purple-700 border border-purple-200 text-xs font-semibold rounded-lg transition">
+                        Contoh Soal
+                    </button>
+                    <button type="button" onclick="jsonPanelCopy('add-json-textarea')"
+                        class="px-4 py-1.5 bg-white hover:bg-gray-50 text-gray-600 border border-gray-200 text-xs font-semibold rounded-lg transition ml-auto">
+                        Salin
+                    </button>
+                </div>
+            </div>
+
+            <form method="POST" action="/expert/question-bank/{{ passage.pkey }}/questions/create" id="add-question-form">
+                <input type="hidden" name="question_text" id="question-text-input">
+                <input type="hidden" name="explanation"   id="explanation-input">
+
+                <div class="p-5 space-y-4">
+
+                    {% if answer_type == 'cloze' %}
+                    <div class="flex items-end gap-3 flex-wrap">
+                        <div>
+                            <label class="qe-label mb-1.5 block">Nomor Lücke <span style="color:var(--danger)">*</span></label>
+                            <input type="number" name="gap_no" id="add-gap-no" min="1" required value="{{ (questions | length) + 1 }}"
+                                class="w-24 px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50 focus:bg-white transition">
+                        </div>
+                        <p class="text-xs pb-2.5" style="color:var(--faint)">Sesuai penanda [n] di teks Lückentext.</p>
+                    </div>
+                    {% endif %}
+
+                    <div class="{% if answer_type == 'cloze' %}hidden{% endif %}">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="qe-label">Teks Pertanyaan <span style="color:var(--danger)">*</span></span>
+                            <div class="flex rounded-lg border border-gray-200 overflow-hidden text-xs font-semibold">
+                                <button type="button" id="add-btn-wysiwyg"
+                                    onclick="setAddQMode('wysiwyg')"
+                                    class="px-2.5 py-1 bg-blue-600 text-white transition">WYSIWYG</button>
+                                <button type="button" id="add-btn-html"
+                                    onclick="setAddQMode('html')"
+                                    class="px-2.5 py-1 bg-white text-gray-500 hover:bg-gray-50 transition">Plain HTML</button>
+                            </div>
+                        </div>
+                        <div id="add-wysiwyg-wrap" class="ql-modal">
+                            <div id="quill-question"></div>
+                        </div>
+                        <div id="add-html-wrap" class="hidden">
+                            <textarea id="add-html-source" rows="5"
+                                class="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50 resize-y leading-relaxed"
+                                placeholder="&lt;p&gt;Teks pertanyaan...&lt;/p&gt;"></textarea>
+                        </div>
+                    </div>
+
+                    <div>
+                        <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
+                            <p class="qe-label">{% if cloze_input %}Jawaban Benar{% else %}Pilihan Jawaban{% endif %} <span style="color:var(--danger)">*</span></p>
+                            {% if answer_type != 'rf' and not cloze_input %}
+                            <span class="text-[11px]" style="color:var(--faint)">Klik huruf untuk menandai kunci jawaban</span>
+                            {% endif %}
+                        </div>
+                        {% if cloze_input %}
+                        <input type="hidden" name="correct_answer" value="A">
+                        <input type="text" name="answer_text" id="add-answer-text"
+                            class="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50 focus:bg-white transition"
+                            placeholder="Kata / frasa yang benar — beberapa jawaban pisahkan dengan ;">
+                        <p class="text-xs mt-2 rounded-lg px-3 py-2" style="background:#EFF1F4;color:var(--muted)">
+                            Peserta mengetik jawaban di rumpang teks — penilaian otomatis mengabaikan besar-kecil huruf.
+                        </p>
+                        {% elif answer_type == 'rf' %}
+                        {{ rf_hidden_options('', 'add-opt-') }}
+                        {{ rf_answer_key('correct_answer') }}
+                        {% else %}
+                        <div class="space-y-2">
+                            {% for opt in ['A', 'B', 'C', 'D'] %}
+                            <div class="sq-opt-row">
+                                <label class="opt-key" title="Jadikan {{ opt }} kunci jawaban">
+                                    <input type="radio" name="correct_answer" value="{{ opt }}" {% if loop.first %}checked{% endif %} class="sr-only">
+                                    <span class="opt-key-badge">{{ opt }}</span>
+                                </label>
+                                {% if answer_type == 'cloze' %}
+                                <input type="text" name="option_{{ opt | lower }}"
+                                    id="add-opt-{{ opt | lower }}"
+                                    class="flex-1 min-w-0 px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50 focus:bg-white transition"
+                                    placeholder="Opsi {{ opt }}">
+                                {% else %}
+                                <input type="text" name="option_{{ opt | lower }}"
+                                    id="add-opt-{{ opt | lower }}"
+                                    data-image-field="add-option-{{ opt | lower }}-image"
+                                    class="flex-1 min-w-0 px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50 focus:bg-white transition"
+                                    placeholder="Opsi {{ opt }} — ketik teks atau Ctrl+V gambar">
+                                {{ render_option_image('option_' ~ (opt | lower) ~ '_image', 'add-option-' ~ (opt | lower) ~ '-image') }}
+                                {% endif %}
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <div>
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="qe-label">Pembahasan / Penjelasan</span>
+                            <div class="flex rounded-lg border border-gray-200 overflow-hidden text-xs font-semibold">
+                                <button type="button" id="add-exp-btn-wysiwyg"
+                                    onclick="setAddExpMode('wysiwyg')"
+                                    class="px-2.5 py-1 bg-blue-600 text-white transition">WYSIWYG</button>
+                                <button type="button" id="add-exp-btn-html"
+                                    onclick="setAddExpMode('html')"
+                                    class="px-2.5 py-1 bg-white text-gray-500 hover:bg-gray-50 transition">Plain HTML</button>
+                            </div>
+                        </div>
+                        <div id="add-exp-wysiwyg-wrap" class="ql-modal">
+                            <div id="quill-explanation"></div>
+                        </div>
+                        <div id="add-exp-html-wrap" class="hidden">
+                            <textarea id="add-exp-html-source" rows="5"
+                                class="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50 resize-y leading-relaxed"
+                                placeholder="&lt;p&gt;Pembahasan...&lt;/p&gt;"></textarea>
+                        </div>
+                    </div>
+
+                </div>
+
+                <div class="px-5 py-4" style="border-top:1px solid var(--line-soft); background:#F8FAFD; border-radius:0 0 12px 12px;">
+                    <button type="submit"
+                        class="w-full text-white font-semibold py-2.5 rounded-xl text-sm transition shadow-sm"
+                        style="background:var(--ok)">
+                        + Simpan Soal
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        {% elif q_mode == 'grouped' %}
+        {# ── Builder: tulis semua soal di satu layar, simpan sekali ───────── #}
+        <div class="bg-white rounded-2xl shadow-sm border" id="builder-panel" style="border-color:var(--line)">
+            <div class="flex flex-wrap items-center justify-between gap-3 px-5 py-4" style="border-bottom:1px solid var(--line)">
+                <div class="flex items-center gap-2.5">
+                    <h3 class="font-display font-semibold text-[15px]" style="color:var(--ink)">Soal-Soal</h3>
+                    <span class="pill brand" id="builder-count">0 soal</span>
+                </div>
+                <button type="button" onclick="builderAdd()"
+                    class="text-xs font-semibold text-white px-3.5 py-2 rounded-lg transition"
+                    style="background:var(--brand)">
+                    ＋ Tambah Soal
+                </button>
+            </div>
+            <div id="builder-list" class="px-5 py-4 space-y-3">
+                <p class="text-xs text-center py-8 leading-relaxed" id="builder-empty" style="color:var(--faint)">
+                    Belum ada soal. Klik <strong>＋ Tambah Soal</strong>, tulis semua soal di sini,<br>
+                    lalu simpan semuanya sekali lewat tombol <strong>Simpan</strong> di bawah.
+                </p>
+            </div>
+        </div>
+        {% else %}
+        <div class="bg-gray-50 rounded-2xl border border-dashed border-gray-300 p-10 text-center text-gray-400">
+            <div class="text-4xl mb-2">💡</div>
+            <p class="text-sm">Simpan passage terlebih dahulu untuk mulai menambah soal</p>
+        </div>
+        {% endif %}
+    </div>
+
+</div>{# end #main-grid #}
+
+<!-- Edit Question Modal -->
+<div id="edit-question-modal" class="hidden fixed inset-0 z-50 bg-black/50 flex items-start justify-center p-4 overflow-y-auto">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-5xl my-6">
+
+        {# ── Modal header ─────────────────────────────────────────────────── #}
+        <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+            <h3 class="font-bold text-gray-900 text-base">Edit Soal</h3>
+            <div class="flex items-center gap-2">
+                <button type="button" onclick="jsonPanelToggle(editJsonCtx)"
+                    class="inline-flex items-center gap-1.5 text-xs font-semibold text-purple-700 bg-purple-50 hover:bg-purple-100 border border-purple-200 px-3 py-1.5 rounded-lg transition">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"/></svg>
+                    JSON
+                </button>
+                <button type="button" onclick="closeEditModal()" class="text-gray-400 hover:text-gray-600 transition">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
+            </div>
+        </div>
+
+        {# JSON Import/Export panel #}
+        <div id="edit-json-panel" class="hidden border-b border-gray-100 px-6 py-4 bg-purple-50">
+            <p class="text-xs font-semibold text-purple-700 mb-2">Import / Export JSON</p>
+            <textarea id="edit-json-textarea" rows="16"
+                class="w-full px-3 py-2.5 border border-purple-200 rounded-xl text-xs font-mono bg-white focus:outline-none focus:ring-2 focus:ring-purple-400 resize-y leading-relaxed"
+                placeholder='{"question_text":"...","option_a":"...","option_b":"...","option_c":"...","option_d":"...","correct_answer":"C","explanation":"..."}'></textarea>
+            <div class="flex flex-wrap gap-2 mt-2">
+                <button type="button" onclick="jsonPanelImport(editJsonCtx)"
+                    class="px-4 py-1.5 bg-purple-600 hover:bg-purple-700 text-white text-xs font-semibold rounded-lg transition">
+                    ↓ Import ke Form
+                </button>
+                <button type="button" onclick="jsonPanelDump(editJsonCtx)"
+                    class="px-4 py-1.5 bg-white hover:bg-gray-50 text-purple-700 border border-purple-200 text-xs font-semibold rounded-lg transition">
+                    ↑ Form ke JSON
+                </button>
+                <button type="button" onclick="jsonPanelSample(editJsonCtx)"
+                    class="px-4 py-1.5 bg-white hover:bg-gray-50 text-purple-700 border border-purple-200 text-xs font-semibold rounded-lg transition">
+                    Contoh Soal
+                </button>
+                <button type="button" onclick="jsonPanelCopy('edit-json-textarea')"
+                    class="px-4 py-1.5 bg-white hover:bg-gray-50 text-gray-600 border border-gray-200 text-xs font-semibold rounded-lg transition ml-auto">
+                    Salin
+                </button>
+            </div>
+        </div>
+
+        <form method="POST" id="edit-question-form">
+            <input type="hidden" name="passage_pkey"  value="{{ passage.pkey if passage else '' }}">
+            <input type="hidden" name="question_text" id="edit-question-text-hidden">
+            <input type="hidden" name="explanation"   id="edit-explanation-hidden">
+
+            {# ── Body terpadu: Pertanyaan → Jawaban (+kunci) → Pembahasan ──── #}
+            <div class="p-5 space-y-4">
+
+                {% if answer_type == 'cloze' %}
+                <div class="flex items-end gap-3 flex-wrap">
+                    <div>
+                        <label class="qe-label mb-1.5 block">Nomor Lücke <span style="color:var(--danger)">*</span></label>
+                        <input type="number" name="gap_no" id="edit-gap-no" min="1" required
+                            class="w-24 px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50 focus:bg-white transition">
+                    </div>
+                    <p class="text-xs pb-2.5" style="color:var(--faint)">Sesuai penanda [n] di teks Lückentext.</p>
+                </div>
+                {% endif %}
+
+                <div class="{% if answer_type == 'cloze' %}hidden{% endif %}">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="qe-label">Teks Pertanyaan <span style="color:var(--danger)">*</span></span>
+                        <div class="flex rounded-lg border border-gray-200 overflow-hidden text-xs font-semibold">
+                            <button type="button" id="edit-btn-wysiwyg"
+                                onclick="setEditQuestionMode('wysiwyg')"
+                                class="px-2.5 py-1 bg-blue-600 text-white transition">WYSIWYG</button>
+                            <button type="button" id="edit-btn-html"
+                                onclick="setEditQuestionMode('html')"
+                                class="px-2.5 py-1 bg-white text-gray-500 hover:bg-gray-50 transition">Plain HTML</button>
+                        </div>
+                    </div>
+                    <div id="edit-wysiwyg-wrap" class="ql-modal">
+                        <div id="quill-edit-question"></div>
+                    </div>
+                    <div id="edit-html-wrap" class="hidden">
+                        <textarea id="edit-html-source" rows="5"
+                            class="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50 resize-y leading-relaxed"
+                            placeholder="&lt;p&gt;Teks pertanyaan...&lt;/p&gt;"></textarea>
+                    </div>
+                </div>
+
+                <div>
+                    <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
+                        <p class="qe-label">{% if cloze_input %}Jawaban Benar{% else %}Pilihan Jawaban{% endif %} <span style="color:var(--danger)">*</span></p>
+                        {% if answer_type != 'rf' and not cloze_input %}
+                        <span class="text-[11px]" style="color:var(--faint)">Klik huruf untuk menandai kunci jawaban</span>
+                        {% endif %}
+                    </div>
+                    {% if cloze_input %}
+                    <input type="hidden" name="correct_answer" value="A">
+                    <input type="text" name="answer_text" id="edit-answer-text"
+                        class="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50 focus:bg-white transition"
+                        placeholder="Kata / frasa yang benar — beberapa jawaban pisahkan dengan ;">
+                    <p class="text-xs mt-2 rounded-lg px-3 py-2" style="background:#EFF1F4;color:var(--muted)">
+                        Peserta mengetik jawaban di rumpang teks — penilaian otomatis mengabaikan besar-kecil huruf.
+                    </p>
+                    {% elif answer_type == 'rf' %}
+                    {{ rf_hidden_options('', 'edit-option-') }}
+                    {{ rf_answer_key('correct_answer', '', 'edit-correct-') }}
+                    {% else %}
+                    <div class="space-y-2">
+                        {% for opt in ['a', 'b', 'c', 'd'] %}
+                        <div class="sq-opt-row">
+                            <label class="opt-key" title="Jadikan {{ opt | upper }} kunci jawaban">
+                                <input type="radio" name="correct_answer" value="{{ opt | upper }}" id="edit-correct-{{ opt | upper }}" class="sr-only">
+                                <span class="opt-key-badge">{{ opt | upper }}</span>
+                            </label>
+                            {% if answer_type == 'cloze' %}
+                            <input type="text" name="option_{{ opt }}" id="edit-option-{{ opt }}"
+                                class="flex-1 min-w-0 px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50 focus:bg-white transition"
+                                placeholder="Opsi {{ opt | upper }}">
+                            {% else %}
+                            <input type="text" name="option_{{ opt }}" id="edit-option-{{ opt }}"
+                                data-image-field="edit-option-{{ opt }}-image"
+                                class="flex-1 min-w-0 px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50 focus:bg-white transition"
+                                placeholder="Opsi {{ opt | upper }} — ketik teks atau Ctrl+V gambar">
+                            {{ render_option_image('option_' ~ opt ~ '_image', 'edit-option-' ~ opt ~ '-image') }}
+                            {% endif %}
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+
+                <div>
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="qe-label">Pembahasan / Penjelasan</span>
+                        <div class="flex rounded-lg border border-gray-200 overflow-hidden text-xs font-semibold">
+                            <button type="button" id="edit-exp-btn-wysiwyg"
+                                onclick="setEditExpMode('wysiwyg')"
+                                class="px-2.5 py-1 bg-blue-600 text-white transition">WYSIWYG</button>
+                            <button type="button" id="edit-exp-btn-html"
+                                onclick="setEditExpMode('html')"
+                                class="px-2.5 py-1 bg-white text-gray-500 hover:bg-gray-50 transition">Plain HTML</button>
+                        </div>
+                    </div>
+                    <div id="edit-exp-wysiwyg-wrap" class="ql-modal">
+                        <div id="quill-edit-explanation"></div>
+                    </div>
+                    <div id="edit-exp-html-wrap" class="hidden">
+                        <textarea id="edit-exp-html-source" rows="5"
+                            class="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50 resize-y leading-relaxed"
+                            placeholder="&lt;p&gt;Pembahasan...&lt;/p&gt;"></textarea>
+                    </div>
+                </div>
+
+            </div>
+
+            {# ── Footer actions ───────────────────────────────────────────── #}
+            <div class="flex gap-3 px-6 py-4 border-t border-gray-100 bg-gray-50 rounded-b-2xl">
+                <button type="submit"
+                    class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 rounded-xl text-sm transition shadow-sm">
+                    Simpan Perubahan
+                </button>
+                <button type="button" onclick="closeEditModal()"
+                    class="px-6 py-2.5 border border-gray-200 text-gray-600 rounded-xl text-sm hover:bg-white transition">
+                    Batal
+                </button>
+            </div>
+        </form>
+
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='libs/quill/quill.min.js') }}"></script>
+<script>
+// Sections data for dynamic select
+const sectionsMap  = {{ sections_map | tojson }};
+const packagesList = {{ packages | tojson }};
+const EXISTING_QUESTIONS = {{ (questions if questions else []) | tojson }};
+const CURRENT_PASSAGE_PKEY = {{ (passage.pkey if passage else '') | tojson }};
+const CURRENT_PASSAGE_TITLE = {{ (passage.title if passage else '') | tojson }};
+const ANSWER_TYPE  = {{ answer_type | tojson }};
+const ALLOW_IMAGES = ANSWER_TYPE !== 'cloze';
+const IMG_TOOL     = ALLOW_IMAGES ? [['image']] : [];
+
+function loadSections(packagePkey, selectedPkey) {
+    const select = document.getElementById('section-select');
+    if (!select) return;
+    select.innerHTML = '<option value="">-- Pilih Seksi --</option>';
+    if (!packagePkey) return;
+    const sections = sectionsMap[packagePkey] || [];
+    sections.forEach(sec => {
+        const opt = document.createElement('option');
+        opt.value = sec.pkey;
+        opt.textContent = sec.title + ' (' + sec.section_type + ')';
+        if (selectedPkey && sec.pkey === selectedPkey) opt.selected = true;
+        select.appendChild(opt);
+    });
+    if (selectedPkey) select.value = selectedPkey;
+}
+
+// ── Config from server ───────────────────────────────────────────────────────
+const SECTION_CONFIG  = {{ (section_config | tojson) if section_config else 'null' }};
+const CFG_MODE        = SECTION_CONFIG ? SECTION_CONFIG.default_passage_mode : 'flexible';
+
+const MODE_HINTS = {
+    single : 'Soal berdiri sendiri — tidak memerlukan teks atau audio pendukung.',
+    grouped: 'Beberapa soal berbagi satu konteks bacaan atau audio.',
+};
+
+// ── setQuestionMode ──────────────────────────────────────────────────────────
+function setQuestionMode(mode) {
+    document.getElementById('question-mode-input').value = mode;
+
+    const passagePanel  = document.getElementById('passage-panel');
+    const contentFields = document.getElementById('content-fields');
+    const mainGrid      = document.getElementById('main-grid');
+    const panelTitle    = document.getElementById('panel-title');
+    const btnSingle     = document.getElementById('btn-mode-single');
+    const btnGrouped    = document.getElementById('btn-mode-grouped');
+    const hint          = document.getElementById('mode-hint');
+    const btnLabel      = document.getElementById('btn-save-label');
+
+    const titleWrap   = document.getElementById('title-field-wrap');
+    const titleInput  = document.getElementById('title-input');
+    const sqFields    = document.getElementById('single-question-fields');
+    const contentCard = document.getElementById('content-card');
+    const rightPanel  = document.getElementById('questions-panel');
+    const cardA       = document.getElementById('card-a');
+
+    // Audio URL inputs — disable the one NOT in use so only one submits
+    const passageAudioInput = document.getElementById('passage-audio-url');
+    const sqAudioInput      = document.getElementById('sq-audio-url');
+
+    if (mode === 'single') {
+        contentFields.classList.add('hidden');
+        if (contentCard) contentCard.classList.add('hidden');
+        if (titleWrap)   titleWrap.classList.add('hidden');
+        if (titleInput)  titleInput.removeAttribute('required');
+        if (sqFields)    sqFields.classList.remove('hidden');
+        if (rightPanel)  rightPanel.classList.add('hidden');
+        if (cardA)       cardA.classList.add('hidden');
+        if (panelTitle)  panelTitle.textContent = 'Soal Mandiri';
+        passagePanel.classList.remove('xl:col-span-2');
+        passagePanel.classList.add('xl:col-span-full');
+        mainGrid.classList.remove('xl:grid-cols-5', 'xl:grid-cols-3');
+        if (btnSingle)         btnSingle.classList.add('active');
+        if (btnGrouped)        btnGrouped.classList.remove('active');
+        if (btnLabel)          btnLabel.textContent = 'Simpan Soal Mandiri';
+        // Disable grouped-mode audio so it doesn't override single-mode audio on submit
+        if (passageAudioInput) passageAudioInput.disabled = true;
+        if (sqAudioInput)      sqAudioInput.disabled      = false;
+    } else {
+        contentFields.classList.remove('hidden');
+        if (contentCard) contentCard.classList.remove('hidden');
+        if (titleWrap)   titleWrap.classList.remove('hidden');
+        if (titleInput)  titleInput.setAttribute('required', '');
+        if (sqFields)    sqFields.classList.add('hidden');
+        if (rightPanel)  rightPanel.classList.remove('hidden');
+        if (cardA)       cardA.classList.remove('hidden');
+        if (panelTitle)  panelTitle.textContent = {% if passage %}'Edit Kelompok Soal'{% else %}'Kelompok Soal Baru'{% endif %};
+        passagePanel.classList.remove('xl:col-span-full');
+        passagePanel.classList.add('xl:col-span-2');
+        mainGrid.classList.add('xl:grid-cols-5');
+        if (btnSingle)         btnSingle.classList.remove('active');
+        if (btnGrouped)        btnGrouped.classList.add('active');
+        if (btnLabel)          btnLabel.textContent = {% if passage %}'Simpan Perubahan'{% else %}'Simpan Kelompok Soal'{% endif %};
+        // Disable single-mode audio so it doesn't conflict
+        if (sqAudioInput)      sqAudioInput.disabled      = true;
+        if (passageAudioInput) passageAudioInput.disabled  = false;
+    }
+    if (hint) hint.textContent = MODE_HINTS[mode] || '';
+}
+
+// ── selectSubType — driven by config sub_types ───────────────────────────────
+function selectSubType(btn) {
+    // Update hidden inputs
+    const subType    = btn.dataset.subType;
+    const modeForSub = btn.dataset.passageMode;   // 'single' | 'grouped'
+    document.getElementById('passage-sub-type-input').value = subType;
+
+    // Highlight selected button
+    document.querySelectorAll('.sub-type-btn').forEach(b => {
+        b.classList.remove('bg-blue-600','text-white','border-blue-600');
+        b.classList.add('bg-white','text-gray-600','border-gray-200');
+    });
+    btn.classList.add('bg-blue-600','text-white','border-blue-600');
+    btn.classList.remove('bg-white','text-gray-600','border-gray-200');
+
+    // Update hint
+    const hint = document.getElementById('sub-type-hint');
+    if (hint) hint.textContent = btn.dataset.description || '';
+
+    // Mode is fully driven by sub-type — never show mode-row for sections with sub_types
+    setQuestionMode(modeForSub);
+}
+
+// ── Init on page load ────────────────────────────────────────────────────────
+(function() {
+    const requestedMode = {{ (requested_mode or '')|tojson }};
+    let initMode = 'grouped';
+    if (requestedMode === 'single' || requestedMode === 'grouped') {
+        initMode = requestedMode;
+    } else if (CFG_MODE === 'single' || CFG_MODE === 'grouped') {
+        initMode = CFG_MODE;
+    } else {
+        initMode = document.getElementById('question-mode-input').value || 'grouped';
+    }
+    setQuestionMode(initMode);
+
+    // If editing an existing passage that has a sub_type, highlight its button
+    const savedSubType = document.getElementById('passage-sub-type-input').value;
+    if (savedSubType) {
+        const btn = document.querySelector(`.sub-type-btn[data-sub-type="${savedSubType}"]`);
+        if (btn) selectSubType(btn);
+    }
+
+})();
+
+// ── Passage WYSIWYG editor ──────────────────────────────────────────────────
+const passageQuill = new Quill('#quill-passage', {
+    theme: 'snow',
+    modules: { toolbar: [
+        ['bold', 'italic', 'underline'],
+        [{ 'header': [1, 2, 3, false] }],
+        [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+        ['blockquote'],
+        ...IMG_TOOL,
+        ['clean']
+    ]}
+});
+registerQuillImageUpload(passageQuill);
+
+// Load existing content into Quill on page load
+(function() {
+    const existing = document.getElementById('content-text-input').value;
+    if (existing) {
+        passageQuill.root.innerHTML = existing;
+        document.getElementById('html-source').value = existing;
+    }
+})();
+
+// ── Editor mode toggle (WYSIWYG ↔ Plain HTML) ───────────────────────────────
+let currentEditorMode = 'wysiwyg';
+
+function setEditorMode(mode) {
+    const wysiwygWrap = document.getElementById('wysiwyg-wrap');
+    const htmlWrap    = document.getElementById('html-wrap');
+    const htmlSource  = document.getElementById('html-source');
+    const btnW        = document.getElementById('btn-wysiwyg');
+    const btnH        = document.getElementById('btn-html');
+
+    if (mode === 'html') {
+        // WYSIWYG → Plain HTML: dump Quill's HTML into textarea
+        htmlSource.value = passageQuill.root.innerHTML;
+        wysiwygWrap.classList.add('hidden');
+        htmlWrap.classList.remove('hidden');
+        btnW.className = 'px-3 py-1.5 bg-white text-gray-500 hover:bg-gray-50 transition';
+        btnH.className = 'px-3 py-1.5 bg-blue-600 text-white transition';
+
+    } else {
+        // Plain HTML → WYSIWYG: inject textarea HTML into Quill
+        const html = htmlSource.value.trim();
+        if (html) {
+            passageQuill.root.innerHTML = html;
+        }
+        htmlWrap.classList.add('hidden');
+        wysiwygWrap.classList.remove('hidden');
+        btnW.className = 'px-3 py-1.5 bg-blue-600 text-white transition';
+        btnH.className = 'px-3 py-1.5 bg-white text-gray-500 hover:bg-gray-50 transition';
+    }
+    currentEditorMode = mode;
+}
+
+// ── Shared image upload: file picker, Ctrl+V paste ───────────────────────────
+function uploadImageFile(file) {
+    const fd = new FormData();
+    fd.append('file', file, file.name || ('paste.' + ((file.type || 'image/png').split('/')[1] || 'png')));
+    return fetch('/expert/upload-image', { method: 'POST', body: fd })
+        .then(r => r.json())
+        .then(data => {
+            if (data.status !== 'ok') throw new Error(data.message || 'Coba lagi');
+            return data.url;
+        });
+}
+
+function clipboardImageFile(e) {
+    const items = (e.clipboardData && e.clipboardData.items) || [];
+    for (let i = 0; i < items.length; i++) {
+        if (items[i].kind === 'file' && items[i].type.indexOf('image/') === 0) {
+            return items[i].getAsFile();
+        }
+    }
+    return null;
+}
+
+function quillInsertUploadedImage(quillInstance, file) {
+    const placeholder = ' [uploading image...] ';
+    const range = quillInstance.getSelection(true);
+    quillInstance.insertText(range.index, placeholder, 'italic', true);
+    quillInstance.setSelection(range.index + placeholder.length);
+    uploadImageFile(file)
+        .then(url => {
+            quillInstance.deleteText(range.index, placeholder.length);
+            quillInstance.insertEmbed(range.index, 'image', url, 'user');
+            quillInstance.setSelection(range.index + 1);
+        })
+        .catch(err => {
+            quillInstance.deleteText(range.index, placeholder.length);
+            alert('Upload gambar gagal: ' + (err.message || 'koneksi bermasalah'));
+        });
+}
+
+function registerQuillImageUpload(quillInstance) {
+    const toolbar = quillInstance.getModule('toolbar');
+    toolbar.addHandler('image', function() {
+        const input = document.createElement('input');
+        input.setAttribute('type', 'file');
+        input.setAttribute('accept', 'image/jpeg,image/png,image/gif,image/webp,image/svg+xml');
+        input.click();
+        input.onchange = function() {
+            if (input.files[0]) quillInsertUploadedImage(quillInstance, input.files[0]);
+        };
+    });
+    // Capture phase so this runs before Quill's own paste handler (which would embed base64)
+    quillInstance.root.addEventListener('paste', function(e) {
+        const file = clipboardImageFile(e);
+        if (!file) return;
+        e.preventDefault();
+        if (ALLOW_IMAGES) quillInsertUploadedImage(quillInstance, file);
+    }, true);
+}
+
+function insertClozeGap() {
+    const source = currentEditorMode === 'html'
+        ? document.getElementById('html-source').value
+        : passageQuill.getText();
+    let maxNo = 0;
+    (source.match(/\[(\d+)\]/g) || []).forEach(function(m) {
+        maxNo = Math.max(maxNo, parseInt(m.slice(1, -1), 10) || 0);
+    });
+    const marker = '[' + (maxNo + 1) + ']';
+    if (currentEditorMode === 'html') {
+        const ta  = document.getElementById('html-source');
+        const pos = ta.selectionStart || ta.value.length;
+        ta.value = ta.value.slice(0, pos) + marker + ta.value.slice(pos);
+        ta.focus();
+        ta.selectionStart = ta.selectionEnd = pos + marker.length;
+    } else {
+        const range = passageQuill.getSelection(true);
+        passageQuill.insertText(range.index, marker, 'bold', true);
+        passageQuill.setSelection(range.index + marker.length);
+        passageQuill.format('bold', false);
+    }
+}
+
+function optionImageSet(fieldId, url) {
+    const input   = document.getElementById(fieldId);
+    const preview = document.getElementById(fieldId + '-preview');
+    const remove  = document.getElementById(fieldId + '-remove');
+    if (!input) return;
+    input.value = url || '';
+    if (preview) {
+        preview.src = url || '';
+        preview.classList.toggle('hidden', !url);
+    }
+    if (remove) remove.classList.toggle('hidden', !url);
+}
+
+function optionImageUpload(file, fieldId) {
+    const preview = document.getElementById(fieldId + '-preview');
+    if (preview) preview.classList.add('opacity-40');
+    return uploadImageFile(file)
+        .then(url => optionImageSet(fieldId, url))
+        .catch(err => alert('Upload gambar gagal: ' + (err.message || 'koneksi bermasalah')))
+        .finally(() => { if (preview) preview.classList.remove('opacity-40'); });
+}
+
+function optionImagePick(picker, fieldId) {
+    const file = picker.files[0];
+    if (!file) return;
+    optionImageUpload(file, fieldId).finally(() => { picker.value = ''; });
+}
+
+// Ctrl+V an image into an option's text box → becomes that option's image
+document.addEventListener('paste', function(e) {
+    const target = e.target;
+    const fieldId = target && target.dataset ? target.dataset.imageField : '';
+    if (!fieldId) return;
+    const file = clipboardImageFile(e);
+    if (!file) return;
+    e.preventDefault();
+    optionImageUpload(file, fieldId);
+});
+
+{% if passage %}
+const questionQuill = new Quill('#quill-question', {
+    theme: 'snow',
+    modules: { toolbar: [['bold', 'italic', 'underline'], ...IMG_TOOL, ['clean']] }
+});
+registerQuillImageUpload(questionQuill);
+
+const explanationQuill = new Quill('#quill-explanation', {
+    theme: 'snow',
+    modules: { toolbar: [
+        ['bold', 'italic', 'underline'],
+        [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+        ...IMG_TOOL,
+        ['clean']
+    ]}
+});
+registerQuillImageUpload(explanationQuill);
+{% endif %}
+
+// ── Single-mode inline question editors ──────────────────────────────────────
+const sqQuestionQuill = new Quill('#quill-sq-question', {
+    theme: 'snow',
+    modules: { toolbar: [['bold', 'italic', 'underline'], ...IMG_TOOL, ['clean']] }
+});
+registerQuillImageUpload(sqQuestionQuill);
+const sqExplanationQuill = new Quill('#quill-sq-explanation', {
+    theme: 'snow',
+    modules: { toolbar: [
+        ['bold', 'italic', 'underline'],
+        [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+        ...IMG_TOOL,
+        ['clean']
+    ]}
+});
+registerQuillImageUpload(sqExplanationQuill);
+
+// ── JSON ctx objects — wired after all Quill instances exist ─────────────────
+
+// Single-mode ctx
+const sqJsonCtx = {
+    panelId       : 'sq-json-panel',
+    textareaId    : 'sq-json-textarea',
+    questionQuill : sqQuestionQuill,
+    expQuill      : sqExplanationQuill,
+    expHtmlSrcId  : 'sq-exp-html-source',
+    expModeGetter : () => sqExpMode,
+    optIds        : { a:'sq_option_a_input', b:'sq_option_b_input', c:'sq_option_c_input', d:'sq_option_d_input' },
+    correctName   : 'sq_correct_answer',
+    formId        : 'passage-form',
+    qHiddenId     : 'sq-question-text-input',
+    expHiddenId   : 'sq-explanation-input',
+};
+
+// ── Single-mode Card E — Plain HTML toggle ────────────────────────────────────
+let sqExpMode = 'wysiwyg';
+
+function setSqExpMode(mode) {
+    const wWrap = document.getElementById('sq-exp-wysiwyg-wrap');
+    const hWrap = document.getElementById('sq-exp-html-wrap');
+    const hSrc  = document.getElementById('sq-exp-html-source');
+    const btnW  = document.getElementById('sq-exp-btn-wysiwyg');
+    const btnH  = document.getElementById('sq-exp-btn-html');
+    if (mode === 'html') {
+        hSrc.value = sqExplanationQuill.root.innerHTML;
+        wWrap.classList.add('hidden'); hWrap.classList.remove('hidden');
+        btnW.className = 'px-2.5 py-1 bg-white text-gray-500 hover:bg-gray-50 transition';
+        btnH.className = 'px-2.5 py-1 bg-blue-600 text-white transition';
+    } else {
+        const html = hSrc.value.trim();
+        if (html) sqExplanationQuill.root.innerHTML = html;
+        hWrap.classList.add('hidden'); wWrap.classList.remove('hidden');
+        btnW.className = 'px-2.5 py-1 bg-blue-600 text-white transition';
+        btnH.className = 'px-2.5 py-1 bg-white text-gray-500 hover:bg-gray-50 transition';
+    }
+    sqExpMode = mode;
+}
+
+// Pre-load existing values when editing a single-mode passage
+(function() {
+    const existingQ = document.getElementById('sq-question-text-input').value;
+    const existingE = document.getElementById('sq-explanation-input').value;
+    if (existingQ) sqQuestionQuill.root.innerHTML = existingQ;
+    if (existingE) sqExplanationQuill.root.innerHTML = existingE;
+})();
+
+// Passage form submit — always sync from active mode before submitting
+document.getElementById('passage-form').addEventListener('submit', function() {
+    if (currentEditorMode === 'html') {
+        document.getElementById('content-text-input').value =
+            document.getElementById('html-source').value;
+    } else {
+        document.getElementById('content-text-input').value = passageQuill.root.innerHTML;
+    }
+    // Sync single-question Quill editors
+    document.getElementById('sq-question-text-input').value = sqQuestionQuill.root.innerHTML;
+    // Sync explanation — from active mode (wysiwyg or plain html)
+    document.getElementById('sq-explanation-input').value =
+        sqExpMode === 'html'
+            ? document.getElementById('sq-exp-html-source').value
+            : sqExplanationQuill.root.innerHTML;
+    // Auto-title: use first 60 chars of question text if title is blank
+    const titleInput = document.getElementById('title-input');
+    if (titleInput && !titleInput.value.trim()) {
+        const qText = sqQuestionQuill.getText().trim().slice(0, 60);
+        titleInput.value = qText || 'Soal Mandiri';
+    }
+});
+
+// ── Live audio preview when typing URL in sq-audio-url ───────────────────────
+(function() {
+    const urlInput   = document.getElementById('sq-audio-url');
+    const previewWrap = document.getElementById('sq-audio-preview-wrap');
+    const previewNew  = document.getElementById('sq-audio-preview-new');
+    if (!urlInput || !previewWrap || !previewNew) return;
+
+    let debounce;
+    urlInput.addEventListener('input', function() {
+        clearTimeout(debounce);
+        debounce = setTimeout(() => {
+            const url = this.value.trim();
+            if (url) {
+                previewNew.src = url;
+                previewWrap.classList.remove('hidden');
+            } else {
+                previewWrap.classList.add('hidden');
+            }
+        }, 600);
+    });
+})();
+
+// ══════════════════════════════════════════════════════════════════════════════
+// JSON Import / Export helper
+// ctx = {
+//   panelId       : id of the collapsible panel div
+//   textareaId    : id of the <textarea> holding JSON
+//   questionQuill : Quill instance for question text (or null)
+//   expQuill      : Quill instance for explanation (or null)
+//   expHtmlSrcId  : id of plain-html textarea for explanation (or null)
+//   expModeGetter : fn() → 'wysiwyg'|'html'
+//   optIds        : {a, b, c, d} — input element ids for options
+//   correctName   : radio input name for correct_answer
+// }
+// ──────────────────────────────────────────────────────────────────────────────
+
+const SAMPLE_QUESTION = {
+    package: (packagesList[0] && packagesList[0].title) ? packagesList[0].title : 'Goethe-Zertifikat B1',
+    section: 'lesen',
+    question_mode: 'single',
+    question_text: '<p><em>Wählen Sie die richtige Option aus.</em></p><p><br></p><p>Wenn ich am Wochenende frei habe, ______ ich meine Freunde in Berlin.</p><p><br></p><p><strong>Frage:</strong> Welche Form ergänzt den Satz richtig?</p>',
+    option_a: 'treffe',
+    option_b: 'treffen',
+    option_c: 'getroffen',
+    option_d: 'trafen',
+    correct_answer: 'A',
+    explanation: '<p><strong>Jawaban: A — treffe.</strong></p><p><br></p><p><strong>Pembahasan:</strong></p><p>Subjek kalimat utama adalah <em>ich</em>. Kata kerja <em>treffen</em> merupakan unregelmäßiges Verb yang pada orang pertama tunggal Präsens berkonjugasi menjadi <strong>ich treffe</strong>.</p>'
+};
+
+const SAMPLE_GROUPED_READING = {
+    package: (packagesList[0] && packagesList[0].title) ? packagesList[0].title : 'Goethe-Zertifikat B1',
+    section: 'lesen',
+    question_mode: 'grouped',
+    title: 'Öffentlicher Nahverkehr in Deutschland',
+    content_text: '<p><em>Lesen Sie den Text und beantworten Sie die Aufgaben 1–3.</em></p><p><br></p><p>In vielen deutschen Städten spielt der öffentliche Nahverkehr (ÖPNV) eine zentrale Rolle im Alltag der Menschen. Ob Straßenbahn, U-Bahn oder Bus: Millionen von Pendlern nutzen diese Verkehrsmittel täglich. Neben der Entlastung der Straßen steht vor allem der Umweltschutz im Vordergrund moderner Stadtplanung.</p><p><br></p><p>Ein wichtiger Schritt zur Modernisierung ist die Einführung digitaler Fahrscheine und flexibler Abonnements. Das deutschlandweit gültige Ticket hat dazu geführt, dass immer mehr Berufstätige das Auto stehen lassen.</p>',
+    questions: [
+        {
+            question_text: '<p>Worum geht es im Text hauptsächlich?</p>',
+            option_a: 'Um die Geschichte der Straßenbahn in Deutschland',
+            option_b: 'Um die Bedeutung und Modernisierung des Nahverkehrs',
+            option_c: 'Warum das Auto in Großstädten verboten werden sollte',
+            option_d: 'Um Probleme bei der Ausbildung von Fahrern',
+            correct_answer: 'B',
+            explanation: '<p><strong>Jawaban: B — Um die Bedeutung und Modernisierung des Nahverkehrs.</strong></p><p>Teks menjelaskan peran transportasi publik, manfaat lingkungan, serta inovasi tiket digital.</p>'
+        },
+        {
+            question_text: '<p>Was steht neben der Verkehrsentlastung im Vordergrund?</p>',
+            option_a: 'Der Umweltschutz',
+            option_b: 'Höhere Einnahmen für Städte',
+            option_c: 'Der Bau neuer Parkplätze',
+            option_d: 'Die Abschaffung von Fußgängerzonen',
+            correct_answer: 'A',
+            explanation: '<p><strong>Jawaban: A — Der Umweltschutz.</strong></p><p>Paragraf 1 secara jelas menyatakan: <em>Neben der Entlastung der Straßen steht vor allem der Umweltschutz im Vordergrund.</em></p>'
+        }
+    ]
+};
+
+// ── Dump sesuai jenis soal (test_type × mode × answer_type) ─────────────────
+// Sumber utama: /expert/question-bank/dump-templates (db_test_type_dump).
+// Bila server tidak tersedia, jatuh ke contoh bawaan per jenis di bawah.
+
+const QE_JENIS_LABELS = {
+    single      : 'Pilihan Ganda — Mandiri',
+    grouped     : 'Pilihan Ganda — Kelompok',
+    rf_single   : 'Richtig/Falsch — Mandiri',
+    rf_grouped  : 'Richtig/Falsch — Kelompok',
+    cloze       : 'Lückentext (Pilihan A–D)',
+    cloze_select: 'Lückentext (Pilihan di Teks)',
+    cloze_input : 'Lückentext (Ketik Jawaban)',
+};
+
+const QE_JENIS_HINTS = {
+    single      : 'Impor satu soal: question_text, option_a–option_d, correct_answer, explanation.',
+    grouped     : 'Kelompok soal: title, content_text / audio_url, lalu questions[] — tiap soal ada opsi, kunci, dan pembahasan.',
+    rf_single   : 'Richtig/Falsch mandiri: question_text (pernyataan) + correct_answer A (Richtig) / B (Falsch) — tanpa opsi.',
+    rf_grouped  : 'Kelompok RF: transkrip/teks di content_text, lalu questions[] berisi pernyataan + correct_answer A/B.',
+    cloze       : 'Lückentext kartu soal: content_text memuat rumpang [1], [2], …; questions[] = per rumpang (gap_no, option_a–option_d, kunci).',
+    cloze_select: 'Lückentext dropdown inline: sama seperti kartu soal (option_a–option_d + kunci), hanya saja opsi tampil di teks.',
+    cloze_input : 'Lückentext isian: content_text memuat rumpang [1], [2], …; questions[] = per rumpang (gap_no, answer_text, explanation) — TANPA opsi.',
+};
+
+function qeDumpJenisKey() {
+    const mode = (((document.getElementById('question-mode-input') || {}).value) || 'single').toLowerCase();
+    if (ANSWER_TYPE === 'cloze') {
+        if (CLOZE_ANSWER_MODE === 'input')  return 'cloze_input';
+        if (CLOZE_ANSWER_MODE === 'select') return 'cloze_select';
+        return 'cloze';
+    }
+    if (ANSWER_TYPE === 'rf')    return mode === 'grouped' ? 'rf_grouped' : 'rf_single';
+    return mode === 'grouped' ? 'grouped' : 'single';
+}
+
+function qeDumpTestType() {
+    const keyInput = document.getElementById('section-key-input');
+    return ((keyInput && keyInput.value) || '').trim().toLowerCase();
+}
+
+function qeFetchTypeDumps(limit, onItems) {
+    const url = '/expert/question-bank/dump-templates?test_type=' + encodeURIComponent(qeDumpTestType()) +
+        '&mode=' + encodeURIComponent(qeDumpJenisKey()) + '&limit=' + (limit || 1);
+    fetch(url)
+        .then(function(r) { return r.json(); })
+        .then(function(data) { onItems((data && data.status === 'OK' && data.items) || []); })
+        .catch(function() { onItems([]); });
+}
+
+// Contoh bawaan per jenis — dipakai hanya bila dump server tidak tersedia
+const QE_FALLBACK_HOEREN_SINGLE = {
+    question_mode: 'single',
+    question_text: '<p><em>Sie hören eine Durchsage am Bahnhof.</em></p><p>„Achtung an Gleis 5: Der ICE 578 nach Hamburg, planmäßige Abfahrt 14:32 Uhr, fährt heute mit circa 20 Minuten Verspätung ab.“</p><p><strong>Wann fährt der Zug voraussichtlich ab?</strong></p>',
+    option_a: 'Um 14:12 Uhr',
+    option_b: 'Um 14:32 Uhr',
+    option_c: 'Um 14:52 Uhr',
+    option_d: 'Um 15:32 Uhr',
+    correct_answer: 'C',
+    explanation: '<p><strong>Jawaban: C — Um 14:52 Uhr.</strong></p><p>Jadwal awal 14:32 dan kereta terlambat <em>circa 20 Minuten</em>, jadi berangkat sekitar 14:52.</p>'
+};
+
+const QE_FALLBACK_HOEREN_GROUPED = {
+    question_mode: 'grouped',
+    title: 'Telefongespräch — Wohnungssuche',
+    content_text: '<p><em>Sie hören ein Telefongespräch. Beantworten Sie die Aufgaben 1–3.</em></p><p><strong>Transkript</strong></p><p><strong>Makler:</strong> Guten Tag, die Wohnung in der Goethestraße ist noch frei — eine Dreizimmerwohnung, 72 Quadratmeter, mit Balkon.</p><p><strong>Lisa:</strong> Und wie hoch ist die Miete?</p><p><strong>Makler:</strong> 780 Euro kalt, dazu 170 Euro Nebenkosten — insgesamt 950 Euro warm.</p><p><strong>Lisa:</strong> Darf ich eine Katze halten?</p><p><strong>Makler:</strong> Katzen sind kein Problem, nur Hunde sind nicht erlaubt.</p>',
+    questions: [
+        {
+            question_text: '<p>Wie viele Zimmer hat die Wohnung?</p>',
+            option_a: 'Zwei', option_b: 'Drei', option_c: 'Vier', option_d: 'Zweiundsiebzig',
+            correct_answer: 'B',
+            explanation: '<p><strong>Jawaban: B — Drei.</strong></p><p><em>Eine Dreizimmerwohnung</em> = tiga kamar; 72 adalah luas (m²).</p>'
+        },
+        {
+            question_text: '<p>Wie viel kostet die Wohnung insgesamt pro Monat?</p>',
+            option_a: '170 Euro', option_b: '780 Euro', option_c: '950 Euro', option_d: '720 Euro',
+            correct_answer: 'C',
+            explanation: '<p><strong>Jawaban: C — 950 Euro.</strong></p><p>Kaltmiete 780 € + Nebenkosten 170 € = <em>950 Euro warm</em>.</p>'
+        },
+        {
+            question_text: '<p>Welches Haustier ist nicht erlaubt?</p>',
+            option_a: 'Eine Katze', option_b: 'Ein Hund', option_c: 'Ein Vogel', option_d: 'Alle Haustiere',
+            correct_answer: 'B',
+            explanation: '<p><strong>Jawaban: B — Ein Hund.</strong></p><p><em>Nur Hunde sind nicht erlaubt</em>; kucing boleh.</p>'
+        }
+    ]
+};
+
+const QE_FALLBACK_RF_SINGLE = {
+    question_mode: 'single',
+    answer_type: 'rf',
+    question_text: '<p><em>Sie hören eine Durchsage am Bahnhof.</em></p><p>„Liebe Fahrgäste, wegen eines technischen Defekts fällt der Regionalexpress nach Nürnberg um 16:10 Uhr heute aus. Bitte nehmen Sie den nächsten Zug um 16:40 Uhr von Gleis 3.“</p><p><strong>Der Zug um 16:10 Uhr fährt heute nicht.</strong></p>',
+    correct_answer: 'A',
+    explanation: '<p><strong>Richtig.</strong> <em>… fällt der Regionalexpress … um 16:10 Uhr heute aus</em> — <em>ausfallen</em> = dibatalkan, jadi kereta itu tidak berangkat.</p>'
+};
+
+const QE_FALLBACK_RF_GROUPED = {
+    question_mode: 'grouped',
+    answer_type: 'rf',
+    title: 'Gespräch im Reisebüro — Richtig oder Falsch?',
+    content_text: '<p><em>Sie hören ein Gespräch. Sind die Aussagen 1–3 richtig oder falsch?</em></p><p><strong>Transkript</strong></p><p><strong>Kundin:</strong> Ich möchte im August mit meiner Tochter zwei Wochen nach Spanien fliegen, am liebsten ab Frankfurt.</p><p><strong>Mitarbeiter:</strong> Ich habe ein Hotel auf Mallorca, 200 Meter vom Strand, mit Frühstück — für Sie beide 1.400 Euro.</p><p><strong>Kundin:</strong> Das passt. Mehr als 1.500 Euro möchte ich nicht ausgeben. Ist das Frühstück dabei?</p><p><strong>Mitarbeiter:</strong> Ja, Frühstück ist inklusive, nur das Abendessen kostet extra.</p>',
+    questions: [
+        { question_text: '<p>Die Frau reist allein.</p>', correct_answer: 'B',
+          explanation: '<p><strong>Falsch.</strong> Ia pergi <em>mit meiner Tochter</em> (bersama putrinya).</p>' },
+        { question_text: '<p>Sie möchte mit dem Flugzeug reisen.</p>', correct_answer: 'A',
+          explanation: '<p><strong>Richtig.</strong> <em>… zwei Wochen nach Spanien fliegen.</em></p>' },
+        { question_text: '<p>Das Frühstück ist im Preis inklusive.</p>', correct_answer: 'A',
+          explanation: '<p><strong>Richtig.</strong> <em>Frühstück ist inklusive.</em> Yang bayar terpisah adalah makan malam.</p>' }
+    ]
+};
+
+const QE_FALLBACK_CLOZE = {
+    question_mode: 'grouped',
+    answer_type: 'cloze',
+    title: 'Notizen — Termin beim Zahnarzt',
+    content_text: '<p><em>Sie hören eine Nachricht auf dem Anrufbeantworter und machen Notizen. Ergänzen Sie die Lücken 1–3.</em></p><p><strong>Transkript</strong> <em>(ganti dengan audio bila sudah tersedia)</em>: „Guten Tag, hier ist die Zahnarztpraxis Dr. Becker. Ihr Termin ist am Dienstag, den 14. Mai, um 15:30 Uhr. Bitte bringen Sie Ihre Versichertenkarte mit und kommen Sie zehn Minuten früher.“</p><p><strong>Notizen</strong></p><p>Termin am <strong>[1]</strong>, den 14. Mai, um <strong>[2]</strong> Uhr.<br>Mitbringen: <strong>[3]</strong>.</p>',
+    questions: [
+        { gap_no: 1, option_a: 'Montag', option_b: 'Dienstag', option_c: 'Donnerstag', option_d: 'Freitag', correct_answer: 'B',
+          explanation: '<p><strong>B — Dienstag.</strong> <em>Ihr Termin ist am Dienstag, den 14. Mai.</em></p>' },
+        { gap_no: 2, option_a: '13:30', option_b: '15:00', option_c: '15:30', option_d: '16:30', correct_answer: 'C',
+          explanation: '<p><strong>C — 15:30.</strong> <em>… um 15:30 Uhr.</em></p>' },
+        { gap_no: 3, option_a: 'den Personalausweis', option_b: 'die Versichertenkarte', option_c: 'ein Passfoto', option_d: 'Bargeld', correct_answer: 'B',
+          explanation: '<p><strong>B.</strong> <em>Bitte bringen Sie Ihre Versichertenkarte mit</em> (kartu asuransi).</p>' }
+    ]
+};
+
+const QE_FALLBACK_CLOZE_INPUT = {
+    question_mode: 'grouped',
+    answer_type: 'cloze',
+    cloze_answer_mode: 'input',
+    title: 'Notizen — Termin beim Arzt (isian)',
+    content_text: '<p><em>Sie hören eine Nachricht und machen Notizen. Ergänzen Sie die Lücken 1–3.</em></p><p><strong>Transkript</strong> <em>(ganti dengan audio bila sudah tersedia)</em>: „Guten Tag, hier ist die Praxis Dr. Klein. Ihr Termin ist am Freitag um 9 Uhr. Bitte bringen Sie Ihre Versichertenkarte mit und kommen Sie fünf Minuten früher.“</p><p><strong>Notizen</strong></p><p>Termin am <strong>[1]</strong> um <strong>[2]</strong> Uhr.<br>Ich soll <strong>[3]</strong> Minuten früher kommen.</p>',
+    questions: [
+        { gap_no: 1, answer_text: 'Freitag',
+          explanation: '<p><strong>Freitag.</strong> <em>Ihr Termin ist am Freitag.</em></p>' },
+        { gap_no: 2, answer_text: '9 Uhr',
+          explanation: '<p><strong>9 Uhr.</strong> <em>… um 9 Uhr.</em></p>' },
+        { gap_no: 3, answer_text: 'fünf',
+          explanation: '<p><strong>fünf.</strong> <em>… kommen Sie fünf Minuten früher.</em></p>' }
+    ]
+};
+
+function qeFallbackSample(jenis) {
+    const hoeren = qeDumpTestType() === 'hoeren';
+    if (jenis === 'rf_single')    return QE_FALLBACK_RF_SINGLE;
+    if (jenis === 'rf_grouped')   return QE_FALLBACK_RF_GROUPED;
+    if (jenis === 'cloze')        return QE_FALLBACK_CLOZE;
+    if (jenis === 'cloze_select') return QE_FALLBACK_CLOZE;       // data sama seperti MC
+    if (jenis === 'cloze_input')  return QE_FALLBACK_CLOZE_INPUT; // isian: answer_text, tanpa opsi
+    if (jenis === 'grouped')      return hoeren ? QE_FALLBACK_HOEREN_GROUPED : SAMPLE_GROUPED_READING;
+    return hoeren ? QE_FALLBACK_HOEREN_SINGLE : SAMPLE_QUESTION;
+}
+
+// Suntik meta halaman (section / question_mode / answer_type / cloze_answer_mode)
+// agar hasil dump bisa di-impor ulang ke bentuk yang sama.
+function qeTailorDumpItem(item) {
+    const meta = jsonCollectMeta();
+    const out  = Object.assign({}, item);
+    out.section       = meta.section || out.section;
+    out.question_mode = out.question_mode || meta.question_mode;
+    out.answer_type   = meta.answer_type;
+    if (meta.answer_type === 'cloze') out.cloze_answer_mode = CLOZE_ANSWER_MODE;
+    return out;
+}
+
+// Ambil satu contoh sesuai jenis halaman: dump server dulu, lalu contoh bawaan.
+function qeLoadDumpTemplate(onDone, loadingMsg) {
+    if (loadingMsg) topJsonStatus(loadingMsg, true);
+    qeFetchTypeDumps(1, function(items) {
+        if (items && items.length) {
+            onDone(qeTailorDumpItem(items[0]), 'server');
+            return;
+        }
+        onDone(qeTailorDumpItem(qeFallbackSample(qeDumpJenisKey())), 'local');
+    });
+}
+
+function jsonFindPackage(value) {
+    if (!value) return null;
+    const v = String(value).trim().toLowerCase();
+    return (packagesList || []).find(p =>
+        (p.pkey || '').toLowerCase() === v ||
+        (p.package_id || '').toLowerCase() === v ||
+        (p.title || '').toLowerCase() === v ||
+        (p.test_type || '').toLowerCase() === v
+    ) || null;
+}
+
+function jsonFindSection(pkgPkey, value) {
+    if (!value) return null;
+    const v = String(value).trim().toLowerCase();
+    const pool = [];
+    if (pkgPkey && sectionsMap[pkgPkey]) {
+        pool.push.apply(pool, sectionsMap[pkgPkey]);
+    } else {
+        Object.keys(sectionsMap || {}).forEach(k => {
+            pool.push.apply(pool, sectionsMap[k] || []);
+        });
+    }
+    return pool.find(s =>
+        (s.pkey || '').toLowerCase() === v ||
+        (s.section_id || '').toLowerCase() === v ||
+        (s.title || '').toLowerCase() === v ||
+        (s.section_type || '').toLowerCase() === v
+    ) || null;
+}
+
+function jsonCollectMeta() {
+    const keyInput = document.getElementById('section-key-input');
+    const mode     = (document.getElementById('question-mode-input') || {}).value || 'single';
+    return {
+        section      : keyInput ? (keyInput.value || '') : '',
+        question_mode: mode,
+        answer_type  : ANSWER_TYPE || 'mc',
+    };
+}
+
+function jsonApplyMeta(obj) {
+    const secVal  = obj.section || obj.section_id || obj.section_pkey || obj.section_type || obj.seksi || obj.section_key || '';
+    const modeVal = String(obj.question_mode || obj.mode || '').toLowerCase();
+    const keyInput = document.getElementById('section-key-input');
+    if (keyInput && secVal && !keyInput.value) {
+        keyInput.value = String(secVal).trim().toLowerCase();
+    }
+
+    if (modeVal === 'single' || modeVal === 'grouped') {
+        setQuestionMode(modeVal);
+    }
+
+    if (obj.passage_sub_type) {
+        const btn = document.querySelector('.sub-type-btn[data-sub-type="' + obj.passage_sub_type + '"]');
+        if (btn) selectSubType(btn);
+    }
+}
+
+function getActiveQuestionCtx() {
+    const mode = (document.getElementById('question-mode-input') || {}).value;
+    if (mode === 'single' && typeof sqJsonCtx !== 'undefined') return sqJsonCtx;
+    if (typeof addJsonCtx !== 'undefined') return addJsonCtx;
+    if (typeof sqJsonCtx !== 'undefined') return sqJsonCtx;
+    return null;
+}
+
+function topJsonCtx() {
+    return { panelId: 'top-json-panel', textareaId: 'top-json-textarea' };
+}
+
+function setInputView(view) {
+    const jsonPanel = document.getElementById('top-json-panel');
+    const formWrap  = document.getElementById('normal-input-wrap');
+    const mainGrid  = document.getElementById('main-grid');
+    const btnForm   = document.getElementById('btn-view-form');
+    const btnJson   = document.getElementById('btn-view-json');
+    const hint      = document.getElementById('input-mode-hint');
+    const showJson  = view === 'json';
+
+    if (jsonPanel) jsonPanel.classList.toggle('hidden', !showJson);
+    if (formWrap)  formWrap.classList.toggle('hidden', showJson);
+    if (mainGrid)  mainGrid.classList.toggle('hidden', showJson);
+
+    if (btnForm && btnJson) {
+        if (showJson) {
+            btnJson.className = 'px-3 py-1.5 bg-purple-600 text-white transition';
+            btnForm.className = 'px-3 py-1.5 bg-white text-gray-500 hover:bg-gray-50 transition';
+        } else {
+            btnForm.className = 'px-3 py-1.5 bg-blue-600 text-white transition';
+            btnJson.className = 'px-3 py-1.5 bg-white text-gray-500 hover:bg-gray-50 transition';
+        }
+    }
+    if (hint) {
+        hint.textContent = showJson
+            ? (QE_JENIS_HINTS[qeDumpJenisKey()] || QE_JENIS_HINTS.grouped)
+            : 'Isi lewat form, atau tempel JSON';
+    }
+    if (showJson) {
+        const mode = (document.getElementById('question-mode-input') || {}).value;
+        if (mode === 'grouped') topJsonDumpGrouped();
+        else topJsonDump();
+    }
+}
+
+function topJsonToggle() {
+    const panel = document.getElementById('top-json-panel');
+    const showingJson = panel && !panel.classList.contains('hidden');
+    setInputView(showingJson ? 'form' : 'json');
+}
+
+function jsonQuestionPayload(q) {
+    const payload = {
+        question_text : (q && q.question_text) || '',
+        option_a      : (q && q.option_a) || '',
+        option_b      : (q && q.option_b) || '',
+        option_c      : (q && q.option_c) || '',
+        option_d      : (q && q.option_d) || '',
+        correct_answer: (q && q.correct_answer) || '',
+        explanation   : (q && q.explanation) || '',
+    };
+    if (q && q.gap_no) payload.gap_no = q.gap_no;
+    if (q && q.answer_text) payload.answer_text = q.answer_text;
+    return payload;
+}
+
+// null = form masih kosong → pemanggil memuat contoh sesuai jenis halaman
+function collectGroupedDump() {
+    const meta = jsonCollectMeta();
+    const titleInput = document.getElementById('title-input');
+    let content = '';
+    const hidden = document.getElementById('content-text-input');
+    if (hidden) content = hidden.value || '';
+    if (typeof passageQuill !== 'undefined' && passageQuill) {
+        content = passageQuill.root.innerHTML;
+    }
+    const htmlSource = document.getElementById('html-source');
+    if (htmlSource && htmlSource.offsetParent !== null) {
+        content = htmlSource.value || content;
+    }
+    const questions = (EXISTING_QUESTIONS || []).map(jsonQuestionPayload);
+    if (typeof addJsonCtx !== 'undefined') {
+        const draft = jsonCollectFromForm(addJsonCtx);
+        if (!jsonIsEmptyQuestion(draft)) questions.push(draft);
+    }
+    if (document.getElementById('builder-list') && typeof builderCollect === 'function') {
+        builderCollect().forEach(function(draft) {
+            if (!jsonIsEmptyQuestion(draft)) questions.push(draft);
+        });
+    }
+    const title = (titleInput && titleInput.value) || CURRENT_PASSAGE_TITLE || '';
+    const audio = ((document.getElementById('passage-audio-url') || {}).value) || '';
+    if (!title && jsonIsBlankHtml(content) && !questions.length) {
+        return null;
+    }
+    const dump = {
+        section      : meta.section || 'lesen',
+        question_mode: 'grouped',
+        answer_type  : meta.answer_type,
+        title        : title,
+        content_text : content,
+        audio_url    : audio,
+        questions    : questions,
+    };
+    if (meta.answer_type === 'cloze') dump.cloze_answer_mode = CLOZE_ANSWER_MODE;
+    return dump;
+}
+
+// Form ke JSON (Mandiri) — isi form dulu; bila kosong, muat contoh sesuai
+// test_type + bentuk soal halaman ini (bukan contoh acak).
+function topJsonDump() {
+    const draft = Object.assign({}, jsonCollectMeta(), jsonCollectFromForm(sqJsonCtx));
+    if (!jsonIsEmptyQuestion(draft)) {
+        jsonPanelWrite(topJsonCtx(), draft);
+        return;
+    }
+    qeLoadDumpTemplate(function(item, source) {
+        jsonPanelWrite(topJsonCtx(), item);
+        topJsonStatus(source === 'server'
+            ? 'Contoh ' + (QE_JENIS_LABELS[qeDumpJenisKey()] || '') + ' dimuat — sesuaikan lalu klik Import & Simpan'
+            : 'Dump server tidak tersedia — contoh bawaan ' + (QE_JENIS_LABELS[qeDumpJenisKey()] || '') + ' dimuat',
+            source === 'server');
+    }, 'Memuat contoh ' + (QE_JENIS_LABELS[qeDumpJenisKey()] || '') + '…');
+}
+
+function topJsonDumpGrouped() {
+    const dump = collectGroupedDump();
+    if (dump) {
+        jsonPanelWrite(topJsonCtx(), dump);
+        return;
+    }
+    qeLoadDumpTemplate(function(item, source) {
+        jsonPanelWrite(topJsonCtx(), item);
+        topJsonStatus(source === 'server'
+            ? 'Contoh ' + (QE_JENIS_LABELS[qeDumpJenisKey()] || '') + ' dimuat — sesuaikan lalu klik Import & Simpan'
+            : 'Dump server tidak tersedia — contoh bawaan ' + (QE_JENIS_LABELS[qeDumpJenisKey()] || '') + ' dimuat',
+            source === 'server');
+    }, 'Memuat contoh ' + (QE_JENIS_LABELS[qeDumpJenisKey()] || '') + '…');
+}
+
+function topJsonSample() {
+    qeLoadDumpTemplate(function(item) {
+        jsonPanelWrite(topJsonCtx(), item);
+    }, 'Memuat contoh…');
+}
+
+function topJsonStatus(text, ok) {
+    const el = document.getElementById('top-json-status');
+    if (!el) return;
+    el.textContent = text || '';
+    el.className = 'text-xs font-medium mt-2 ' + (ok ? 'text-green-600' : 'text-red-600');
+    el.classList.toggle('hidden', !text);
+}
+
+function jsonNormalizeImported(obj) {
+    if (!obj || typeof obj !== 'object') return obj;
+    if (typeof obj.questions === 'string') {
+        try {
+            const parsed = JSON.parse(jsonNormalizeQuotes(obj.questions));
+            if (Array.isArray(parsed)) obj.questions = parsed;
+        } catch (_) {}
+    }
+    if (!Array.isArray(obj.questions)) obj.questions = [];
+    return obj;
+}
+
+function jsonHasGroupedQuestions(obj) {
+    if (!obj || typeof obj !== 'object') return false;
+    const nested = Array.isArray(obj.questions) ? obj.questions.filter(function(q) {
+        return q && typeof q === 'object' && !jsonIsEmptyQuestion(jsonQuestionPayload(q));
+    }) : [];
+    if (nested.length >= 1 && (obj.content_text || obj.title || obj.question_mode === 'grouped')) {
+        return true;
+    }
+    return false;
+}
+
+// Halaman buat: passage hasil impor pertama diingat di sini agar impor
+// berikutnya MENAMBAH soal ke passage yang sama, bukan membuat duplikat.
+let topJsonImportTarget = '';
+
+function topJsonEditorLink(pkey) {
+    const el = document.getElementById('top-json-status');
+    if (!el) return;
+    const a = document.createElement('a');
+    a.href = '/expert/question-bank/' + pkey;
+    a.textContent = 'Buka editor soal →';
+    a.className = 'underline font-semibold ml-1';
+    el.appendChild(document.createTextNode(' '));
+    el.appendChild(a);
+}
+
+function topJsonImport() {
+    const raw = document.getElementById('top-json-textarea').value.trim();
+    let obj;
+    try { obj = jsonNormalizeImported(jsonParseQuestion(raw)); }
+    catch (e) {
+        topJsonStatus('JSON tidak valid — periksa format dan coba lagi. ' + e.message, false);
+        return;
+    }
+    if (!obj || typeof obj !== 'object') {
+        topJsonStatus('JSON tidak valid — objek soal tidak ditemukan.', false);
+        return;
+    }
+
+    if (jsonHasGroupedQuestions(obj) || (obj.question_mode === 'grouped' && Array.isArray(obj.questions))) {
+        const body = { json: raw };
+        // Kirim jenis + tipe sesuai halaman agar hasil impor tetap berbentuk sama
+        body.question_mode = qeDumpJenisKey();
+        body.test_type     = qeDumpTestType();
+        const targetPkey   = CURRENT_PASSAGE_PKEY || topJsonImportTarget;
+        if (targetPkey) body.passage_pkey = targetPkey;
+        topJsonStatus('Menyimpan teks bacaan dan semua soal...', true);
+        fetch('/expert/question-bank/import-json', {
+            method : 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body   : JSON.stringify(body),
+        })
+        .then(function(r) { return r.json().then(function(data) { return { http: r.status, data: data }; }); })
+        .then(function(res) {
+            const data = res.data || {};
+            if (data.status !== 'OK') {
+                topJsonStatus(data.message || 'Impor gagal', false);
+                return;
+            }
+            const errNote = (data.errors && data.errors.length) ? ' | ' + data.errors.join(' · ') : '';
+            topJsonStatus(
+                'Tersimpan ' + (data.created_questions || 0) + ' soal' + errNote,
+                true
+            );
+            const pkey = data.passage_pkey || CURRENT_PASSAGE_PKEY || topJsonImportTarget;
+            if (!CURRENT_PASSAGE_PKEY) {
+                // Halaman buat: TETAP di halaman ini — catat target agar impor
+                // berikutnya menambah soal ke passage yang sama, tautan editor
+                // disediakan bila ingin lanjut ke editor.
+                if (pkey) {
+                    topJsonImportTarget = pkey;
+                    topJsonEditorLink(pkey);
+                }
+            } else if (pkey) {
+                // Halaman edit: segarkan halaman yang sama untuk memuat soal baru
+                setTimeout(function() { window.location.href = '/expert/question-bank/' + pkey; }, 600);
+            }
+        })
+        .catch(function() {
+            topJsonStatus('Koneksi bermasalah, coba lagi', false);
+        });
+        return;
+    }
+
+    jsonApplyMeta(obj);
+    if (obj.title) {
+        const titleInput = document.getElementById('title-input');
+        if (titleInput) titleInput.value = obj.title;
+    }
+    if (obj.content_text !== undefined) {
+        const hidden = document.getElementById('content-text-input');
+        if (hidden) hidden.value = obj.content_text;
+        if (typeof passageQuill !== 'undefined' && passageQuill) {
+            passageQuill.root.innerHTML = obj.content_text;
+        }
+        const htmlSource = document.getElementById('html-source');
+        if (htmlSource) htmlSource.value = obj.content_text;
+    }
+    const ctx = getActiveQuestionCtx();
+    const firstQ = (obj.questions && obj.questions[0]) ? obj.questions[0] : obj;
+    if (ctx) jsonApplyQuestionFields(ctx, firstQ);
+    setInputView('form');
+}
+
+function jsonIsBlankHtml(html) {
+    return !String(html || '')
+        .replace(/<p><br\s*\/?><\/p>/gi, '')
+        .replace(/<br\s*\/?>/gi, '')
+        .replace(/<p>\s*<\/p>/gi, '')
+        .replace(/&nbsp;/gi, ' ')
+        .replace(/<[^>]+>/g, '')
+        .trim();
+}
+
+function jsonCollectFromForm(ctx) {
+    const qMode = ctx.qModeGetter ? ctx.qModeGetter() : 'wysiwyg';
+    const q = qMode === 'html' && ctx.qHtmlSrcId
+        ? (document.getElementById(ctx.qHtmlSrcId).value || '')
+        : (ctx.questionQuill ? ctx.questionQuill.root.innerHTML.trim() : '');
+    const expMode = ctx.expModeGetter ? ctx.expModeGetter() : 'wysiwyg';
+    const exp = expMode === 'html' && ctx.expHtmlSrcId
+        ? (document.getElementById(ctx.expHtmlSrcId).value || '')
+        : (ctx.expQuill ? ctx.expQuill.root.innerHTML.trim() : '');
+
+    const obj = {
+        question_text  : q,
+        option_a       : (document.getElementById(ctx.optIds.a) || {}).value || '',
+        option_b       : (document.getElementById(ctx.optIds.b) || {}).value || '',
+        option_c       : (document.getElementById(ctx.optIds.c) || {}).value || '',
+        option_d       : (document.getElementById(ctx.optIds.d) || {}).value || '',
+        correct_answer : '',
+        explanation    : exp,
+    };
+    if (ctx.answerTextId) {
+        obj.answer_text = ((document.getElementById(ctx.answerTextId) || {}).value) || '';
+    }
+    const radios = ctx.formId
+        ? document.querySelectorAll('#' + ctx.formId + ' input[name="' + ctx.correctName + '"]')
+        : document.querySelectorAll('input[name="' + ctx.correctName + '"]');
+    radios.forEach(r => {
+        if (r.checked) obj.correct_answer = r.value;
+    });
+    return obj;
+}
+
+function jsonIsEmptyQuestion(obj) {
+    return jsonIsBlankHtml(obj.question_text)
+        && !(obj.option_a || '').trim()
+        && !(obj.option_b || '').trim()
+        && !(obj.option_c || '').trim()
+        && !(obj.option_d || '').trim()
+        && !(obj.answer_text || '').trim()
+        && jsonIsBlankHtml(obj.explanation);
+}
+
+function jsonPanelWrite(ctx, obj) {
+    document.getElementById(ctx.textareaId).value = JSON.stringify(obj, null, 2);
+}
+
+function jsonPanelToggle(ctx) {
+    const panel = document.getElementById(ctx.panelId);
+    const isHidden = panel.classList.contains('hidden');
+    if (isHidden) {
+        jsonPanelDump(ctx);
+        panel.classList.remove('hidden');
+    } else {
+        panel.classList.add('hidden');
+    }
+}
+
+// Ambil satu soal dari dump (kelompok → questions[0], mandiri → item itu sendiri)
+function qeSingleQuestionPayload(item) {
+    if (item && Array.isArray(item.questions) && item.questions.length) {
+        return jsonQuestionPayload(item.questions[0]);
+    }
+    return jsonQuestionPayload(item);
+}
+
+function jsonPanelDump(ctx) {
+    const draft = Object.assign({}, jsonCollectMeta(), jsonCollectFromForm(ctx));
+    if (!jsonIsEmptyQuestion(draft)) {
+        jsonPanelWrite(ctx, draft);
+        return;
+    }
+    qeFetchTypeDumps(1, function(items) {
+        const item = (items && items[0]) || qeFallbackSample(qeDumpJenisKey());
+        jsonPanelWrite(ctx, qeSingleQuestionPayload(item));
+    });
+}
+
+function jsonPanelSample(ctx) {
+    qeFetchTypeDumps(1, function(items) {
+        const item = (items && items[0]) || qeFallbackSample(qeDumpJenisKey());
+        jsonPanelWrite(ctx, qeSingleQuestionPayload(item));
+    });
+}
+
+function jsonNormalizeQuotes(raw) {
+    return String(raw || '')
+        .replace(/^\uFEFF/, '')
+        .replace(/[\u201C\u201D\u201E\u2033]/g, '"')
+        .replace(/[\u2018\u2019\u201A\u2032]/g, "'");
+}
+
+function jsonUnescapeLoose(value) {
+    return String(value)
+        .replace(/\\n/g, '\n')
+        .replace(/\\t/g, '\t')
+        .replace(/\\"/g, '"')
+        .replace(/\\\\/g, '\\');
+}
+
+function jsonParseQuestion(raw) {
+    const text = jsonNormalizeQuotes(raw).trim();
+    try { return JSON.parse(text); } catch (_) {}
+
+    // Lenient parse: use the next "key": as the end of the current value,
+    // so unescaped quotes inside HTML (e.g. <em>"is being renovated"</em>) are kept.
+    const keyRe = /"([a-zA-Z0-9_]+)"\s*:\s*/g;
+    const matches = [];
+    let m;
+    while ((m = keyRe.exec(text)) !== null) {
+        matches.push({ key: m[1], valueStart: m.index + m[0].length, keyStart: m.index });
+    }
+    if (!matches.length) throw new Error('Tidak ada field JSON yang dikenali');
+
+    const obj = {};
+    for (let i = 0; i < matches.length; i++) {
+        const end = (i + 1 < matches.length)
+            ? matches[i + 1].keyStart
+            : Math.max(text.lastIndexOf('}'), text.length);
+        let rawVal = text.slice(matches[i].valueStart, end).trim().replace(/,?\s*$/, '');
+        if (rawVal.charAt(0) === '"' && rawVal.charAt(rawVal.length - 1) === '"') {
+            rawVal = jsonUnescapeLoose(rawVal.slice(1, -1));
+        }
+        obj[matches[i].key] = rawVal;
+    }
+    return obj;
+}
+
+function jsonApplyQuestionFields(ctx, obj) {
+    if (ctx.answerTextId && obj.answer_text !== undefined) {
+        const atInput = document.getElementById(ctx.answerTextId);
+        if (atInput) atInput.value = obj.answer_text;
+    }
+    if (obj.question_text !== undefined) {
+        if (ctx.questionQuill) ctx.questionQuill.root.innerHTML = obj.question_text;
+        if (ctx.qHtmlSrcId) {
+            const qSrc = document.getElementById(ctx.qHtmlSrcId);
+            if (qSrc) qSrc.value = obj.question_text;
+        }
+        if (ctx.qHiddenId) {
+            const qHidden = document.getElementById(ctx.qHiddenId);
+            if (qHidden) qHidden.value = obj.question_text;
+        }
+    }
+
+    ['a','b','c','d'].forEach(k => {
+        const el = document.getElementById(ctx.optIds[k]);
+        if (el && obj['option_' + k] !== undefined) el.value = obj['option_' + k];
+    });
+
+    if (obj.correct_answer) {
+        const target = (obj.correct_answer + '').toUpperCase();
+        const radios = ctx.formId
+            ? document.querySelectorAll('#' + ctx.formId + ' input[name="' + ctx.correctName + '"]')
+            : document.querySelectorAll('input[name="' + ctx.correctName + '"]');
+        radios.forEach(r => {
+            r.checked = (r.value.toUpperCase() === target);
+        });
+    }
+
+    if (obj.explanation !== undefined) {
+        if (ctx.expQuill) ctx.expQuill.root.innerHTML = obj.explanation;
+        if (ctx.expHtmlSrcId) {
+            const eSrc = document.getElementById(ctx.expHtmlSrcId);
+            if (eSrc) eSrc.value = obj.explanation;
+        }
+        if (ctx.expHiddenId) {
+            const eHidden = document.getElementById(ctx.expHiddenId);
+            if (eHidden) eHidden.value = obj.explanation;
+        }
+    }
+}
+
+function jsonPanelImport(ctx) {
+    const raw = document.getElementById(ctx.textareaId).value.trim();
+    let obj;
+    try { obj = jsonParseQuestion(raw); }
+    catch(e) {
+        alert('JSON tidak valid — periksa format dan coba lagi.\n' + e.message);
+        return;
+    }
+    if (!obj || typeof obj !== 'object') {
+        alert('JSON tidak valid — objek soal tidak ditemukan.');
+        return;
+    }
+    jsonApplyMeta(obj);
+    jsonApplyQuestionFields(ctx, obj);
+    jsonPanelWrite(ctx, Object.assign({}, jsonCollectMeta(), jsonCollectFromForm(ctx)));
+    if (ctx.panelId && ctx.panelId !== 'top-json-panel') {
+        document.getElementById(ctx.panelId).classList.add('hidden');
+    }
+}
+
+function jsonPanelCopy(textareaId) {
+    const el = document.getElementById(textareaId);
+    el.select();
+    document.execCommand('copy');
+    const btn = el.nextElementSibling;
+    if (btn) { btn.textContent = '✓ Disalin!'; setTimeout(() => btn.textContent = 'Salin', 1500); }
+}
+
+// ── Audio upload widget helpers ───────────────────────────────────────────
+
+function audioWidgetPickFile(input) {
+    const widget = input.closest('.audio-upload-widget');
+    const fieldId = widget.dataset.fieldId;
+    const file = input.files[0];
+    if (!file) return;
+
+    const progress      = document.getElementById(fieldId + '-progress');
+    const progressBar   = document.getElementById(fieldId + '-progress-bar');
+    const progressLabel = document.getElementById(fieldId + '-progress-label');
+    const statusEl      = document.getElementById(fieldId + '-status');
+    const urlInput      = document.getElementById(fieldId);
+    const previewWrap   = document.getElementById(fieldId + '-preview');
+    const audioEl       = document.getElementById(fieldId + '-audio');
+
+    // Show progress
+    progress.classList.remove('hidden');
+    progressBar.style.width = '0%';
+    progressLabel.textContent = 'Mengupload ' + file.name + '...';
+    statusEl.classList.add('hidden');
+
+    const fd = new FormData();
+    fd.append('file', file);
+
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', '/expert/upload-audio', true);
+
+    xhr.upload.onprogress = function(e) {
+        if (e.lengthComputable) {
+            const pct = Math.round((e.loaded / e.total) * 100);
+            progressBar.style.width = pct + '%';
+            progressLabel.textContent = 'Mengupload... ' + pct + '%';
+        }
+    };
+
+    xhr.onload = function() {
+        progress.classList.add('hidden');
+        try {
+            const res = JSON.parse(xhr.responseText);
+            if (res.status === 'ok') {
+                urlInput.value = res.url;
+                // Update preview
+                audioEl.src = res.url;
+                previewWrap.classList.remove('hidden');
+                audioEl.load();
+                // Success message
+                statusEl.textContent = '✓ Upload berhasil: ' + res.filename;
+                statusEl.className = 'text-xs font-medium mb-2 text-green-600';
+                statusEl.classList.remove('hidden');
+                setTimeout(() => statusEl.classList.add('hidden'), 4000);
+            } else {
+                statusEl.textContent = '✗ ' + (res.message || 'Upload gagal');
+                statusEl.className = 'text-xs font-medium mb-2 text-red-500';
+                statusEl.classList.remove('hidden');
+            }
+        } catch(e) {
+            statusEl.textContent = '✗ Upload gagal, coba lagi';
+            statusEl.className = 'text-xs font-medium mb-2 text-red-500';
+            statusEl.classList.remove('hidden');
+        }
+    };
+
+    xhr.onerror = function() {
+        progress.classList.add('hidden');
+        statusEl.textContent = '✗ Koneksi bermasalah, coba lagi';
+        statusEl.className = 'text-xs font-medium mb-2 text-red-500';
+        statusEl.classList.remove('hidden');
+    };
+
+    xhr.send(fd);
+    // Reset picker so same file can be re-picked
+    input.value = '';
+}
+
+function audioWidgetUrlChanged(input) {
+    const widget    = input.closest('.audio-upload-widget');
+    const fieldId   = widget.dataset.fieldId;
+    const previewWrap = document.getElementById(fieldId + '-preview');
+    const audioEl     = document.getElementById(fieldId + '-audio');
+    const url = input.value.trim();
+    if (url) {
+        audioEl.src = url;
+        audioEl.load();
+        previewWrap.classList.remove('hidden');
+    } else {
+        previewWrap.classList.add('hidden');
+        audioEl.src = '';
+    }
+}
+
+// ── End audio upload widget helpers ──────────────────────────────────────
+
+{% if passage %}
+// ── JSON ctx — Tambah Soal Baru ───────────────────────────────────────────────
+const addJsonCtx = {
+    panelId       : 'add-json-panel',
+    textareaId    : 'add-json-textarea',
+    questionQuill : questionQuill,
+    expQuill      : explanationQuill,
+    qHtmlSrcId    : 'add-html-source',
+    qHiddenId     : 'question-text-input',
+    qModeGetter   : () => addQMode,
+    expHtmlSrcId  : 'add-exp-html-source',
+    expHiddenId   : 'explanation-input',
+    expModeGetter : () => addExpMode,
+    optIds        : { a:'add-opt-a', b:'add-opt-b', c:'add-opt-c', d:'add-opt-d' },
+    correctName   : 'correct_answer',
+    formId        : 'add-question-form',
+    answerTextId  : {{ "'add-answer-text'" if cloze_input else 'null' }},
+};
+
+// ── Tambah Soal Baru — Plain HTML toggles ────────────────────────────────────
+let addQMode   = 'wysiwyg';
+let addExpMode = 'wysiwyg';
+
+function setAddQMode(mode) {
+    const wWrap = document.getElementById('add-wysiwyg-wrap');
+    const hWrap = document.getElementById('add-html-wrap');
+    const hSrc  = document.getElementById('add-html-source');
+    const btnW  = document.getElementById('add-btn-wysiwyg');
+    const btnH  = document.getElementById('add-btn-html');
+    if (mode === 'html') {
+        hSrc.value = questionQuill.root.innerHTML;
+        wWrap.classList.add('hidden'); hWrap.classList.remove('hidden');
+        btnW.className = 'px-2.5 py-1 bg-white text-gray-500 hover:bg-gray-50 transition';
+        btnH.className = 'px-2.5 py-1 bg-blue-600 text-white transition';
+    } else {
+        const html = hSrc.value.trim();
+        if (html) questionQuill.root.innerHTML = html;
+        hWrap.classList.add('hidden'); wWrap.classList.remove('hidden');
+        btnW.className = 'px-2.5 py-1 bg-blue-600 text-white transition';
+        btnH.className = 'px-2.5 py-1 bg-white text-gray-500 hover:bg-gray-50 transition';
+    }
+    addQMode = mode;
+}
+
+function setAddExpMode(mode) {
+    const wWrap = document.getElementById('add-exp-wysiwyg-wrap');
+    const hWrap = document.getElementById('add-exp-html-wrap');
+    const hSrc  = document.getElementById('add-exp-html-source');
+    const btnW  = document.getElementById('add-exp-btn-wysiwyg');
+    const btnH  = document.getElementById('add-exp-btn-html');
+    if (mode === 'html') {
+        hSrc.value = explanationQuill.root.innerHTML;
+        wWrap.classList.add('hidden'); hWrap.classList.remove('hidden');
+        btnW.className = 'px-2.5 py-1 bg-white text-gray-500 hover:bg-gray-50 transition';
+        btnH.className = 'px-2.5 py-1 bg-blue-600 text-white transition';
+    } else {
+        const html = hSrc.value.trim();
+        if (html) explanationQuill.root.innerHTML = html;
+        hWrap.classList.add('hidden'); wWrap.classList.remove('hidden');
+        btnW.className = 'px-2.5 py-1 bg-blue-600 text-white transition';
+        btnH.className = 'px-2.5 py-1 bg-white text-gray-500 hover:bg-gray-50 transition';
+    }
+    addExpMode = mode;
+}
+
+// Add question form submit (grouped mode) — sync Quill/textarea → hidden inputs
+document.getElementById('add-question-form').addEventListener('submit', function() {
+    document.getElementById('question-text-input').value =
+        addQMode === 'html'
+            ? document.getElementById('add-html-source').value
+            : questionQuill.root.innerHTML;
+    document.getElementById('explanation-input').value =
+        addExpMode === 'html'
+            ? document.getElementById('add-exp-html-source').value
+            : explanationQuill.root.innerHTML;
+});
+
+// ── Edit modal Quill instances ────────────────────────────────────────────────
+const editQuestionQuill = new Quill('#quill-edit-question', {
+    theme: 'snow',
+    modules: { toolbar: [['bold', 'italic', 'underline'], ...IMG_TOOL, ['clean']] }
+});
+registerQuillImageUpload(editQuestionQuill);
+
+const editExplanationQuill = new Quill('#quill-edit-explanation', {
+    theme: 'snow',
+    modules: { toolbar: [
+        ['bold', 'italic', 'underline'],
+        [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+        ...IMG_TOOL,
+        ['clean']
+    ]}
+});
+registerQuillImageUpload(editExplanationQuill);
+
+const editJsonCtx = {
+    panelId       : 'edit-json-panel',
+    textareaId    : 'edit-json-textarea',
+    questionQuill : editQuestionQuill,
+    expQuill      : editExplanationQuill,
+    qHtmlSrcId    : 'edit-html-source',
+    qHiddenId     : 'edit-question-text-hidden',
+    qModeGetter   : () => editQMode,
+    expHtmlSrcId  : 'edit-exp-html-source',
+    expHiddenId   : 'edit-explanation-hidden',
+    expModeGetter : () => editExpMode,
+    optIds        : { a:'edit-option-a', b:'edit-option-b', c:'edit-option-c', d:'edit-option-d' },
+    correctName   : 'correct_answer',
+    formId        : 'edit-question-form',
+    answerTextId  : {{ "'edit-answer-text'" if cloze_input else 'null' }},
+};
+
+// ── Modal Plain HTML toggle ───────────────────────────────────────────────────
+let editQMode   = 'wysiwyg';
+let editExpMode = 'wysiwyg';
+
+function setEditQuestionMode(mode) {
+    const wWrap  = document.getElementById('edit-wysiwyg-wrap');
+    const hWrap  = document.getElementById('edit-html-wrap');
+    const hSrc   = document.getElementById('edit-html-source');
+    const btnW   = document.getElementById('edit-btn-wysiwyg');
+    const btnH   = document.getElementById('edit-btn-html');
+    if (mode === 'html') {
+        hSrc.value = editQuestionQuill.root.innerHTML;
+        wWrap.classList.add('hidden'); hWrap.classList.remove('hidden');
+        btnW.className = 'px-2.5 py-1 bg-white text-gray-500 hover:bg-gray-50 transition';
+        btnH.className = 'px-2.5 py-1 bg-blue-600 text-white transition';
+    } else {
+        const html = hSrc.value.trim();
+        if (html) editQuestionQuill.root.innerHTML = html;
+        hWrap.classList.add('hidden'); wWrap.classList.remove('hidden');
+        btnW.className = 'px-2.5 py-1 bg-blue-600 text-white transition';
+        btnH.className = 'px-2.5 py-1 bg-white text-gray-500 hover:bg-gray-50 transition';
+    }
+    editQMode = mode;
+}
+
+function setEditExpMode(mode) {
+    const wWrap = document.getElementById('edit-exp-wysiwyg-wrap');
+    const hWrap = document.getElementById('edit-exp-html-wrap');
+    const hSrc  = document.getElementById('edit-exp-html-source');
+    const btnW  = document.getElementById('edit-exp-btn-wysiwyg');
+    const btnH  = document.getElementById('edit-exp-btn-html');
+    if (mode === 'html') {
+        hSrc.value = editExplanationQuill.root.innerHTML;
+        wWrap.classList.add('hidden'); hWrap.classList.remove('hidden');
+        btnW.className = 'px-2.5 py-1 bg-white text-gray-500 hover:bg-gray-50 transition';
+        btnH.className = 'px-2.5 py-1 bg-blue-600 text-white transition';
+    } else {
+        const html = hSrc.value.trim();
+        if (html) editExplanationQuill.root.innerHTML = html;
+        hWrap.classList.add('hidden'); wWrap.classList.remove('hidden');
+        btnW.className = 'px-2.5 py-1 bg-blue-600 text-white transition';
+        btnH.className = 'px-2.5 py-1 bg-white text-gray-500 hover:bg-gray-50 transition';
+    }
+    editExpMode = mode;
+}
+
+// Sync Quill/textarea → hidden inputs on modal form submit
+document.getElementById('edit-question-form').addEventListener('submit', function() {
+    // Question text
+    const qHtml = editQMode === 'html'
+        ? document.getElementById('edit-html-source').value
+        : editQuestionQuill.root.innerHTML;
+    document.getElementById('edit-question-text-hidden').value = qHtml;
+    // Explanation
+    const eHtml = editExpMode === 'html'
+        ? document.getElementById('edit-exp-html-source').value
+        : editExplanationQuill.root.innerHTML;
+    document.getElementById('edit-explanation-hidden').value = eHtml;
+});
+
+function openEditQuestion(btn) {
+    const pkey = btn.dataset.pkey;
+    const data = JSON.parse(btn.dataset.question);
+
+    document.getElementById('edit-question-form').action =
+        '/expert/question-bank/questions/' + pkey + '/update';
+
+    // Load into Quill editors
+    editQuestionQuill.root.innerHTML    = data.question_text || '';
+    editExplanationQuill.root.innerHTML = data.explanation   || '';
+    const gapInput = document.getElementById('edit-gap-no');
+    if (gapInput) {
+        const gapMatch = String(data.question_text || '').match(/\d+/);
+        gapInput.value = gapMatch ? gapMatch[0] : '';
+    }
+
+    // Lückentext isian: satu kolom jawaban benar; bentuk lain: opsi A–D
+    const answerTextInput = document.getElementById('edit-answer-text');
+    if (answerTextInput) {
+        answerTextInput.value = data.answer_text || '';
+    } else {
+        document.getElementById('edit-option-a').value = data.option_a || '';
+        document.getElementById('edit-option-b').value = data.option_b || '';
+        document.getElementById('edit-option-c').value = data.option_c || '';
+        document.getElementById('edit-option-d').value = data.option_d || '';
+        ['a','b','c','d'].forEach(o => optionImageSet('edit-option-' + o + '-image', data['option_' + o + '_image'] || ''));
+    }
+
+    const correct = (data.correct_answer || 'A').toUpperCase();
+    ['A','B','C','D'].forEach(o => {
+        const el = document.getElementById('edit-correct-' + o);
+        if (el) el.checked = (o === correct);
+    });
+
+    document.getElementById('edit-question-modal').classList.remove('hidden');
+    // Focus the question editor after a short delay
+    setTimeout(() => editQuestionQuill.focus(), 80);
+}
+
+function closeEditModal() {
+    document.getElementById('edit-question-modal').classList.add('hidden');
+    editQuestionQuill.root.innerHTML    = '';
+    editExplanationQuill.root.innerHTML = '';
+    // Reset both editors back to WYSIWYG mode
+    setEditQuestionMode('wysiwyg');
+    setEditExpMode('wysiwyg');
+    document.getElementById('edit-html-source').value     = '';
+    document.getElementById('edit-exp-html-source').value = '';
+    // Hide JSON panel
+    document.getElementById('edit-json-panel').classList.add('hidden');
+    document.getElementById('edit-json-textarea').value = '';
+}
+{% endif %}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Builder soal — tulis semua soal di satu layar, simpan SEKALI.
+// Dipakai saat membuat Kelompok Soal baru (mode grouped / rf / cloze).
+// ─────────────────────────────────────────────────────────────────────────────
+const BUILDER_ACTIVE = !CURRENT_PASSAGE_PKEY && !!document.getElementById('builder-panel');
+let builderSeq = 0;
+
+// ── Cara menjawab rumpang Lückentext — dipilih di halaman "Soal Baru":
+//    'mc' (kartu A–D) | 'select' (dropdown inline) | 'input' (isian) ──
+let CLOZE_ANSWER_MODE = {{ (cloze_answer_mode or 'mc') | tojson }};
+let CLOZE_INPUT_MODE  = CLOZE_ANSWER_MODE === 'input';
+
+function builderJenisKey() {
+    if (ANSWER_TYPE === 'cloze') return 'cloze';
+    if (ANSWER_TYPE === 'rf')    return 'rf_grouped';
+    return 'grouped';
+}
+
+function qeToast(msg, ok = true) {
+    let t = document.getElementById('qe-toast');
+    if (!t) { t = document.createElement('div'); t.id = 'qe-toast'; document.body.appendChild(t); }
+    t.textContent = msg;
+    t.style.background = ok ? 'var(--ink)' : 'var(--danger)';
+    t.classList.add('show');
+    clearTimeout(t._h);
+    t._h = setTimeout(() => t.classList.remove('show'), 2600);
+}
+
+function qeHtmlToP(text) {
+    const t = (text || '').trim();
+    if (!t) return '';
+    if (t.startsWith('<')) return t;
+    return t.split('\n').filter(Boolean).map(l => '<p>' + l + '</p>').join('');
+}
+
+function builderCardHtml(n) {
+    const rf = ANSWER_TYPE === 'rf';
+    const cloze = ANSWER_TYPE === 'cloze';
+    const clozeInput = cloze && CLOZE_INPUT_MODE;
+    let optsBlock = '';
+    if (clozeInput) {
+        optsBlock = `
+            <div>
+                <p class="qe-label mb-1.5">Jawaban Benar <span style="color:var(--danger)">*</span></p>
+                <input type="text" data-f="answer_text" class="qe-input" placeholder="Kata / frasa yang benar untuk rumpang ini…">
+                <p class="text-[11px] mt-1.5 rounded-lg px-3 py-2" style="background:#EFF1F4;color:var(--muted)">
+                    Boleh beberapa jawaban benar — pisahkan dengan titik koma (<strong>;</strong>), mis. <em>zuhause; zu Hause</em>.
+                    Penilaian otomatis mengabaikan besar-kecil huruf.
+                </p>
+            </div>`;
+    } else if (!rf) {
+        const rows = ['A', 'B', 'C', 'D'].map(o => `
+            <div class="sq-opt-row">
+                <label class="opt-key" title="Jadikan ${o} kunci jawaban">
+                    <input type="radio" name="bq${n}_correct" value="${o}" ${o === 'A' ? 'checked' : ''} class="sr-only">
+                    <span class="opt-key-badge">${o}</span>
+                </label>
+                <input type="text" data-f="option_${o.toLowerCase()}" class="qe-input" placeholder="Opsi ${o}">
+            </div>`).join('');
+        optsBlock = `
+            <div>
+                <div class="flex flex-wrap items-center justify-between gap-2 mb-1.5">
+                    <p class="qe-label">Pilihan Jawaban <span style="color:var(--danger)">*</span></p>
+                    <span class="text-[11px]" style="color:var(--faint)">Klik huruf untuk menandai kunci jawaban</span>
+                </div>
+                <div class="space-y-2">${rows}</div>
+            </div>`;
+    } else {
+        optsBlock = `
+            <div>
+                <p class="qe-label mb-1.5">Kunci Jawaban <span style="color:var(--danger)">*</span></p>
+                <div class="grid grid-cols-2 gap-2">
+                    <label class="flex items-center justify-center cursor-pointer py-2.5 border-2 border-gray-200 rounded-xl hover:border-blue-400 has-[:checked]:border-blue-600 has-[:checked]:bg-blue-50 transition">
+                        <input type="radio" name="bq${n}_correct" value="A" checked class="sr-only">
+                        <span class="text-sm font-bold" style="color:var(--ink)">Richtig</span>
+                    </label>
+                    <label class="flex items-center justify-center cursor-pointer py-2.5 border-2 border-gray-200 rounded-xl hover:border-blue-400 has-[:checked]:border-blue-600 has-[:checked]:bg-blue-50 transition">
+                        <input type="radio" name="bq${n}_correct" value="B" class="sr-only">
+                        <span class="text-sm font-bold" style="color:var(--ink)">Falsch</span>
+                    </label>
+                </div>
+                <p class="text-xs mt-2 rounded-lg px-3 py-2" style="background:#EFF1F4;color:var(--muted)">Tulis pernyataannya di teks pertanyaan — peserta menilai Richtig atau Falsch.</p>
+            </div>`;
+    }
+    const gapNote = cloze
+        ? `<p class="text-[11px] rounded-lg px-3 py-2" style="background:var(--brand-soft);color:var(--brand-ink)">${clozeInput
+            ? `Jawaban untuk rumpang ke-<strong>${n}</strong> — peserta mengetik jawaban di penanda <strong>[${n}]</strong> pada teks.`
+            : (CLOZE_ANSWER_MODE === 'select'
+                ? `Opsi untuk rumpang ke-<strong>${n}</strong> — tampil sebagai <strong>dropdown</strong> pada penanda <strong>[${n}]</strong> di teks.`
+                : `Opsi untuk rumpang ke-<strong>${n}</strong> — cocokkan dengan penanda <strong>[${n}]</strong> di teks Lückentext.`)}</p>`
+        : '';
+    return `
+    <details class="builder-card" open>
+        <summary>
+            <span class="builder-num">${n}</span>
+            <span class="builder-snippet">Soal baru…</span>
+            <span class="pill ok b-key" style="display:none"></span>
+            <button type="button" class="builder-del" onclick="event.stopPropagation(); this.closest('details').remove(); builderSync();">Hapus</button>
+        </summary>
+        <div class="builder-body">
+            ${gapNote}
+            ${cloze ? '' : `
+            <div>
+                <p class="qe-label mb-1.5">Teks Pertanyaan <span style="color:var(--danger)">*</span></p>
+                <textarea data-f="question_text" rows="2" class="qe-input" placeholder="Tulis pertanyaannya…"></textarea>
+            </div>`}
+            ${optsBlock}
+            <div>
+                <p class="qe-label mb-1.5">Pembahasan</p>
+                <textarea data-f="explanation" rows="2" class="qe-input" placeholder="Kenapa jawabannya benar… (opsional)"></textarea>
+            </div>
+        </div>
+    </details>`;
+}
+
+function builderAdd() {
+    builderSeq += 1;
+    const list = document.getElementById('builder-list');
+    const empty = document.getElementById('builder-empty');
+    if (empty) empty.remove();
+    list.insertAdjacentHTML('beforeend', builderCardHtml(builderSeq));
+    builderSync();
+    const firstField = list.lastElementChild.querySelector('.qe-input');
+    if (firstField) firstField.focus();
+}
+
+function builderSync() {
+    const cards = document.querySelectorAll('#builder-list .builder-card');
+    const list = document.getElementById('builder-list');
+    if (!cards.length && !document.getElementById('builder-empty')) {
+        list.insertAdjacentHTML('beforeend',
+            '<p class="text-xs text-center py-8" id="builder-empty" style="color:var(--faint)">Belum ada soal. Klik <strong>＋ Tambah Soal</strong>.</p>');
+    }
+    cards.forEach((card, i) => {
+        const n = i + 1;
+        card.querySelector('.builder-num').textContent = n;
+        const ta = card.querySelector('[data-f="question_text"]');
+        const at = card.querySelector('[data-f="answer_text"]');
+        const snip = card.querySelector('.builder-snippet');
+        if (ta && snip && !ta._bound) {
+            ta._bound = true;
+            ta.addEventListener('input', () => {
+                snip.textContent = ta.value.trim().slice(0, 60) || 'Soal baru…';
+            });
+        }
+        if (at && snip && !at._bound) {
+            at._bound = true;
+            at.addEventListener('input', () => {
+                snip.textContent = '✍️ ' + (at.value.trim().slice(0, 60) || '…');
+            });
+        }
+        const keyEl = card.querySelector('.b-key');
+        const rad = card.querySelector('input[type=radio]:checked');
+        if (keyEl && rad) {
+            keyEl.style.display = '';
+            keyEl.textContent = 'Kunci: ' + (ANSWER_TYPE === 'rf'
+                ? (rad.value === 'A' ? 'Richtig' : 'Falsch') : rad.value);
+        }
+    });
+    const cnt = document.getElementById('builder-count');
+    if (cnt) cnt.textContent = cards.length + ' soal';
+    const lbl = document.getElementById('btn-save-label');
+    if (lbl) lbl.textContent = cards.length
+        ? 'Simpan Kelompok Soal (' + cards.length + ' soal)'
+        : 'Simpan Kelompok Soal';
+}
+
+document.addEventListener('change', e => {
+    if (e.target && e.target.name && e.target.name.indexOf('_correct') !== -1 &&
+        e.target.name.startsWith('bq')) builderSync();
+});
+
+function builderCollect() {
+    const items = [];
+    const clozeInput = ANSWER_TYPE === 'cloze' && CLOZE_INPUT_MODE;
+    document.querySelectorAll('#builder-list .builder-card').forEach((card, i) => {
+        const get = f => {
+            const el = card.querySelector('[data-f="' + f + '"]');
+            return el ? el.value.trim() : '';
+        };
+        const item = {
+            question_text: ANSWER_TYPE === 'cloze' ? '' : qeHtmlToP(get('question_text')),
+            correct_answer: 'A',
+            explanation: qeHtmlToP(get('explanation')),
+            gap_no: i + 1,
+        };
+        if (clozeInput) {
+            item.answer_text = get('answer_text');
+        } else if (ANSWER_TYPE !== 'rf') {
+            item.option_a = get('option_a');
+            item.option_b = get('option_b');
+            item.option_c = get('option_c');
+            item.option_d = get('option_d');
+        }
+        const rad = card.querySelector('input[type=radio]:checked');
+        if (rad) item.correct_answer = rad.value;
+        items.push(item);
+    });
+    return items;
+}
+
+if (BUILDER_ACTIVE) {
+    document.getElementById('passage-form').addEventListener('submit', function (e) {
+        e.preventDefault();
+        const questions = builderCollect();
+        if (!questions.length) { qeToast('Tambahkan minimal 1 soal dulu — klik ＋ Tambah Soal', false); return; }
+        if (ANSWER_TYPE === 'cloze') {
+            const marks = (((document.getElementById('content-text-input') || {}).value || '').match(/\[\d+\]/g) || []).length;
+            if (marks !== questions.length) {
+                qeToast('Jumlah rumpang di teks (' + marks + ') ≠ jumlah soal (' + questions.length + ') — periksa lagi', false);
+                return;
+            }
+        }
+        for (let i = 0; i < questions.length; i++) {
+            if (ANSWER_TYPE !== 'cloze' && !questions[i].question_text) {
+                qeToast('Soal nomor ' + (i + 1) + ' belum ada teks pertanyaannya', false);
+                return;
+            }
+            if (ANSWER_TYPE === 'cloze' && CLOZE_INPUT_MODE && !questions[i].answer_text) {
+                qeToast('Rumpang nomor ' + (i + 1) + ' belum ada jawaban benarnya', false);
+                return;
+            }
+            if (ANSWER_TYPE === 'cloze' && CLOZE_ANSWER_MODE === 'select') {
+                const filled = ['option_a','option_b','option_c','option_d']
+                    .filter(k => questions[i][k]).length;
+                if (filled < 2) {
+                    qeToast('Rumpang nomor ' + (i + 1) + ' minimal 2 opsi terisi untuk dropdown', false);
+                    return;
+                }
+            }
+        }
+        const item = {
+            question_mode: 'grouped',
+            title: (document.getElementById('title-input') || {}).value || '',
+            content_text: (document.getElementById('content-text-input') || {}).value || '',
+            audio_url: (document.getElementById('passage-audio-url') || {}).value || '',
+            answer_type: ANSWER_TYPE,
+            cloze_answer_mode: ANSWER_TYPE === 'cloze' ? CLOZE_ANSWER_MODE : '',
+            questions: questions,
+        };
+        const btn = document.getElementById('save-passage-btn');
+        if (btn) { btn.disabled = true; btn.textContent = 'Menyimpan…'; }
+        fetch('/expert/question-bank/import-json', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                json: JSON.stringify(item),
+                question_mode: builderJenisKey(),
+                test_type: (document.getElementById('section-key-input') || {}).value || '',
+            }),
+        }).then(r => r.json()).then(data => {
+            if (data.status === 'OK' && data.passage_pkey) {
+                qeToast('Tersimpan — membuka editor…');
+                window.location.href = '/expert/question-bank/' + data.passage_pkey;
+            } else {
+                if (btn) { btn.disabled = false; btn.textContent = 'Simpan Kelompok Soal'; }
+                qeToast((data.errors && data.errors[0]) || data.message || 'Gagal menyimpan', false);
+            }
+        }).catch(() => {
+            if (btn) { btn.disabled = false; btn.textContent = 'Simpan Kelompok Soal'; }
+            qeToast('Koneksi bermasalah, coba lagi', false);
+        });
+    });
+    builderSync();
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Tambah soal TANPA pindah halaman (halaman edit, bentuk mc/rf).
+// Cloze tetap memakai form POST biasa (butuh nomor Lücke dari server).
+// ─────────────────────────────────────────────────────────────────────────────
+function qeInsertQuestionCard(item, pkey) {
+    EXISTING_QUESTIONS.push(Object.assign({pkey: pkey}, item));
+    const n = EXISTING_QUESTIONS.length;
+    const is_rf = (item.answer_type || ANSWER_TYPE) === 'rf';
+    const is_input = !!(item.answer_text || '').trim();
+    let optHtml = '';
+    if (is_input) {
+        const alts = String(item.answer_text || '').split(';').map(s => s.trim()).filter(Boolean);
+        const more = alts.length > 1 ? ' <span class="text-green-600 font-normal">(+' + (alts.length - 1) + ' varian lain)</span>' : '';
+        optHtml = '<div class="flex items-start gap-2 px-3 py-2 rounded-lg border text-xs bg-green-50 border-green-200">' +
+            '<span class="font-bold text-green-700 flex-shrink-0">✍️ Jawaban benar:</span>' +
+            '<span class="text-green-800" style="word-break:break-word;">' + alts[0] + more + '</span></div>';
+    } else {
+        const pairs = is_rf
+            ? [['A', item.option_a || 'Richtig'], ['B', item.option_b || 'Falsch']]
+            : [['A', item.option_a], ['B', item.option_b], ['C', item.option_c], ['D', item.option_d]];
+        optHtml = pairs.map(pair => {
+            const o = pair[0], label = pair[1] || '';
+            const hit = item.correct_answer === o;
+            return '<div class="flex items-start gap-2 px-3 py-2 rounded-lg border text-xs ' +
+                (hit ? 'bg-green-50 border-green-200' : 'bg-gray-50 border-gray-100') + '">' +
+                (is_rf ? '' : '<span class="font-bold ' + (hit ? 'text-green-700' : 'text-gray-500') + ' flex-shrink-0">' + o + '</span>') +
+                '<div class="min-w-0"><span class="' + (hit ? 'text-green-800' : 'text-gray-600') + '"></span>' + label + '</div></div>';
+        }).join('');
+    }
+    const dataQ = JSON.stringify({
+        pkey: pkey,
+        question_text: item.question_text,
+        option_a: item.option_a, option_b: item.option_b,
+        option_c: item.option_c, option_d: item.option_d,
+        correct_answer: item.correct_answer,
+        explanation: item.explanation,
+        answer_type: item.answer_type || ANSWER_TYPE,
+        answer_text: item.answer_text || '',
+    }).replace(/"/g, '&quot;');
+    const card = '<div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5" style="animation:fadeSlideIn .25s ease">' +
+        '<div class="flex items-center justify-between gap-3 mb-3">' +
+        '<div class="flex items-center gap-2.5 min-w-0">' +
+        '<div class="w-7 h-7 text-white text-sm font-bold rounded-full flex items-center justify-center flex-shrink-0 font-display" style="background:var(--brand)">' + n + '</div>' +
+        '<span class="pill ok shrink-0">Kunci: ' + (is_input ? 'isian' : (is_rf ? (item.correct_answer === 'A' ? 'Richtig' : 'Falsch') : item.correct_answer)) + '</span>' +
+        '</div>' +
+        '<div class="flex gap-2 shrink-0">' +
+        '<button type="button" data-pkey="' + pkey + '" data-question="' + dataQ + '" onclick="openEditQuestion(this)" class="text-xs text-blue-600 border border-blue-200 hover:bg-blue-50 px-3 py-1.5 rounded-lg font-medium transition">Edit</button>' +
+        '<form method="POST" action="/expert/question-bank/questions/' + pkey + '/delete" class="inline" onsubmit="return confirm(\'Hapus soal ini?\')">' +
+        '<input type="hidden" name="passage_pkey" value="' + CURRENT_PASSAGE_PKEY + '">' +
+        '<button type="submit" class="text-xs text-red-600 border border-red-200 hover:bg-red-50 px-3 py-1.5 rounded-lg font-medium transition">Hapus</button>' +
+        '</form>' +
+        '</div>' +
+        '</div>' +
+        '<div class="text-sm text-gray-800 mb-3 prose prose-sm max-w-none" style="word-break:break-word;">' + item.question_text + '</div>' +
+        '<div class="' + (is_input ? '' : 'grid grid-cols-2 gap-2') + '">' + optHtml + '</div>' +
+        '</div>';
+    const addPanel = document.getElementById('add-question-panel');
+    if (addPanel) addPanel.insertAdjacentHTML('beforebegin', card);
+}
+
+if (CURRENT_PASSAGE_PKEY && ANSWER_TYPE !== 'cloze') {
+    document.getElementById('add-question-form').addEventListener('submit', function (e) {
+        e.preventDefault();
+        const item = {
+            question_text: (document.getElementById('question-text-input') || {}).value || '',
+            option_a: (document.getElementById('add-opt-a') || {}).value || '',
+            option_b: (document.getElementById('add-opt-b') || {}).value || '',
+            option_c: (document.getElementById('add-opt-c') || {}).value || '',
+            option_d: (document.getElementById('add-opt-d') || {}).value || '',
+            correct_answer: ((document.querySelector('#add-question-form input[name="correct_answer"]:checked') || {}).value) || 'A',
+            explanation: (document.getElementById('explanation-input') || {}).value || '',
+            answer_type: ANSWER_TYPE,
+        };
+        if (!item.question_text.trim() || item.question_text.trim() === '<p><br></p>') {
+            qeToast('Tulis teks pertanyaannya dulu', false);
+            return;
+        }
+        fetch('/expert/question-bank/import-json', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                json: JSON.stringify(item),
+                passage_pkey: CURRENT_PASSAGE_PKEY,
+            }),
+        }).then(r => r.json()).then(data => {
+            if (data.status === 'OK' && data.created_questions) {
+                const pkey = (data.question_pkeys || []).slice(-1)[0] || '';
+                qeInsertQuestionCard(item, pkey);
+                questionQuill.setText('\n');
+                explanationQuill.setText('\n');
+                document.getElementById('question-text-input').value = '';
+                document.getElementById('explanation-input').value = '';
+                document.querySelectorAll('#add-question-form input[type="text"]').forEach(inp => { inp.value = ''; });
+                document.querySelectorAll('#add-question-form input[name$="_image"]').forEach(inp => {
+                    inp.value = '';
+                    const prev = document.getElementById(inp.id + '-preview');
+                    if (prev) prev.style.display = 'none';
+                });
+                const firstRad = document.querySelector('#add-question-form input[name="correct_answer"][value="A"]');
+                if (firstRad) firstRad.checked = true;
+                qeToast('Soal tersimpan ✓  — lanjut tulis soal berikutnya');
+                window.scrollTo({top: 0, behavior: 'smooth'});
+            } else {
+                qeToast((data.errors && data.errors[0]) || data.message || 'Gagal menyimpan soal', false);
+            }
+        }).catch(() => qeToast('Koneksi bermasalah, coba lagi', false));
+    });
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Lückentext: blok/pilih kata di teks → jadikan rumpang bernomor otomatis.
+// Kata terpilih langsung terisi sebagai kunci jawaban.
+// ─────────────────────────────────────────────────────────────────────────────
+function clozeMarkSelection() {
+    if (typeof passageQuill === 'undefined') { qeToast('Editor belum siap', false); return; }
+    const sel = passageQuill.getSelection(true);
+    if (!sel || sel.length === 0) {
+        qeToast('Blok dulu kata/frasa di teks yang mau dijadikan rumpang', false);
+        return;
+    }
+    const word = (passageQuill.getText(sel.index, sel.length) || '').replace(/\s+/g, ' ').trim();
+    if (!word) { qeToast('Pilihan kosong', false); return; }
+
+    const marker = '[' + clozeNextGapNo() + ']';
+    passageQuill.deleteText(sel.index, sel.length);
+    passageQuill.insertText(sel.index, marker, { bold: true, background: '#DCE7FB' });
+    passageQuill.setSelection(sel.index + marker.length);
+    const n = parseInt(marker.slice(1, -1), 10);
+
+    if (typeof BUILDER_ACTIVE !== 'undefined' && BUILDER_ACTIVE) {
+        builderAdd();
+        const cards = document.querySelectorAll('#builder-list .builder-card');
+        const card  = cards[cards.length - 1];
+        if (card) {
+            const optA = card.querySelector('[data-f="option_a"]');
+            if (optA) optA.value = word;
+            const radA = card.querySelector('input[type=radio][value="A"]');
+            if (radA) radA.checked = true;
+        }
+        builderSync();
+        const card2 = document.querySelectorAll('#builder-list .builder-card');
+        const last  = card2[card2.length - 1];
+        if (last) {
+            const snip = last.querySelector('.builder-snippet');
+            if (snip) snip.textContent = 'Rumpang ' + n + ' · ' + word;
+            const optB = last.querySelector('[data-f="option_b"]');
+            if (optB) optB.focus();
+        }
+    } else {
+        const gapInput = document.getElementById('add-gap-no');
+        if (gapInput) gapInput.value = n;
+        const addA = document.getElementById('add-opt-a');
+        if (addA) addA.value = word;
+        const radA = document.querySelector('#add-question-form input[name="correct_answer"][value="A"]');
+        if (radA) radA.checked = true;
+        const addB = document.getElementById('add-opt-b');
+        if (addB) addB.focus();
+        const addPanel = document.getElementById('add-question-panel');
+        if (addPanel) addPanel.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+    qeToast('Rumpang ' + marker + ' dibuat — kuncinya "' + word + '". Tinggal isi 3 pengecoh.');
+}
+
+function clozeNextGapNo() {
+    if (typeof passageQuill === 'undefined') return 1;
+    const source = (typeof currentEditorMode !== 'undefined' && currentEditorMode === 'html')
+        ? (document.getElementById('html-source') || {}).value || ''
+        : passageQuill.getText() || '';
+    let maxNo = 0;
+    (source.match(/\[(\d+)\]/g) || []).forEach(function (m) {
+        maxNo = Math.max(maxNo, parseInt(m.slice(1, -1), 10) || 0);
+    });
+    return maxNo + 1;
+}
+
+// Tombol aktif hanya saat ada teks terpilih
+if (typeof passageQuill !== 'undefined' && document.getElementById('btn-mark-gap')) {
+    const btnMark = document.getElementById('btn-mark-gap');
+    const syncMarkBtn = () => {
+        const sel = passageQuill.getSelection();
+        btnMark.disabled = !(sel && sel.length > 0);
+    };
+    passageQuill.on('selection-change', syncMarkBtn);
+    syncMarkBtn();
+}
+
+// Pre-dump JSON sesuai jenis halaman — di paling akhir agar semua deklarasi
+// (termasuk CLOZE_INPUT_MODE) sudah siap dipakai builderCollect().
+if (typeof topJsonDump === 'function') {
+    const bootMode = (document.getElementById('question-mode-input') || {}).value;
+    if (bootMode === 'grouped' && typeof topJsonDumpGrouped === 'function') topJsonDumpGrouped();
+    else topJsonDump();
+}
+</script>
+{% endblock %}

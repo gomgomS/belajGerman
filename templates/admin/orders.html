@@ -1,0 +1,93 @@
+{% extends "admin/base_admin.html" %}
+
+{% block title %}Pembayaran{% endblock %}
+{% block page_title %}Pembayaran{% endblock %}
+{% block page_subtitle %}Terima atau tolak transfer manual dari peserta{% endblock %}
+
+{% block header_actions %}
+<div class="flex gap-2">
+    <a href="?status=" class="adm-filter {% if not request.args.get('status') %}is-active{% endif %}">Semua</a>
+    <a href="?status=PENDING" class="adm-filter {% if request.args.get('status') == 'PENDING' %}is-active{% endif %}">Menunggu</a>
+    <a href="?status=CONFIRMED" class="adm-filter {% if request.args.get('status') == 'CONFIRMED' %}is-active{% endif %}">Terkonfirmasi</a>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="bg-white rounded-2xl border overflow-hidden" style="border-color:var(--line)">
+    <div class="overflow-x-auto">
+        <table class="adm-table">
+            <thead>
+                <tr>
+                    <th>Paket</th>
+                    <th>Tier</th>
+                    <th>Nominal</th>
+                    <th>Tanggal</th>
+                    <th>Status</th>
+                    <th class="text-right">Aksi</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for order in orders %}
+                <tr id="order-row-{{ order.pkey }}">
+                    <td class="font-medium max-w-[180px] truncate" style="color:var(--ink)">{{ order.package_title }}</td>
+                    <td>
+                        {% if order.tier == 'PREMIUM' %}<span class="pill brand">{{ order.tier }}</span>
+                        {% else %}<span class="pill neutral">{{ order.tier }}</span>{% endif %}
+                    </td>
+                    <td class="font-semibold">Rp {{ "{:,}".format(order.amount) }}</td>
+                    <td style="color:var(--muted)">{{ order.rec_timestamp_str }}</td>
+                    <td>
+                        {% if order.status == 'CONFIRMED' %}<span class="pill ok">Terkonfirmasi</span>
+                        {% elif order.status == 'PENDING' %}<span class="pill warn">Menunggu</span>
+                        {% else %}<span class="pill err">{{ order.status }}</span>{% endif %}
+                    </td>
+                    <td class="text-right">
+                        {% if order.status == 'PENDING' %}
+                        <div class="flex gap-2 justify-end">
+                            <button onclick="confirmOrder('{{ order.pkey }}')"
+                                class="text-xs font-semibold text-white px-3.5 py-1.5 rounded-lg transition"
+                                style="background:var(--ok)">
+                                Terima Pembayaran
+                            </button>
+                            <button onclick="cancelOrder('{{ order.pkey }}')"
+                                class="text-xs font-semibold px-3.5 py-1.5 rounded-lg transition"
+                                style="background:#FDEBE9; color:var(--danger)">
+                                Tolak
+                            </button>
+                        </div>
+                        {% else %}
+                        <span class="text-xs" style="color:var(--faint)">—</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% else %}
+                <tr><td colspan="6" class="text-center py-14" style="color:var(--faint)">
+                    Belum ada order — antrean masih kosong
+                </td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function confirmOrder(orderPkey) {
+    if (!confirm('Terima pembayaran order ini?')) return;
+    fetch('/api/admin/order/' + orderPkey + '/confirm', {method: 'POST'})
+        .then(r => r.json()).then(data => {
+            if (data.status === 'OK') location.reload();
+            else alert('Gagal menerima pembayaran: ' + (data.message || ''));
+        });
+}
+function cancelOrder(orderPkey) {
+    if (!confirm('Tolak order ini? Peserta bisa memesan ulang kapan saja.')) return;
+    fetch('/api/admin/order/' + orderPkey + '/cancel', {method: 'POST'})
+        .then(r => r.json()).then(data => {
+            if (data.status === 'OK') location.reload();
+            else alert('Gagal membatalkan order');
+        });
+}
+</script>
+{% endblock %}

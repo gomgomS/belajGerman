@@ -1,0 +1,47 @@
+{% extends "admin/base_admin.html" %}
+
+{% block title %}Pengaturan{% endblock %}
+{% block page_title %}Pengaturan{% endblock %}
+{% block page_subtitle %}Pilih kelompok pengaturan yang ingin diubah{% endblock %}
+
+{% block breadcrumb %}
+<nav class="flex items-center gap-1.5 text-xs mb-4 flex-wrap" style="color:var(--faint)">
+    <a href="/dashboard/admin" class="transition" style="color:var(--muted)">Dasbor</a>
+    <svg class="w-3 h-3 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+    <span class="font-medium" style="color:var(--ink)">Pengaturan</span>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+    {% for item in settings_menu %}
+    {% if item.ready %}
+    <a href="{{ item.href }}"
+        class="group bg-white rounded-2xl border p-5 flex items-start gap-4 transition hover:shadow-sm"
+        style="border-color:var(--line)">
+        <div class="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 font-display font-bold text-[15px]"
+            style="background:var(--brand-soft); color:var(--brand-ink)">{{ item.title[0] }}</div>
+        <div class="min-w-0 flex-1">
+            <div class="flex items-start justify-between gap-2">
+                <h3 class="font-display font-semibold text-[15px] leading-snug" style="color:var(--ink)">{{ item.title }}</h3>
+                <svg class="w-4 h-4 shrink-0 mt-0.5 transition-transform group-hover:translate-x-0.5" style="color:var(--faint)" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+            </div>
+            <p class="text-xs mt-1.5 leading-relaxed" style="color:var(--muted)">{{ item.desc }}</p>
+        </div>
+    </a>
+    {% else %}
+    <div class="bg-white rounded-2xl border border-dashed p-5 flex items-start gap-4 opacity-70" style="border-color:var(--line)">
+        <div class="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 font-display font-bold text-[15px]"
+            style="background:#EFF1F4; color:var(--faint)">{{ item.title[0] }}</div>
+        <div class="min-w-0 flex-1">
+            <div class="flex items-start justify-between gap-2">
+                <h3 class="font-display font-semibold text-[15px] leading-snug" style="color:var(--muted)">{{ item.title }}</h3>
+                <span class="pill neutral">Segera</span>
+            </div>
+            <p class="text-xs mt-1.5 leading-relaxed" style="color:var(--faint)">{{ item.desc }}</p>
+        </div>
+    </div>
+    {% endif %}
+    {% endfor %}
+</div>
+{% endblock %}

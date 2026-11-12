@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ package.title if package else 'Ujian' }} — {{ section.title if section else '' }}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='v2/platform.output.css') }}">
+    <style>
+      /* BelajDeutsch design system — exam runner (mode fokus) */
+      :root{
+        --bg:#F5F6F9; --surface:#FFFFFF; --ink:#171A21; --muted:#5B6472; --faint:#98A1AE;
+        --line:#E4E7EC; --line-soft:#EDF0F4;
+        --brand:#1D4ED8; --brand-strong:#1E40AF; --brand-soft:#EFF4FF; --brand-ink:#1E3A8A;
+        --danger:#D92D20; --ok:#12805C; --warn:#B54708;
+      }
+      body.exm{ background:var(--bg); color:var(--ink);
+        font-family:'IBM Plex Sans','Segoe UI',system-ui,sans-serif; font-size:14px; line-height:1.6; }
+      .exm h1,.exm h2,.exm h3,.exm h4{ font-family:'Barlow','Arial Narrow',sans-serif; }
+      .exm button{ font-family:'Barlow','Arial Narrow',sans-serif; }
+
+      /* stepper bagian */
+      .step-dot{ width:24px; height:24px; border-radius:50%; font-family:'Barlow'; font-size:11px; font-weight:700;
+        display:flex; align-items:center; justify-content:center; }
+      .step-dot.done{ background:var(--brand-soft); color:var(--brand-ink); }
+      .step-dot.current{ background:var(--brand); color:#fff; }
+      .step-dot.todo{ background:rgba(255,255,255,.1); color:rgba(255,255,255,.45); }
+
+      /* opsi jawaban */
+      .answer-option{ border:1.5px solid var(--line); border-radius:12px; background:var(--surface);
+        transition:border-color .15s, background .15s; }
+      .answer-option:hover{ border-color:#B8C6E8; background:#F8FAFD; }
+      .answer-option input[type=radio]{ position:absolute; opacity:0; pointer-events:none; }
+      .answer-option:has(input:checked){ border-color:var(--brand); background:var(--brand-soft); }
+      .answer-option:has(input:focus-visible){ outline:2px solid var(--brand); outline-offset:2px; }
+      .opt-letter{ width:24px; height:24px; border-radius:50%; border:1.5px solid var(--line);
+        font-family:'Barlow'; font-weight:700; font-size:12px; color:var(--muted);
+        display:inline-flex; align-items:center; justify-content:center; flex-shrink:0; transition:all .15s; }
+      .answer-option:has(input:checked) .opt-letter{ background:var(--brand); border-color:var(--brand); color:#fff; }
+
+      .font-display{ font-family:'Barlow','Arial Narrow',sans-serif; }
+      .tabular{ font-variant-numeric:tabular-nums; }
+    </style>
+</head>
+<body class="exm bg-gray-100 text-gray-800">
+
+<!-- Top Bar -->
+<div class="sticky top-0 z-40 text-white px-4 py-2.5 flex items-center justify-between shadow-lg" style="background:var(--ink)">
+    <div class="flex items-center gap-3 min-w-0">
+        <div class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style="background:var(--brand)">
+            <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13"/></svg>
+        </div>
+        <div class="min-w-0">
+            <div class="font-display font-semibold text-sm truncate">{{ package.title if package else 'Ujian' }}</div>
+            <div class="text-xs truncate" style="color:#98A1AE">{{ section.title if section else '' }}</div>
+        </div>
+    </div>
+
+    <div class="flex items-center gap-3 sm:gap-4">
+        <!-- Section stepper -->
+        {% set cur_idx = namespace(v=0) %}
+        {% for s in all_sections %}{% if s.pkey == exam_session.current_section_id %}{% set cur_idx.v = loop.index %}{% endif %}{% endfor %}
+        <div class="hidden sm:flex items-center gap-1.5" title="Bagian {{ cur_idx.v }} dari {{ all_sections | length }}">
+            {% for sec in all_sections %}
+            <div class="step-dot {% if loop.index < cur_idx.v %}done{% elif loop.index == cur_idx.v %}current{% else %}todo{% endif %}">{{ loop.index }}</div>
+            {% endfor %}
+        </div>
+
+        <!-- Timer -->
+        <div class="px-4 py-1.5 rounded-xl text-center" id="timer-box" style="background:var(--danger)">
+            <div class="text-[10px] font-semibold uppercase tracking-wider" style="color:#FBD5D1">Sisa Waktu</div>
+            <div class="font-mono font-bold text-lg leading-tight text-white tabular" id="timer">00:00</div>
+        </div>
+    </div>
+</div>
+
+<div class="max-w-4xl mx-auto px-4 py-6">
+
+    <!-- Questions -->
+    <form id="exam-form">
+    {% set question_counter = namespace(value=0) %}
+    {% set part_ns = namespace(current='') %}
+    {% for passage in passages %}
+    {% if passage.part_pkey and passage.part_pkey != part_ns.current %}
+    <div class="flex items-center gap-3 mt-2 mb-4">
+        <span class="font-display text-[13px] font-bold px-3 py-1.5 rounded-lg" style="background:var(--brand-soft); color:var(--brand-ink)">{{ passage.part_name }}</span>
+        <div class="flex-1 h-px" style="background:var(--line)"></div>
+    </div>
+    {% endif %}
+    {% set part_ns.current = passage.part_pkey or '' %}
+    {% set cloze_mode = (passage.cloze_answer_mode or 'mc') if passage.answer_type == 'cloze' else 'mc' %}
+    {% set cloze_inline = cloze_mode in ['input', 'select'] %}
+    <div class="passage-group mb-6" id="passage-{{ passage.pkey }}" {% if cloze_inline %}data-cloze-input="1" data-cloze-mode="{{ cloze_mode }}"{% endif %}>
+
+        <!-- Passage content -->
+        {% if passage.audio_url %}
+        <div class="rounded-2xl p-5 mb-4" style="background:#FDF6E9; border:1px solid #F0DFC0">
+            <div class="text-sm font-semibold mb-2" style="color:var(--warn)">🎧 Audio — {{ passage.title }}</div>
+            <audio controls class="w-full" src="{{ passage.audio_url }}"></audio>
+        </div>
+        {% endif %}
+        {% if passage.content_text and passage.content_text|trim not in ['<p><br></p>', '<p></p>'] %}
+        <div class="bg-white rounded-2xl p-5 mb-4" style="border:1px solid var(--line); border-left:3px solid var(--brand)">
+            <div class="font-display text-sm font-semibold mb-3" style="color:var(--brand-ink)">📖 {{ passage.title }}
+                {% if cloze_inline %}<span class="text-xs font-normal" style="color:var(--muted)">— {{ 'isikan jawaban' if cloze_mode == 'input' else 'pilih jawaban' }} langsung di teks</span>{% endif %}
+            </div>
+            <div class="text-sm leading-relaxed {% if cloze_inline %}cloze-input-body{% endif %}" style="color:var(--ink)"
+                {% if cloze_inline %}data-src="{{ passage.content_text }}"{% endif %}>{{ passage.content_text | safe if not cloze_inline else '' }}</div>
+        </div>
+        {% endif %}
+
+        {% if cloze_inline %}
+        <!-- Lückentext inline (isian/dropdown): metadata gap — kontrol disisipkan JS ke teks di atas -->
+        {% set question_counter.value = question_counter.value + (passage.questions | length) %}
+        {% for q in passage.questions %}
+        <input type="hidden" class="cloze-gap-meta" data-pkey="{{ q.pkey }}" data-qtext="{{ q.question_text }}"{% if cloze_mode == 'select' %}
+            data-opt-a="{{ q.option_a }}" data-opt-b="{{ q.option_b }}" data-opt-c="{{ q.option_c }}" data-opt-d="{{ q.option_d }}"{% endif %}>
+        {% endfor %}
+        {% else %}
+
+        <!-- Questions in this passage -->
+        {% for q in passage.questions %}
+        {% set question_counter.value = question_counter.value + 1 %}
+        <div class="bg-white rounded-2xl p-5 mb-3" style="border:1px solid var(--line)" id="q-{{ q.pkey }}">
+            <div class="flex items-start gap-3 mb-4">
+                <span class="w-8 h-8 text-white text-sm font-bold rounded-full flex items-center justify-center flex-shrink-0 font-display" style="background:var(--brand)">{{ question_counter.value }}</span>
+                <div class="text-sm leading-relaxed" style="color:var(--ink)">{{ q.question_text | safe }}</div>
+            </div>
+
+            {% set is_rf = q.answer_type == 'rf' %}
+            <div class="ml-11 {% if is_rf %}grid grid-cols-1 sm:grid-cols-2 gap-2{% else %}space-y-2{% endif %}">
+                {% for opt_key, opt_text in ([('A', q.option_a), ('B', q.option_b)] if is_rf else [('A', q.option_a), ('B', q.option_b), ('C', q.option_c), ('D', q.option_d)]) %}
+                <label class="answer-option flex items-start gap-3 p-3.5 cursor-pointer relative" data-question="{{ q.pkey }}" data-section="{{ exam_session.current_section_id }}">
+                    <input type="radio"
+                        name="answer_{{ q.pkey }}"
+                        value="{{ opt_key }}"
+                        {% if existing_answers.get(q.pkey) == opt_key %}checked{% endif %}
+                        onchange="saveAnswer('{{ exam_session.pkey }}', '{{ q.pkey }}', '{{ exam_session.current_section_id }}', '{{ opt_key }}'); updateAnswered();">
+                    {% if is_rf %}
+                    <span class="opt-letter">{{ 'R' if opt_key == 'A' else 'F' }}</span>
+                    {% else %}
+                    <span class="opt-letter">{{ opt_key }}</span>
+                    {% endif %}
+                    <div class="min-w-0 flex-1">
+                        {% set opt_img = q['option_' ~ (opt_key | lower) ~ '_image'] %}
+                        {% if opt_img %}<img src="{{ opt_img }}" alt="Opsi {{ opt_key }}" class="rounded-lg mb-1" style="max-height:112px; max-width:200px; width:auto; height:auto; border:1px solid var(--line)">{% endif %}
+                        <span class="text-sm" style="color:var(--ink)">{{ opt_text }}</span>
+                    </div>
+                </label>
+                {% endfor %}
+            </div>
+        </div>
+        {% endfor %}
+        {% endif %}
+    </div>
+    {% endfor %}
+    </form>
+
+    <!-- Sticky action bar -->
+    <div class="sticky bottom-0 z-30 -mx-4 px-4 py-3 mt-8 flex flex-wrap items-center justify-between gap-3"
+        style="background:rgba(255,255,255,.94); backdrop-filter:blur(8px); border-top:1px solid var(--line)">
+        <div class="text-sm" style="color:var(--muted)">
+            <span class="font-display font-bold" style="color:var(--ink)"><span id="answered-count">0</span>/{{ question_counter.value }}</span> terjawab
+            <span class="hidden sm:inline">· jawaban tersimpan otomatis</span>
+        </div>
+        <button onclick="confirmNextSection()"
+            class="font-semibold px-6 py-3 rounded-xl transition text-white shadow-sm" style="background:var(--brand)">
+            {% if all_sections | length > 1 and exam_session.current_section_id != all_sections[-1].pkey %}
+            Bagian Berikutnya →
+            {% else %}
+            Selesai &amp; Lihat Hasil →
+            {% endif %}
+        </button>
+    </div>
+
+</div>
+
+<!-- Confirm Modal -->
+<div id="confirm-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4" style="background:rgba(18,21,28,.45)">
+    <div class="bg-white rounded-2xl shadow-2xl p-6 max-w-sm w-full">
+        <h3 class="font-display font-bold text-lg mb-2" id="confirm-title">Lanjutkan ke bagian berikutnya?</h3>
+        <p class="text-sm mb-5" id="confirm-msg" style="color:var(--muted)">Setelah lanjut, kamu tidak bisa kembali ke bagian ini.</p>
+        <div class="flex gap-3">
+            <button onclick="nextSection()" class="flex-1 font-semibold py-2.5 rounded-xl text-sm text-white transition" style="background:var(--brand)">Ya, Lanjutkan</button>
+            <button onclick="document.getElementById('confirm-modal').classList.add('hidden')"
+                class="flex-1 py-2.5 rounded-xl text-sm transition"
+                style="border:1px solid var(--line); color:var(--muted)">Batal</button>
+        </div>
+    </div>
+</div>
+
+<script>
+const EXAM_SESSION_PKEY  = "{{ exam_session.pkey }}";
+const SECTION_DEADLINE   = {{ exam_session.section_deadline }};
+let saveQueue = {};
+let saveTimer = null;
+
+// Timer
+function updateTimer() {
+    const now       = Date.now();
+    const remaining = Math.max(0, SECTION_DEADLINE - now);
+    const totalSec  = Math.floor(remaining / 1000);
+    const mins      = Math.floor(totalSec / 60);
+    const secs      = totalSec % 60;
+    const timerEl   = document.getElementById('timer');
+    const timerBox  = document.getElementById('timer-box');
+
+    timerEl.textContent = String(mins).padStart(2, '0') + ':' + String(secs).padStart(2, '0');
+
+    if (remaining <= 60000) timerBox.classList.add('animate-pulse');
+    if (remaining <= 0) {
+        clearInterval(timerInterval);
+        nextSection();
+    }
+}
+const timerInterval = setInterval(updateTimer, 1000);
+updateTimer();
+
+// Penghitung soal terjawab
+const qNames = new Set();
+document.querySelectorAll('.answer-option input[type=radio]').forEach(i => qNames.add(i.name));
+function updateAnswered() {
+    const radios = document.querySelectorAll('.answer-option input[type=radio]:checked').length;
+    const gaps   = Array.from(document.querySelectorAll('.gap-input'))
+        .filter(i => i.value.trim()).length;
+    const el = document.getElementById('answered-count');
+    if (el) el.textContent = radios + gaps;
+}
+updateAnswered();
+
+// ── Lückentext inline: sisipkan input isian / dropdown ke penanda [n] ──────────
+const EXISTING_ANSWERS = {{ existing_answers | tojson }};
+document.querySelectorAll('[data-cloze-input]').forEach(group => {
+    const body = group.querySelector('.cloze-input-body');
+    if (!body) return;
+    const isSelect = group.dataset.clozeMode === 'select';
+    // Nomor gap diambil dari teks soal "Lücke n"
+    const metas = {};
+    group.querySelectorAll('.cloze-gap-meta').forEach(m => {
+        const mm = String(m.dataset.qtext || '').match(/\d+/);
+        if (mm) metas[mm[0]] = m.dataset;
+    });
+    const html = String(body.dataset.src || '').replace(
+        /(<(?:strong|b)>\s*)?\[(\d+)\]\s*(<\/(?:strong|b)>)?/gi,
+        (all, pre, num) => {
+            const meta = metas[num];
+            if (!meta) return all;
+            const pkey = meta.pkey;
+            const val = String(EXISTING_ANSWERS[pkey] || '').replace(/"/g, '&quot;');
+            let control;
+            if (isSelect) {
+                const opts = ['a', 'b', 'c', 'd']
+                    .map(k => ({ letter: k.toUpperCase(), text: String(meta['opt' + k.toUpperCase()] || '').trim() }))
+                    .filter(o => o.text);
+                control = '<select class="gap-input" data-q="' + pkey + '" data-section="{{ exam_session.current_section_id }}" ' +
+                    'style="border:1.5px solid var(--line);border-radius:8px;padding:4px 26px 4px 10px;font-size:13px;max-width:230px;background:#fff;outline:none;font-family:inherit;cursor:pointer;appearance:auto">' +
+                    '<option value="">– pilih –</option>' +
+                    opts.map(o => '<option value="' + o.letter + '"' + (val === o.letter ? ' selected' : '') + '>' +
+                        o.letter + ' — ' + String(o.text).replace(/&/g, '&amp;').replace(/</g, '&lt;') + '</option>').join('') +
+                    '</select>';
+            } else {
+                control = '<input type="text" class="gap-input" data-q="' + pkey + '" data-section="{{ exam_session.current_section_id }}" value="' + val + '" ' +
+                    'style="border:1.5px solid var(--line);border-radius:8px;padding:4px 10px;font-size:13px;width:135px;background:#fff;outline:none;font-family:inherit" placeholder="…">';
+            }
+            return '<span style="display:inline-flex;align-items:center;gap:5px;white-space:nowrap;margin:0 2px">' +
+                '<span style="display:inline-flex;align-items:center;justify-content:center;width:19px;height:19px;border-radius:50%;background:var(--brand);color:#fff;font-size:11px;font-weight:700;flex-shrink:0">' + num + '</span>' +
+                control + '</span>';
+        }
+    );
+    body.innerHTML = html;
+});
+
+// Save answer
+function saveAnswer(sessionPkey, questionPkey, sectionPkey, selectedAnswer) {
+    fetch('/api/exam/save-answer', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+            exam_session_pkey: sessionPkey,
+            question_pkey    : questionPkey,
+            section_pkey     : sectionPkey,
+            selected_answer  : selectedAnswer,
+        })
+    });
+}
+
+// Jawaban isian tersimpan saat kotak input selesai diisi (blur / Enter)
+document.addEventListener('change', e => {
+    const t = e.target;
+    if (t && t.classList && t.classList.contains('gap-input')) {
+        saveAnswer(EXAM_SESSION_PKEY, t.dataset.q, t.dataset.section, t.value.trim());
+        updateAnswered();
+    }
+});
+
+// Auto-save all answered questions every 60 seconds
+setInterval(() => {
+    document.querySelectorAll('input[type=radio]:checked').forEach(input => {
+        const name     = input.name;
+        const qpkey    = name.replace('answer_', '');
+        const secpkey  = document.querySelector('[data-question="' + qpkey + '"]')?.dataset.section || '';
+        saveAnswer(EXAM_SESSION_PKEY, qpkey, secpkey, input.value);
+    });
+    document.querySelectorAll('.gap-input').forEach(input => {
+        if (input.value.trim()) {
+            saveAnswer(EXAM_SESSION_PKEY, input.dataset.q, input.dataset.section, input.value.trim());
+        }
+    });
+}, 60000);
+
+function confirmNextSection() {
+    document.getElementById('confirm-modal').classList.remove('hidden');
+}
+
+function nextSection() {
+    document.getElementById('confirm-modal').classList.add('hidden');
+    fetch('/api/exam/next-section', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({exam_session_pkey: EXAM_SESSION_PKEY})
+    }).then(r => r.json()).then(data => {
+        if (data.redirect) window.location.href = data.redirect;
+    });
+}
+</script>
+</body>
+</html>

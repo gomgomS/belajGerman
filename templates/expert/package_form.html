@@ -1,0 +1,69 @@
+{% extends "admin/base_admin.html" %}
+
+{% block title %}{% if package %}Edit Paket{% else %}Buat Paket Baru{% endif %}{% endblock %}
+{% block page_title %}{% if package %}Edit Paket{% else %}Buat Paket Baru{% endif %}{% endblock %}
+{% block page_subtitle %}{% if package %}{{ package.title }}{% else %}Isi detail paket ujian{% endif %}{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl">
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+        <form method="POST" class="space-y-5">
+
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-2">Judul Paket <span class="text-red-500">*</span></label>
+                <input type="text" name="title" required value="{{ package.title if package else '' }}"
+                    class="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50 focus:bg-white transition"
+                    placeholder="Contoh: Simulasi Goethe-Zertifikat B1 Paket A">
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Nama Tes <span class="text-red-500">*</span></label>
+                    <select name="test_name_code" required class="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50 focus:bg-white transition">
+                        <option value="">-- Pilih nama tes --</option>
+                        {% for tn in test_names %}
+                        <option value="{{ tn.code }}" {% if package and package.test_name_code == tn.code %}selected{% endif %}>{{ tn.label }}</option>
+                        {% endfor %}
+                    </select>
+                    {% if not test_names %}
+                    <p class="text-xs text-amber-600 mt-1">Belum ada nama tes — admin menambah di Pengaturan &gt; Nama Tes.</p>
+                    {% endif %}
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Level <span class="text-red-500">*</span></label>
+                    <select name="level_code" required class="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50 focus:bg-white transition">
+                        <option value="">-- Pilih level --</option>
+                        {% for lv in levels %}
+                        <option value="{{ lv.code }}" {% if package and package.level_code == lv.code %}selected{% endif %}>{{ lv.label }}</option>
+                        {% endfor %}
+                    </select>
+                    {% if not levels %}
+                    <p class="text-xs text-amber-600 mt-1">Belum ada level — admin menambah di Pengaturan &gt; Level Tes.</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-2">Deskripsi</label>
+                <textarea name="description" rows="4"
+                    class="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50 focus:bg-white transition resize-none"
+                    placeholder="Deskripsi singkat tentang paket ini...">{{ package.description if package else '' }}</textarea>
+            </div>
+
+            <p class="text-xs text-gray-400">Bagian ujian (Hören, Lesen, …) dan sub-bagian (Teil 1, 2, …) ditambahkan setelah paket dibuat.</p>
+
+            <div class="flex gap-3 pt-2">
+                <button type="submit"
+                    class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-xl transition text-sm shadow-sm">
+                    {% if package %}Simpan Perubahan{% else %}Buat Paket{% endif %}
+                </button>
+                <a href="/expert/exam-package"
+                    class="px-6 py-3 border border-gray-200 text-gray-600 hover:bg-gray-50 font-medium rounded-xl transition text-sm">
+                    Batal
+                </a>
+            </div>
+
+        </form>
+    </div>
+</div>
+{% endblock %}
