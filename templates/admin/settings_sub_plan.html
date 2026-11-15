@@ -186,7 +186,7 @@
                     <td>
                         <div class="sp-actions">
                             <button type="button" class="sp-btn"
-                                onclick="openPlanModal({pkey:'{{ plan.pkey }}', code:'{{ plan.code }}', label:{{ plan.label | tojson }}, tagline:{{ (plan.tagline or '') | tojson }}, priceMonthly:{{ plan.price_idr or 0 }}, priceQuarterly:{{ plan.price_quarterly_idr or 0 }}, priceYearly:{{ plan.price_yearly_idr or 0 }}, discMonthly:{{ plan.discount_monthly_pct or 0 }}, discQuarterly:{{ plan.discount_quarterly_pct or 0 }}, discYearly:{{ plan.discount_yearly_pct or 0 }}, credits:{{ plan.ai_credits_monthly or 0 }}, sort:{{ plan.sort_order or 0 }}, status:{{ plan.status | tojson }})">Ubah</button>
+                                onclick="openPlanModal({pkey:'{{ plan.pkey }}', code:'{{ plan.code }}', label:{{ plan.label | tojson | forceescape }}, tagline:{{ (plan.tagline or '') | tojson | forceescape }}, priceMonthly:{{ plan.price_idr or 0 }}, priceQuarterly:{{ plan.price_quarterly_idr or 0 }}, priceYearly:{{ plan.price_yearly_idr or 0 }}, discMonthly:{{ plan.discount_monthly_pct or 0 }}, discQuarterly:{{ plan.discount_quarterly_pct or 0 }}, discYearly:{{ plan.discount_yearly_pct or 0 }}, credits:{{ plan.ai_credits_monthly or 0 }}, sort:{{ plan.sort_order or 0 }}, status:{{ plan.status | tojson | forceescape }})">Ubah</button>
                             <form method="POST" action="/dashboard/admin/settings/sub-plan/{{ plan.pkey }}/delete"
                                 onsubmit="return confirm('Hapus paket {{ plan.label }}?')">
                                 <button type="submit" class="sp-btn danger">Hapus</button>

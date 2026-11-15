@@ -9,12 +9,15 @@ from flask import render_template
 
 
 def html_student_dashboard(stats, results, packages, subscription, sub_plans, user,
-                           credit_balance=0, credit_error="", credit_ok=""):
+                           credit_balance=0, credit_error="", credit_ok="",
+                           regular_packages=None, premium_packages=None):
     return render_template(
         "student/dashboard.html",
         stats=stats, results=results, packages=packages,
         subscription=subscription, sub_plans=sub_plans, user=user,
         credit_balance=credit_balance, credit_error=credit_error, credit_ok=credit_ok,
+        regular_packages=regular_packages if regular_packages is not None else packages,
+        premium_packages=premium_packages or [],
     )
 # end def
 
@@ -35,9 +38,13 @@ def html_student_subscription(subscription, sub_plans, user):
 # end def
 
 
-def html_student_history(results, orders, user):
+def html_student_history(results, orders, user,
+                         results_locked=False, teaser_results=None, total_results=0):
     return render_template(
         "student/verlauf.html",
         results=results, orders=orders, user=user,
+        results_locked=results_locked,
+        teaser_results=teaser_results or [],
+        total_results=total_results,
     )
 # end def

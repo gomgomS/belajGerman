@@ -32,6 +32,48 @@
         <section class="hist-col">
             <h2>Hasil ujian <span>· Prüfungsergebnisse</span></h2>
             <div class="hist-list">
+                {% if results_locked %}
+                {# Abo berakhir: hasil terkunci — teaser 2 terakhir, judul & tanggal tetap tampil #}
+                {% if total_results %}
+                <div class="rounded-2xl p-5" style="background:#FDF6E9; border:1px solid #F0DFC0">
+                    <div class="flex items-start justify-between gap-3 flex-wrap">
+                        <div class="min-w-0">
+                            <p class="font-semibold text-[14px]" style="color:#8A6D1F">🔒 Hasil ujian terkunci</p>
+                            <p class="text-[12.5px] mt-1 max-w-sm leading-relaxed" style="color:#B58A2E">
+                                Kamu punya <strong>{{ total_results }} hasil</strong> tersimpan.
+                                Selama Abo aktif semuanya terbuka — berlangganan lagi untuk melihat
+                                hasil-hasil masa lalumu kembali.
+                            </p>
+                        </div>
+                        <a href="/student/preise" class="btn-primary shrink-0" style="background:#D97706">Langganan lagi</a>
+                    </div>
+                </div>
+                {% for result in teaser_results %}
+                <article class="card hist-card">
+                    <div class="flex items-start justify-between gap-3">
+                        <div class="min-w-0">
+                            <div class="font-semibold text-[14.5px] truncate" style="color:var(--ink)">{{ result.package_data.title if result.package_data else 'Prüfung' }}</div>
+                            <div class="text-[12px] mt-0.5" style="color:var(--faint)">{{ result.rec_timestamp_str }}</div>
+                        </div>
+                        <div class="text-right shrink-0">
+                            <div class="hist-score" style="color:var(--faint); filter:blur(7px)">00</div>
+                            <div class="text-[11px] mt-1" style="color:var(--faint)">🔒 terkunci</div>
+                        </div>
+                    </div>
+                </article>
+                {% endfor %}
+                {% if total_results > 2 %}
+                <div class="card empty-box" style="padding:16px">
+                    + {{ total_results - 2 }} hasil lainnya juga tersimpan — terbuka saat Abo aktif kembali.
+                </div>
+                {% endif %}
+                {% else %}
+                <div class="card empty-box">
+                    Belum ada hasil ujian.
+                    <div class="mt-3"><a href="/student" class="btn-soft">Mulai latihan</a></div>
+                </div>
+                {% endif %}
+                {% else %}
                 {% for result in results %}
                 <article class="card hist-card">
                     <div class="flex items-start justify-between gap-3">
@@ -52,6 +94,7 @@
                     <div class="mt-3"><a href="/student" class="btn-soft">Mulai latihan</a></div>
                 </div>
                 {% endfor %}
+                {% endif %}
             </div>
         </section>
 

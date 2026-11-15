@@ -116,21 +116,28 @@ def student_dashboard():
         for pkg in packages:
             if pkg.get("is_premium"):
                 pkg["premium_locked"] = bool(subscription) and pkg["pkey"] not in unlocked
+                pkg["balance_after"]  = credit_balance - int(pkg.get("premium_credit_cost", 10) or 10)
             else:
                 pkg["premium_locked"] = False
             # end if
         # end for
 
+        # pisahkan ujian reguler vs premium
+        regular_packages = [p for p in packages if not p.get("is_premium")]
+        premium_packages = [p for p in packages if p.get("is_premium")]
+
         return view_student.html_student_dashboard(
-            stats          = stats,
-            results        = results[:5],
-            packages       = packages,
-            subscription   = subscription,
-            sub_plans      = plans,
-            credit_balance = credit_balance,
-            credit_error   = request.args.get("credit_error", ""),
-            credit_ok      = request.args.get("credit_ok", ""),
-            user           = g.current_user,
+            stats            = stats,
+            results          = results[:5],
+            packages         = packages,
+            regular_packages = regular_packages,
+            premium_packages = premium_packages,
+            subscription     = subscription,
+            sub_plans        = plans,
+            credit_balance   = credit_balance,
+            credit_error     = request.args.get("credit_error", ""),
+            credit_ok        = request.args.get("credit_ok", ""),
+            user             = g.current_user,
         )
     except Exception:
         print(traceback.format_exc())
@@ -189,18 +196,34 @@ def student_subscription():
 @student_blueprint.route("/student/verlauf", methods=["GET"])
 @middleware_privilege(roles=["peserta", "super_admin"])
 def student_history():
-    """Verlauf — riwayat ujian & pembayaran."""
+    """Verlauf — riwayat ujian & pembayaran.
+    Abo aktif → semua hasil terlihat. Abo berakhir → hasil terkunci ( teaser 2 terakhir, tanggal tetap tampil);
+    berlangganan lagi → seluruh hasil masa lalu terbuka kembali."""
     try:
         from exam_engine import exam_engine_proc
         from payment     import payment_proc
 
         results = exam_engine_proc.get_user_results(g.current_user["user_id"]).get("data", [])
         orders  = payment_proc.get_user_orders(g.current_user["user_id"]).get("data", [])
+        subscription = _decorate_subscription(
+            payment_proc.get_active_subscription(g.current_user["user_id"]).get("data")
+        )
+
+        results_locked = False
+        teaser_results = []
+        if not subscription:
+            results_locked = True
+            # teaser: 2 hasil terakhir — judul & tanggal tampil, skor terkunci
+            teaser_results = results[:2]
+        # end if
 
         return view_student.html_student_history(
-            results = results,
-            orders  = orders,
-            user    = g.current_user,
+            results         = results,
+            orders          = orders,
+            results_locked  = results_locked,
+            teaser_results  = teaser_results,
+            total_results   = len(results),
+            user            = g.current_user,
         )
     except Exception:
         print(traceback.format_exc())

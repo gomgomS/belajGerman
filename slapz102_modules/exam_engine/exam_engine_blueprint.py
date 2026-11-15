@@ -189,6 +189,12 @@ def result_page(result_pkey):
         # end if
 
         result  = result_data["data"]
+
+        # hasil hanya terlihat selama Abo aktif; berakhir → terkunci (teaser di Verlauf)
+        if not payment_proc.get_active_subscription(g.current_user["user_id"]).get("data"):
+            return redirect("/student/verlauf")
+        # end if
+
         access  = payment_proc.check_user_access(g.current_user["user_id"], result.get("fk_package_id", ""))
 
         return view_exam_engine.html_result(
@@ -216,6 +222,12 @@ def review_page(result_pkey):
         # end if
 
         result = result_data["data"]
+
+        # review juga terkunci saat Abo tidak aktif
+        if not payment_proc.get_active_subscription(g.current_user["user_id"]).get("data"):
+            return redirect("/student/verlauf")
+        # end if
+
         access = payment_proc.check_user_access(g.current_user["user_id"], result.get("fk_package_id", ""))
 
         if not access["has_access"] or access["tier"] != "PREMIUM":
