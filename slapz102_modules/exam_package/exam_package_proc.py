@@ -1087,6 +1087,92 @@ def delete_part(part_pkey):
 # end def
 
 
+def get_passage_usage_detail(passage_pkey):
+    """Daftar penempatan satu passage di paket-paket: paket, seksi, sub-bagian (Teil)."""
+    try:
+        mgdDB = database.get_db_conn(config.mainDB)
+        passage = mgdDB.db_toefl_passage.find_one({"pkey": passage_pkey, "is_deleted": False})
+        if not passage:
+            return {"status": "ERROR", "message": "Soal tidak ditemukan"}
+        # end if
+
+        items = list(mgdDB.db_toefl_section_item.find({
+            "fk_passage_id": passage_pkey, "is_deleted": False,
+        }))
+        sec_ids, part_ids = set(), set()
+        for it in items:
+            if it.get("fk_package_section_id"):
+                sec_ids.add(it.get("fk_package_section_id"))
+            # end if
+            if it.get("fk_part_id"):
+                part_ids.add(it.get("fk_part_id"))
+            # end if
+        # end for
+        if passage.get("fk_package_section_id"):
+            sec_ids.add(passage.get("fk_package_section_id"))
+        # end if
+
+        sections = list(mgdDB.db_toefl_package_section.find(
+            {"pkey": {"$in": list(sec_ids)}, "is_deleted": False}
+        ))
+        pkg_ids = [s.get("fk_package_id") for s in sections if s.get("fk_package_id")]
+        parts = list(mgdDB.db_toefl_package_part.find(
+            {"pkey": {"$in": list(part_ids)}, "is_deleted": False}
+        )) if part_ids else []
+        part_by_id = {p.get("pkey"): p.get("name", "") for p in parts}
+        sec_by_id  = {s.get("pkey"): s for s in sections}
+        packages = []
+        if pkg_ids:
+            packages = list(mgdDB.db_toefl_package.find({"pkey": {"$in": pkg_ids}, "is_deleted": False}))
+        # end if
+        pkg_by_id = {p.get("pkey"): p for p in packages}
+
+        placements, seen = [], set()
+        def _place(section, part_pkey=""):
+            sec_pk = (section or {}).get("pkey", "")
+            pkg    = pkg_by_id.get((section or {}).get("fk_package_id", ""))
+            if not sec_pk or not pkg:
+                return
+            # end if
+            key = (pkg.get("pkey"), sec_pk, part_pkey or "")
+            if key in seen:
+                return
+            # end if
+            seen.add(key)
+            placements.append({
+                "package_pkey": pkg.get("pkey", ""),
+                "package_no"  : pkg.get("package_no", 0) or 0,
+                "package_title": pkg.get("title", ""),
+                "status"      : pkg.get("status", ""),
+                "level_code"  : pkg.get("level_code") or pkg.get("test_type") or "",
+                "section_title": (section or {}).get("title", ""),
+                "part_name"   : part_by_id.get(part_pkey, "") or "",
+            })
+        # end def
+
+        for it in items:
+            _place(sec_by_id.get(it.get("fk_package_section_id")), it.get("fk_part_id") or "")
+        # end for
+        if passage.get("fk_package_section_id"):
+            _place(sec_by_id.get(passage.get("fk_package_section_id")))
+        # end if
+        placements.sort(key=lambda p: ((p.get("package_no") or 0), p.get("section_title") or ""))
+
+        q_count = mgdDB.db_toefl_question.count_documents({
+            "fk_passage_id": passage_pkey, "is_deleted": False,
+        })
+        return {"status": "OK", "data": {
+            "passage"  : passage,
+            "q_count"  : q_count,
+            "placements": placements,
+        }}
+    except Exception:
+        print(traceback.format_exc())
+        return {"status": "ERROR", "message": "Gagal memuat data pemakaian"}
+    # end try
+# end def
+
+
 def get_passage_usage_map(passage_pkeys, mgdDB=None):
     usage = {pk: [] for pk in (passage_pkeys or []) if pk}
     if not usage:

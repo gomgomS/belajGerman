@@ -1,0 +1,109 @@
+{% extends "admin/base_admin.html" %}
+
+{% block title %}Pemakaian Soal{% endblock %}
+{% block page_title %}Pemakaian Soal{% endblock %}
+{% block page_subtitle %}Di paket mana saja soal ini dipakai{% endblock %}
+
+{% block header_actions %}
+<a href="/expert/question-bank"
+    class="text-sm text-gray-600 border border-gray-200 hover:bg-gray-50 px-3 py-2 rounded-xl font-medium transition">
+    ← Bank Soal
+</a>
+{% endblock %}
+
+{% block breadcrumb %}
+<nav class="flex items-center gap-1.5 text-xs text-gray-400 mb-4 flex-wrap">
+    <a href="/dashboard/expert" class="hover:text-blue-600 transition">Dasbor</a>
+    <svg class="w-3 h-3 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+    <a href="/expert/question-bank" class="hover:text-blue-600 transition">Bank Soal</a>
+    <svg class="w-3 h-3 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+    <span class="text-gray-600 font-medium truncate max-w-xs">Pemakaian: {{ passage.title | truncate(36, True, '…') }}</span>
+</nav>
+{% endblock %}
+
+{% block content %}
+
+<!-- Kartu soal -->
+<div class="bg-white rounded-2xl border border-gray-200 p-5 mb-5">
+    <div class="flex items-start justify-between gap-4 flex-wrap">
+        <div class="min-w-0">
+            <div class="flex items-center gap-2 flex-wrap mb-1.5">
+                {% if passage.question_mode == 'sprechen' %}
+                <span class="pill ok">🎤 Sprechen</span>
+                {% elif passage.question_mode == 'single' %}
+                <span class="pill warn">Mandiri</span>
+                {% else %}
+                <span class="pill brand">Kelompok</span>
+                {% endif %}
+                {% if passage.is_premium %}
+                <span class="pill gold" title="Penanda penyusun">⚡ Premium</span>
+                {% endif %}
+                {% if passage.audio_url %}<span class="pill neutral">🎧 Audio</span>{% endif %}
+            </div>
+            <h2 class="font-display font-bold text-lg" style="color:var(--ink)">{{ passage.title }}</h2>
+            {% set prev = passage.content_text or passage.instruction or '' %}
+            {% if prev %}<p class="text-[12.5px] mt-1 max-w-2xl" style="color:var(--muted)">{{ prev | striptags | truncate(160, True, '…') }}</p>{% endif %}
+        </div>
+        <div class="flex items-center gap-3 shrink-0">
+            <div class="text-center px-4 py-2 rounded-xl" style="background:var(--brand-soft)">
+                <div class="font-display font-bold text-2xl leading-none" style="color:var(--brand)">{{ placements | length }}</div>
+                <div class="text-[10.5px] mt-0.5" style="color:var(--brand-ink)">penempatan</div>
+            </div>
+            <a href="/expert/question-bank/{{ passage.pkey }}" class="text-xs font-semibold px-3.5 py-2 rounded-lg transition"
+                style="border:1px solid var(--line); color:var(--brand-ink)">Edit soal</a>
+        </div>
+    </div>
+</div>
+
+<!-- Tabel penempatan -->
+<div class="bg-white rounded-2xl border border-gray-200 overflow-hidden">
+    <div class="overflow-x-auto">
+        <table class="adm-table">
+            <thead>
+                <tr>
+                    <th>Paket</th>
+                    <th>Level</th>
+                    <th>Bagian Ujian</th>
+                    <th>Sub-bagian</th>
+                    <th>Status Paket</th>
+                    <th class="text-right">Aksi</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for p in placements %}
+                <tr>
+                    <td>
+                        <a href="/expert/exam-package/{{ p.package_no or p.package_pkey }}" class="font-medium hover:underline" style="color:var(--ink)">
+                            #{{ p.package_no }} — {{ p.package_title }}
+                        </a>
+                    </td>
+                    <td><span class="pill brand">{{ p.level_code or '-' }}</span></td>
+                    <td style="color:var(--muted)">{{ p.section_title or '-' }}</td>
+                    <td>
+                        {% if p.part_name %}<span class="pill neutral">{{ p.part_name }}</span>
+                        {% else %}<span style="color:var(--faint)">—</span>{% endif %}
+                    </td>
+                    <td>
+                        {% if p.status == 'PUBLISHED' %}<span class="pill ok">Published</span>
+                        {% else %}<span class="pill neutral">{{ p.status or 'DRAFT' }}</span>{% endif %}
+                    </td>
+                    <td class="text-right">
+                        <a href="/expert/exam-package/{{ p.package_no or p.package_pkey }}" class="text-xs font-semibold" style="color:var(--brand)">Kelola →</a>
+                    </td>
+                </tr>
+                {% else %}
+                <tr><td colspan="6" class="text-center py-14" style="color:var(--faint)">
+                    Soal ini belum dipakai di paket mana pun —
+                    tambahkan lewat <strong>Kelola Paket → ＋ Soal</strong>.
+                </td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<p class="text-xs mt-4" style="color:var(--faint)">
+    Satu penempatan = dipakai di satu bagian/sub-bagian. Soal yang sama bisa muncul di beberapa paket tanpa diduplikasi.
+</p>
+
+{% endblock %}

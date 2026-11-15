@@ -980,6 +980,31 @@ def edit_passage_page(passage_pkey):
 # end def
 
 
+@question_bank_blueprint.route("/expert/question-bank/<passage_pkey>/usage", methods=["GET"])
+@middleware_privilege(roles=["super_admin", "expert"])
+def passage_usage_page(passage_pkey):
+    """Halaman pemakaian satu soal: di paket/seksi/Teil mana saja dipakai."""
+    try:
+        from exam_package import exam_package_proc
+        from sanitize import strip_objectid
+        result = exam_package_proc.get_passage_usage_detail(passage_pkey)
+        data = result.get("data")
+        if not data:
+            return redirect("/expert/question-bank")
+        # end if
+        return view_question_bank.html_passage_usage(
+            passage     = strip_objectid(data.get("passage")),
+            q_count     = data.get("q_count", 0),
+            placements  = data.get("placements", []),
+            user        = g.current_user,
+        )
+    except Exception:
+        print(traceback.format_exc())
+        return "Terjadi kesalahan", 500
+    # end try
+# end def
+
+
 @question_bank_blueprint.route("/expert/question-bank/<passage_pkey>/preview", methods=["GET"])
 @middleware_privilege(roles=["super_admin", "expert"])
 def preview_passage_page(passage_pkey):

@@ -205,8 +205,8 @@
                     <div class="text-xs text-gray-500 mt-0.5">{{ section.duration_minutes }} menit · {{ section.question_count }} soal · {{ section.parts | length }} sub-bagian</div>
                 </div>
                 <div class="flex items-center gap-2">
-                    <button type="button" onclick="pkOpenBank('{{ section.pkey }}', '', '{% if section.parts %}Tanpa sub-bagian{% else %}{{ section.title }}{% endif %}')"
-                        class="text-xs font-semibold text-white px-3 py-1.5 rounded-lg transition" style="background:var(--brand)">＋ Soal</button>
+                    <a href="{{ pkg_url }}/section/{{ section.pkey }}/from-bank"
+                        class="text-xs font-semibold text-white px-3 py-1.5 rounded-lg transition" style="background:var(--brand)">＋ Soal</a>
                     <details class="relative">
                         <summary class="list-none cursor-pointer text-xs text-gray-600 hover:text-blue-600 font-medium">Durasi</summary>
                         <form method="POST" action="{{ pkg_url }}/section/{{ section.pkey }}/update"
@@ -237,8 +237,8 @@
                                 ✦ Jadikan Sub-bagian (semua)
                             </button>
                             {% endif %}
-                            <button type="button" onclick="pkOpenBank('{{ section.pkey }}', '', '{% if section.parts %}Tanpa sub-bagian{% else %}{{ section.title }}{% endif %}')"
-                                class="text-xs bg-white border border-blue-200 text-blue-700 hover:bg-blue-50 px-3 py-1 rounded-lg font-medium transition">＋ Tambah soal</button>
+                            <a href="{{ pkg_url }}/section/{{ section.pkey }}/from-bank"
+                                class="text-xs bg-white border border-blue-200 text-blue-700 hover:bg-blue-50 px-3 py-1 rounded-lg font-medium transition">＋ Tambah soal</a>
                         </div>
                     </div>
                     {% if section.unassigned_passages %}
@@ -305,8 +305,8 @@
                                     <button type="submit" class="text-xs bg-blue-600 text-white px-2 py-1 rounded-md">Simpan</button>
                                 </form>
                             </details>
-                            <button type="button" onclick="pkOpenBank('{{ section.pkey }}', '{{ part.pkey }}', '{{ part.name }}')"
-                                class="text-xs bg-white border border-blue-200 text-blue-700 hover:bg-blue-50 px-3 py-1 rounded-lg font-medium transition">＋ Soal</button>
+                            <a href="{{ pkg_url }}/section/{{ section.pkey }}/from-bank?part={{ part.pkey }}"
+                                class="text-xs bg-white border border-blue-200 text-blue-700 hover:bg-blue-50 px-3 py-1 rounded-lg font-medium transition">＋ Soal</a>
                             <form method="POST" action="{{ pkg_url }}/part/{{ part.pkey }}/delete"
                                 onsubmit="return confirm('Hapus sub-bagian ini? Soalnya kembali ke daftar tanpa sub-bagian.')">
                                 <button type="submit" class="text-xs text-red-500 hover:text-red-700 font-medium">Hapus</button>
@@ -429,31 +429,6 @@ document.getElementById('premium-toggle-edit').addEventListener('change', functi
 });
 </script>
 
-<!-- Modal: tambah soal dari bank (inline, tanpa pindah halaman) -->
-<div id="bank-modal" class="hidden fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
-    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-xl max-h-[85vh] flex flex-col">
-        <div class="flex items-center justify-between px-5 py-4" style="border-bottom:1px solid var(--line)">
-            <div>
-                <h3 class="font-display font-semibold text-[15px]" style="color:var(--ink)">Tambah Soal</h3>
-                <p class="text-xs" id="bm-target" style="color:var(--muted)"></p>
-            </div>
-            <button type="button" onclick="document.getElementById('bank-modal').classList.add('hidden')" class="text-gray-400 hover:text-gray-600">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-            </button>
-        </div>
-        <div class="px-5 py-3" style="border-bottom:1px solid var(--line-soft)">
-            <input type="text" id="bm-search" placeholder="Cari judul soal…" oninput="bmFilter(this.value)"
-                class="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2"
-                style="border-color:var(--line); background:#F7F8FA;">
-        </div>
-        <div id="bm-list" class="px-5 py-4 space-y-2 overflow-y-auto flex-1"></div>
-        <div class="px-5 py-4 flex items-center justify-between gap-3" style="border-top:1px solid var(--line)">
-            <p class="text-xs" style="color:var(--faint)">Soal yang dicentang = isi akhir sub-bagian ini. Hilangkan centang untuk melepas.</p>
-            <button type="button" id="bm-submit" onclick="bmSubmit()"
-                class="text-sm font-semibold text-white px-5 py-2.5 rounded-xl transition shrink-0" style="background:var(--brand)">Masukkan Soal</button>
-        </div>
-    </div>
-</div>
 {% endif %}
 {% endblock %}
 
@@ -493,73 +468,6 @@ function pkCloseInsert(wrap) {
 document.addEventListener('keydown', e => {
     if (e.key === 'Escape') document.querySelectorAll('.pk-insert.open').forEach(pkCloseInsert);
 });
-
-// ── Modal tambah soal dari bank ─────────────────────────────────────────────
-let bmState = { section: '', part: '', rows: [] };
-
-function pkOpenBank(sectionPkey, partPkey, label) {
-    bmState = { section: sectionPkey, part: partPkey, rows: [] };
-    document.getElementById('bm-target').textContent = label + (partPkey ? ' (sub-bagian)' : '');
-    document.getElementById('bm-search').value = '';
-    document.getElementById('bm-list').innerHTML =
-        '<p class="text-xs text-center py-6" style="color:var(--faint)">Memuat bank soal…</p>';
-    document.getElementById('bank-modal').classList.remove('hidden');
-    fetch(PKG_URL + '/section/' + sectionPkey + '/bank-options?part=' + encodeURIComponent(partPkey))
-        .then(r => r.json())
-        .then(data => { bmState.rows = data.data || []; bmFilter(''); })
-        .catch(() => {
-            document.getElementById('bm-list').innerHTML =
-                '<p class="text-xs text-center py-6" style="color:var(--danger)">Gagal memuat bank soal</p>';
-        });
-}
-
-function bmFilter(q) {
-    const list = document.getElementById('bm-list');
-    const ql = (q || '').toLowerCase();
-    const rows = bmState.rows.filter(r => !ql || (r.title || '').toLowerCase().includes(ql));
-    if (!rows.length) {
-        list.innerHTML = '<p class="text-xs text-center py-6" style="color:var(--faint)">Tidak ada soal yang cocok.</p>';
-        bmSync();
-        return;
-    }
-    list.innerHTML = rows.map(r => {
-        const note = r.attached
-            ? '<span class="pill brand" style="margin-right:4px">sudah di sini</span>'
-            : (r.in_part_name ? '<span class="pill warn" style="margin-right:4px">pindah dari ' + r.in_part_name + '</span>' : '');
-        const used = (r.used_in_other || []).length
-            ? ' <span style="color:var(--faint)">· dipakai di paket lain</span>' : '';
-        const mode = r.question_mode === 'single' ? 'Mandiri' : 'Kelompok';
-        return '<label class="bm-row">' +
-            '<input type="checkbox" value="' + r.pkey + '"' + (r.attached ? ' checked' : '') + ' onchange="bmSync()">' +
-            '<div class="min-w-0 flex-1">' +
-            '<div class="text-[13px] font-medium truncate" style="color:var(--ink)">' + (r.title || '(tanpa judul)') + '</div>' +
-            '<div class="flex items-center flex-wrap gap-1.5 mt-0.5 text-[10px]" style="color:var(--faint)">' +
-            note + '<span>' + r.question_count + ' soal · ' + mode + '</span>' + used +
-            '</div></div></label>';
-    }).join('');
-    bmSync();
-}
-
-function bmSync() {
-    const n = document.querySelectorAll('#bm-list input[type=checkbox]:checked').length;
-    document.getElementById('bm-submit').textContent = n ? 'Masukkan ' + n + ' Soal' : 'Masukkan Soal';
-}
-
-function bmSubmit() {
-    const pkeys = Array.from(document.querySelectorAll('#bm-list input[type=checkbox]:checked')).map(i => i.value);
-    if (!pkeys.length) { pkToast('Centang soalnya dulu', false); return; }
-    const body = new URLSearchParams();
-    pkeys.forEach(p => body.append('passage_pkey', p));
-    body.append('part_pkey', bmState.part);
-    body.append('ajax', '1');
-    fetch(PKG_URL + '/section/' + bmState.section + '/from-bank', { method: 'POST', body })
-        .then(r => r.json())
-        .then(d => {
-            if (d.status === 'OK') { pkToast('Soal diperbarui'); setTimeout(() => location.reload(), 350); }
-            else pkToast('Gagal memperbarui soal', false);
-        })
-        .catch(() => pkToast('Koneksi bermasalah', false));
-}
 
 // ── Drag & drop: soal (antar urutan & antar sub-bagian) ─────────────────────
 let dragItem = null;

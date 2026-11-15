@@ -64,6 +64,13 @@ def html_passage_preview(passage, questions, user, gaps=None):
 # end def
 
 
+def html_passage_usage(passage, q_count, placements, user):
+    return render_template("expert/passage_usage.html",
+                           passage=passage, q_count=q_count,
+                           placements=placements, user=user)
+# end def
+
+
 def html_passage_sprechen_preview(passage, user):
     """Pratinjau passage Sprechen memakai halaman siswa dengan perekam suara."""
     item = {

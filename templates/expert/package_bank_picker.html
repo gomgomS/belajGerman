@@ -1,13 +1,13 @@
 {% extends "admin/base_admin.html" %}
 
 {% block title %}Pilih dari Bank{% endblock %}
-{% block page_title %}Pilih dari Bank{% endblock %}
-{% block page_subtitle %}{{ section.title if section else '' }}{% if part %} — {{ part.name }}{% endif %}{% endblock %}
+{% block page_title %}Pilih Soal dari Bank{% endblock %}
+{% block page_subtitle %}{{ section.title if section else '' }}{% if part %} — {{ part.name }}{% endif %} · {{ package.title if package else '' }}{% endblock %}
 
 {% block header_actions %}
 <a href="{{ package_url }}"
     class="text-sm text-gray-600 border border-gray-200 hover:bg-gray-50 px-3 py-2 rounded-xl font-medium transition">
-    Kembali ke Paket
+    ← Kembali ke Paket
 </a>
 {% endblock %}
 
@@ -23,94 +23,436 @@
 </nav>
 {% endblock %}
 
+{% block head %}
+<style>
+  .bp-toolbar{ display:flex; align-items:center; justify-content:space-between; gap:10px;
+    flex-wrap:wrap; margin-bottom:12px; }
+  .bp-tools{ display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
+  .bp-pill{ display:inline-flex; align-items:center; gap:6px; padding:7px 13px; border-radius:9px;
+    border:1px solid #E4E7EC; background:#fff; font-family:'Barlow',sans-serif;
+    font-size:12.5px; font-weight:600; color:#4A5361; cursor:pointer; transition:all .13s; }
+  .bp-pill:hover{ background:#F3F5F8; color:#171A21; }
+  .bp-pill.gold.active{ background:#D97706; border-color:#D97706; color:#fff; }
+  .bp-search{ position:relative; flex:0 1 280px; min-width:220px; }
+  .bp-search svg{ position:absolute; left:11px; top:50%; transform:translateY(-50%); width:15px; height:15px;
+    color:#98A1AE; pointer-events:none; }
+  .bp-search input{ width:100%; padding:8px 12px 8px 34px; border-radius:10px; border:1px solid #E4E7EC;
+    font-size:12.5px; background:#fff; outline:none; font-family:'IBM Plex Sans',sans-serif; }
+  .bp-search input:focus{ border-color:#1D4ED8; box-shadow:0 0 0 3px rgba(29,78,216,.1); }
+
+  .chip{ font-size:10.5px; font-weight:700; padding:2px 9px; border-radius:99px; white-space:nowrap;
+    display:inline-block; }
+  .chip.mode{ background:#EFF1F4; color:#4A5361; }
+  .chip.gold{ background:#FDF6E9; color:#B45308; }
+  .chip.here{ background:#E7F5EF; color:#12805C; }
+  .chip.move{ background:#FDF1E2; color:#B54708; }
+  .chip.used{ background:#F3EFFE; color:#7C3AED; }
+
+  /* ── Tabel ── */
+  .bp-tablewrap{ background:#fff; border:1px solid #E4E7EC; border-radius:14px; overflow:hidden;
+    margin-bottom:14px; }
+  .bp-table{ width:100%; border-collapse:collapse; }
+  .bp-table th{ font-family:'Barlow',sans-serif; font-size:10.5px; font-weight:700; letter-spacing:.08em;
+    text-transform:uppercase; color:#98A1AE; text-align:left; padding:11px 14px;
+    border-bottom:1px solid #E4E7EC; background:#FBFCFE; white-space:nowrap; }
+  .bp-table td{ padding:11px 14px; font-size:13px; border-bottom:1px solid #EDF0F4;
+    vertical-align:middle; color:#242933; }
+  .bp-table tr.bp-item:last-child td{ border-bottom:none; }
+  .bp-table tbody tr:hover > td{ background:#F8FAFD; }
+  tr.bp-item.checked > td{ background:#EFF4FF; }
+  tr.bp-item.checked.has-prem > td{ background:#FFF9EC; }
+
+  .bp-check{ appearance:none; -webkit-appearance:none; width:19px; height:19px; border-radius:6px;
+    border:1.5px solid #CBD5E1; background:#fff; cursor:pointer; position:relative;
+    transition:all .13s; display:inline-block; vertical-align:middle; }
+  .bp-check:hover{ border-color:#1D4ED8; }
+  .bp-check:checked{ background:#1D4ED8; border-color:#1D4ED8; }
+  tr.has-prem .bp-check:checked{ background:#D97706; border-color:#D97706; }
+  .bp-check:checked::after{ content:''; position:absolute; left:5.5px; top:2px; width:5px; height:9px;
+    border:solid #fff; border-width:0 2.5px 2.5px 0; transform:rotate(45deg); }
+
+  .bp-title{ font-family:'Barlow',sans-serif; font-size:13.5px; font-weight:700; color:#171A21;
+    line-height:1.3; }
+  .bp-preview{ font-size:11.5px; color:#5B6472; line-height:1.5; margin-top:3px; max-width:520px;
+    display:-webkit-box; -webkit-line-clamp:1; -webkit-box-orient:vertical; overflow:hidden; }
+
+  .bp-answertype{ font-size:10.5px; color:#98A1AE; margin-top:4px; line-height:1.3;
+    white-space:nowrap; }
+  .bp-use{ display:inline-flex; align-items:center; justify-content:center; min-width:38px;
+    padding:4px 8px; border-radius:8px; background:#EFF4FF; border:1px solid #C9D8F3;
+    font-family:'Barlow',sans-serif; font-size:12.5px; font-weight:700; color:#1E3A8A;
+    text-decoration:none; transition:all .13s; }
+  .bp-use:hover{ background:#1D4ED8; border-color:#1D4ED8; color:#fff; text-decoration:none; }
+  .bp-expand{ width:26px; height:26px; border-radius:8px; border:1px solid #E4E7EC; background:#fff;
+    color:#5B6472; display:inline-flex; align-items:center; justify-content:center; cursor:pointer;
+    transition:all .13s; }
+  .bp-expand:hover{ border-color:#1D4ED8; color:#1D4ED8; }
+  .bp-expand svg{ width:13px; height:13px; transition:transform .15s; }
+  .bp-expand[aria-expanded="true"] svg{ transform:rotate(90deg); }
+
+  /* baris detail expandable */
+  tr.bp-detail{ display:none; }
+  tr.bp-detail.open{ display:table-row; }
+  tr.bp-detail > td{ background:#FBFCFE; padding:0; border-bottom:1px solid #EDF0F4; }
+  .bp-qlist{ padding:6px 14px 10px 56px; }
+  .bp-qrow{ display:flex; align-items:flex-start; gap:10px; padding:8px 0; }
+  .bp-qrow + .bp-qrow{ border-top:1px dashed #EDF0F4; }
+  .bp-qno{ width:22px; height:22px; border-radius:7px; background:#EFF1F4; color:#4A5361;
+    font-family:'Barlow',sans-serif; font-size:11px; font-weight:700; display:flex;
+    align-items:center; justify-content:center; flex-shrink:0; margin-top:1px; }
+  .bp-qrow.prem .bp-qno{ background:#FDF6E9; color:#B45308; }
+  .bp-qtext{ font-size:12.5px; color:#242933; line-height:1.5; min-width:0; flex:1;
+    display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+
+  .bp-empty{ padding:52px 20px; text-align:center; background:#fff; border:1.5px dashed #E4E7EC;
+    border-radius:14px; margin-bottom:14px; }
+
+  /* paginasi */
+  .bp-pager{ display:flex; align-items:center; justify-content:space-between; gap:10px;
+    flex-wrap:wrap; margin-bottom:84px; }
+  .bp-pages{ display:flex; align-items:center; gap:4px; flex-wrap:wrap; }
+  .bp-page-btn{ min-width:30px; height:30px; padding:0 9px; border-radius:8px; border:1px solid #E4E7EC;
+    background:#fff; font-family:'Barlow',sans-serif; font-size:12.5px; font-weight:600; color:#4A5361;
+    cursor:pointer; transition:all .13s; display:inline-flex; align-items:center; justify-content:center; }
+  .bp-page-btn:hover:not(:disabled):not(.active){ background:#F3F5F8; color:#171A21; }
+  .bp-page-btn.active{ background:#171A21; border-color:#171A21; color:#fff; cursor:default; }
+  .bp-page-btn:disabled{ opacity:.4; cursor:not-allowed; }
+  .bp-page-btn.ellipsis{ border:none; background:none; cursor:default; color:#98A1AE; min-width:auto; }
+  .bp-range{ font-size:11.5px; color:#5B6472; }
+  .bp-size-wrap{ display:flex; align-items:center; gap:7px; }
+  .bp-size{ padding:5px 8px; border-radius:8px; border:1px solid #E4E7EC; background:#fff;
+    font-family:'Barlow',sans-serif; font-size:12px; font-weight:600; color:#4A5361; cursor:pointer; outline:none; }
+
+  /* bar aksi sticky */
+  .bp-actionbar{ position:fixed; left:0; right:0; bottom:0; z-index:30;
+    background:rgba(255,255,255,.96); backdrop-filter:blur(10px);
+    border-top:1px solid #E4E7EC; padding:12px 20px; }
+  .bp-actionbar-inner{ display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; }
+  .bp-count{ font-size:13px; color:#5B6472; }
+  .bp-count b{ font-family:'Barlow',sans-serif; font-size:16px; color:#1D4ED8; }
+  .bp-actions{ display:flex; align-items:center; gap:8px; }
+  .bp-btn{ display:inline-flex; align-items:center; gap:7px; font-family:'Barlow',sans-serif;
+    font-size:13px; font-weight:600; padding:10px 16px; border-radius:10px; cursor:pointer;
+    border:1px solid #E4E7EC; background:#fff; color:#4A5361; transition:all .13s; text-decoration:none; }
+  .bp-btn:hover{ background:#F3F5F8; }
+  .bp-btn.primary{ background:#1D4ED8; border-color:#1D4ED8; color:#fff; padding:10px 26px;
+    box-shadow:0 6px 16px rgba(29,78,216,.25); }
+  .bp-btn.primary:hover{ background:#1E40AF; }
+  .bp-btn.primary:disabled{ opacity:.45; cursor:not-allowed; box-shadow:none; }
+
+  .bp-scroll{ overflow-x:auto; }
+  .bp-table{ min-width:760px; }
+  @media (max-width:900px){
+    .bp-col-bentuk, .bp-col-status{ display:none; }
+  }
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="max-w-3xl">
-    <div class="bg-blue-50 border border-blue-200 rounded-xl p-4 text-sm text-blue-800 mb-4">
-        Centang item yang mau masuk
-        <span class="font-semibold">{{ section.title }}{% if part %} — {{ part.name }}{% endif %}</span>.
-        Item yang sudah ada di sub-bagian lain akan dipindah ke sini bila dicentang.
-        Soal yang sama tetap bisa dipakai di paket lain.
+
+<div class="bg-blue-50 border border-blue-200 rounded-xl p-3.5 text-[13px] text-blue-800 mb-3">
+    Centang soal yang mau masuk ke
+    <span class="font-semibold">{{ section.title }}{% if part %} — {{ part.name }}{% endif %}</span>.
+    Item yang sudah ada di sub-bagian lain akan pindah ke sini bila dicentang — soal yang sama tetap bisa dipakai di paket lain.
+    <span class="chip gold" style="vertical-align:middle; margin-left:4px">⚡ = premium (penanda penyusun)</span>
+</div>
+
+<div class="bp-toolbar">
+    <div class="bp-tools">
+        <button type="button" class="bp-pill" onclick="bpSelectAll(true)">☑ Pilih semua tampil</button>
+        <button type="button" class="bp-pill" onclick="bpSelectAll(false)">☐ Kosongkan</button>
+        <button type="button" class="bp-pill gold" id="bp-prem-filter" onclick="bpTogglePrem()">⚡ Hanya premium</button>
+    </div>
+    <div class="bp-search">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+        <input type="text" id="bp-search" placeholder="Cari judul atau isi soal…" oninput="bpApply()">
+    </div>
+</div>
+
+<form method="POST" action="{{ package_url }}/section/{{ section.pkey }}/from-bank" id="bp-form">
+    <input type="hidden" name="part_pkey" value="{{ part.pkey if part else '' }}">
+
+    <div class="bp-tablewrap" id="bp-tablewrap">
+      <div class="bp-scroll">
+        <table class="bp-table">
+            <thead>
+                <tr>
+                    <th style="width:44px"></th>
+                    <th style="width:44px"></th>
+                    <th>Soal</th>
+                    <th class="bp-col-bentuk" style="width:168px">Bentuk</th>
+                    <th style="width:90px">Premium</th>
+                    <th style="width:80px">Dipakai</th>
+                    <th class="bp-col-status" style="width:170px">Status</th>
+                </tr>
+            </thead>
+            <tbody id="bp-tbody">
+                {% for item in candidates %}
+                {% set preview = (item.questions[0].question_text if item.questions else '')|striptags %}
+                {% if item.question_mode == 'sprechen' and not preview %}
+                {% set preview = ((item.instruction or '') ~ ' — ' ~ (item.content_text or ''))|striptags %}
+                {% endif %}
+                {% set q_texts = item.questions | map(attribute='question_text') | join(' ') | striptags %}
+                {% set prem_count = item.questions | selectattr('is_premium') | list | length %}
+                <tr class="bp-item {% if item.has_premium_q %}has-prem{% endif %} {% if item.attached %}checked{% endif %}"
+                    data-search="{{ ((item.title or '') ~ ' ' ~ preview ~ ' ' ~ q_texts) | lower }}"
+                    data-premium="{{ '1' if item.has_premium_q else '' }}">
+                    <td><input type="checkbox" class="bp-check" name="passage_pkey" value="{{ item.pkey }}"
+                        {% if item.attached %}checked{% endif %} onchange="bpSync()"></td>
+                    <td>
+                        {% if item.question_mode == 'sprechen' or item.questions %}
+                        <button type="button" class="bp-expand" aria-expanded="{{ 'true' if item.question_mode == 'sprechen' else 'false' }}"
+                            title="Lihat isi soal" onclick="bpToggleDetail(this)">
+                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/></svg>
+                        </button>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div class="bp-title">{{ item.title or '(Tanpa judul)' }}</div>
+                        {% if preview %}
+                        <div class="bp-preview">{{ preview[:160] }}{% if preview|length > 160 %}…{% endif %}</div>
+                        {% endif %}
+                    </td>
+                    <td class="bp-col-bentuk">
+                        {% if item.question_mode == 'sprechen' %}
+                        <span class="chip mode">🎤 Sprechen</span>
+                        <div class="bp-answertype">1 tugas bicara</div>
+                        {% elif item.question_mode == 'single' %}
+                        <span class="chip mode">Mandiri</span>
+                        <div class="bp-answertype">
+                            {% if item.answer_type == 'rf' %}Richtig / Falsch
+                            {% elif item.answer_type == 'cloze' and item.cloze_answer_mode == 'select' %}Lückentext · Dropdown
+                            {% elif item.answer_type == 'cloze' and item.cloze_answer_mode == 'input' %}Lückentext · Isian
+                            {% elif item.answer_type == 'cloze' %}Lückentext · A–D
+                            {% else %}Pilihan Ganda A–D{% endif %}
+                        </div>
+                        {% else %}
+                        <span class="chip mode">Kelompok · {{ item.question_count }} soal</span>
+                        <div class="bp-answertype">
+                            {% if item.answer_type == 'rf' %}Richtig / Falsch
+                            {% elif item.answer_type == 'cloze' and item.cloze_answer_mode == 'select' %}Lückentext · Dropdown
+                            {% elif item.answer_type == 'cloze' and item.cloze_answer_mode == 'input' %}Lückentext · Isian
+                            {% elif item.answer_type == 'cloze' %}Lückentext · A–D
+                            {% else %}Pilihan Ganda A–D{% endif %}
+                        </div>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if item.has_premium_q %}
+                        <span class="chip gold" title="{{ prem_count if prem_count else 1 }} soal premium di sini (penanda)">⚡ {{ prem_count if prem_count else 1 }}</span>
+                        {% else %}
+                        <span style="color:#C3CAD4">—</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% set n_use = item.used_in_packages|length %}
+                        {% if n_use %}
+                        <a class="bp-use" href="/expert/question-bank/{{ item.pkey }}/usage" target="_blank" rel="noopener"
+                            title="Dipakai di {{ n_use }} penempatan — klik untuk lihat paketnya">{{ n_use }}×</a>
+                        {% else %}
+                        <span style="color:#C3CAD4">—</span>
+                        {% endif %}
+                    </td>
+                    <td class="bp-col-status">
+                        {% if item.attached %}
+                        <span class="chip here">✓ Sudah di sini</span>
+                        {% elif item.in_part_name %}
+                        <span class="chip move">← {{ item.in_part_name }}</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                <tr class="bp-detail {% if item.question_mode == 'sprechen' %}open{% endif %}">
+                    <td colspan="7">
+                        {% if item.question_mode == 'sprechen' %}
+                        <div class="bp-qlist">
+                            <div class="bp-qrow {% if item.is_premium %}prem{% endif %}">
+                                <span class="bp-qno">🎤</span>
+                                <div class="bp-qtext">
+                                    <strong>Aufgabe:</strong> {{ (item.instruction or '') | striptags }}<br>
+                                    {% if item.sample_answer %}<strong>Musterantwort:</strong> {{ item.sample_answer | striptags }}{% endif %}
+                                </div>
+                                {% if item.is_premium %}<span class="chip gold">⚡ Premium</span>{% endif %}
+                            </div>
+                        </div>
+                        {% else %}
+                        <div class="bp-qlist">
+                            {% for q in item.questions %}
+                            <div class="bp-qrow {% if q.is_premium %}prem{% endif %}">
+                                <span class="bp-qno">{{ loop.index }}</span>
+                                <div class="bp-qtext">{{ q.question_text | striptags }}</div>
+                                {% if q.is_premium %}<span class="chip gold">⚡ Premium</span>{% endif %}
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% else %}
+                <tr><td colspan="7" style="padding:0; border-bottom:none">
+                    <div class="bp-empty" style="border:none; margin:0">
+                        <div class="text-4xl mb-3">🗂️</div>
+                        <p class="font-semibold mb-1" style="color:#171A21">Belum ada soal di Bank Soal untuk bagian ujian ini.</p>
+                        <p class="text-sm mb-5" style="color:#5B6472">Buat soal baru, lalu kembali ke sini untuk memasukkannya.</p>
+                        <a href="/expert/question-bank/new" class="bp-btn primary">＋ Buat Soal Baru</a>
+                    </div>
+                </td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+      </div>
     </div>
 
-    <form method="POST" action="{{ package_url }}/section/{{ section.pkey }}/from-bank" class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-        <input type="hidden" name="part_pkey" value="{{ part.pkey if part else '' }}">
-        {% if candidates %}
-        <div class="px-5 pt-4 pb-3 border-b border-gray-100">
-            <input type="search" placeholder="Cari judul atau soal..."
-                oninput="filterBankItems(this.value)"
-                class="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50 focus:bg-white">
+    <div class="bp-pager" id="bp-pager" style="display:none">
+        <span class="bp-range" id="bp-range"></span>
+        <div class="bp-pages" id="bp-pages"></div>
+        <div class="bp-size-wrap">
+            <span class="bp-range">Per halaman</span>
+            <select id="bp-size" class="bp-size" onchange="bpChangeSize(this.value)">
+                <option value="10" selected>10</option>
+                <option value="20">20</option>
+                <option value="50">50</option>
+            </select>
         </div>
-        <div id="bank-list" class="p-4 space-y-2">
-            {% for item in candidates %}
-            {% set preview = (item.questions[0].question_text if item.questions else '')|striptags %}
-            {% if item.question_mode == 'sprechen' and not preview %}
-            {% set preview = ((item.instruction or '') ~ ' — ' ~ (item.content_text or ''))|striptags %}
-            {% endif %}
-            <label class="bank-item flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition
-                {% if item.attached %}bg-blue-50 border-blue-200{% else %}bg-white border-gray-200 hover:border-blue-200{% endif %}"
-                data-search="{{ (item.title or '')|lower }} {{ preview|lower }}">
-                <input type="checkbox" name="passage_pkey" value="{{ item.pkey }}" class="mt-1"
-                    {% if item.attached %}checked{% endif %}
-                    onchange="this.closest('label').classList.toggle('bg-blue-50', this.checked); this.closest('label').classList.toggle('border-blue-200', this.checked); this.closest('label').classList.toggle('border-gray-200', !this.checked);">
-                <div class="min-w-0 flex-1">
-                    <div class="flex items-center flex-wrap gap-1.5">
-                        <span class="text-sm font-semibold text-gray-800 truncate">{{ item.title or '(Tanpa judul)' }}</span>
-                        {% if item.question_mode == 'sprechen' %}
-                        <span class="text-xs bg-green-100 text-green-700 font-semibold px-1.5 py-0.5 rounded">Sprechen · Rekam Suara</span>
-                        {% elif item.question_mode == 'single' %}
-                        <span class="text-xs bg-amber-100 text-amber-700 font-semibold px-1.5 py-0.5 rounded">Mandiri</span>
-                        {% else %}
-                        <span class="text-xs bg-blue-100 text-blue-700 font-semibold px-1.5 py-0.5 rounded">Kelompok</span>
-                        {% endif %}
-                        {% if item.has_premium_q %}
-                        <span class="text-xs font-semibold px-1.5 py-0.5 rounded" style="background:#FDF6E9; color:#B45308" title="Berisi soal/tugas premium (penanda penyusun — tidak memengaruhi paket)">⚡ Premium</span>
-                        {% endif %}
-                        {% if item.attached %}
-                        <span class="text-xs bg-green-100 text-green-700 font-semibold px-1.5 py-0.5 rounded">Sudah masuk</span>
-                        {% elif item.in_part_name %}
-                        <span class="text-xs bg-gray-100 text-gray-600 font-semibold px-1.5 py-0.5 rounded">Di {{ item.in_part_name }}</span>
-                        {% endif %}
-                        {% if item.used_in_other %}
-                        <span class="text-xs bg-violet-100 text-violet-700 font-semibold px-1.5 py-0.5 rounded">{{ item.used_in_other|length }} paket lain</span>
-                        {% endif %}
-                    </div>
-                    <div class="text-xs text-gray-400 mt-0.5">
-                        {% if item.question_mode == 'sprechen' %}Tugas bicara (rekam suara){% else %}{{ item.question_count }} soal{% endif %}{% if item.section_key %} · {{ item.section_key }}{% endif %}
-                    </div>
-                    {% if preview %}
-                    <div class="text-xs text-gray-600 mt-1">{{ preview[:180] }}{% if preview|length > 180 %}…{% endif %}</div>
-                    {% endif %}
-                </div>
-            </label>
-            {% endfor %}
+    </div>
+    <div class="bp-empty" id="bp-nofilter" style="display:none">
+        <p class="text-sm" style="color:#5B6472">Tidak ada soal yang cocok dengan filter / pencarian.</p>
+    </div>
+
+    <div class="bp-actionbar">
+        <div class="bp-actionbar-inner">
+            <div class="bp-count"><b id="bp-count-n">0</b> item dipilih — perubahan berlaku setelah disimpan</div>
+            <div class="bp-actions">
+                <a href="{{ package_url }}" class="bp-btn">Batal</a>
+                <button type="submit" class="bp-btn primary" id="bp-submit" disabled>
+                    Masukkan ke {% if part %}{{ part.name }}{% else %}Bagian Ujian{% endif %}
+                </button>
+            </div>
         </div>
-        <div class="px-5 py-4 border-t border-gray-100 flex gap-3">
-            <button type="submit" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 rounded-xl text-sm transition">
-                Masukkan ke {% if part %}{{ part.name }}{% else %}Bagian Ujian{% endif %}
-            </button>
-            <a href="{{ package_url }}"
-                class="px-5 py-2.5 border border-gray-200 text-gray-600 rounded-xl text-sm hover:bg-gray-50 transition">Batal</a>
-        </div>
-        {% else %}
-        <div class="px-5 py-12 text-center text-sm text-gray-400">
-            Belum ada soal di Bank Soal untuk bagian ujian ini.
-            <a href="/expert/question-bank/new" class="text-blue-600 hover:underline">Buat soal baru</a>.
-        </div>
-        {% endif %}
-    </form>
-</div>
+    </div>
+</form>
 {% endblock %}
 
 {% block scripts %}
 <script>
-function filterBankItems(query) {
-    var q = (query || '').toLowerCase().trim();
-    var list = document.getElementById('bank-list');
-    if (!list) return;
-    list.querySelectorAll('.bank-item').forEach(function(row) {
-        var hay = row.getAttribute('data-search') || '';
-        row.classList.toggle('hidden', q && hay.indexOf(q) === -1);
-    });
+let bpPremOnly = false;
+let bpPage = 1;
+let bpSize = 10;
+
+function bpVisibleItems() {
+    return Array.from(document.querySelectorAll('#bp-tbody tr.bp-item')).filter(tr => tr.style.display !== 'none');
 }
+
+function bpApply(resetPage) {
+    if (resetPage !== false) bpPage = 1;
+    const q = (document.getElementById('bp-search').value || '').trim().toLowerCase();
+    const all = Array.from(document.querySelectorAll('#bp-tbody tr.bp-item'));
+    const visible = [];
+    all.forEach(tr => {
+        const okPrem   = !bpPremOnly || tr.dataset.premium === '1';
+        const okSearch = !q || (tr.dataset.search || '').indexOf(q) >= 0;
+        const show = okPrem && okSearch;
+        if (show) visible.push(tr);
+        tr.style.display = 'none';
+        const det = tr.nextElementSibling;
+        if (det && det.classList.contains('bp-detail')) det.classList.remove('open');
+    });
+    const total = visible.length;
+    const pages = Math.max(1, Math.ceil(total / bpSize));
+    if (bpPage > pages) bpPage = pages;
+    const start = (bpPage - 1) * bpSize;
+    visible.forEach((tr, i) => {
+        tr.style.display = (i >= start && i < start + bpSize) ? '' : 'none';
+    });
+    bpRenderPager(total, pages);
+    const nofilter = document.getElementById('bp-nofilter');
+    nofilter.style.display = (total === 0 && all.length) ? '' : 'none';
+    bpSync();
+}
+
+function pageWindow(current, pages) {
+    const out = [];
+    for (let i = 1; i <= pages; i++) {
+        if (i === 1 || i === pages || Math.abs(i - current) <= 1) out.push(i);
+        else if (out[out.length - 1] !== '…') out.push('…');
+    }
+    return out;
+}
+
+function bpRenderPager(total, pages) {
+    const bar = document.getElementById('bp-pager');
+    if (total <= bpSize) { bar.style.display = 'none'; return; }
+    bar.style.display = '';
+    document.getElementById('bp-range').textContent =
+        'Menampilkan ' + ((bpPage - 1) * bpSize + 1) + '–' + Math.min(total, bpPage * bpSize) + ' dari ' + total;
+    let html = '<button type="button" class="bp-page-btn" ' + (bpPage === 1 ? 'disabled' : '') +
+        ' onclick="bpGoPage(' + (bpPage - 1) + ')">‹</button>';
+    pageWindow(bpPage, pages).forEach(p => {
+        html += p === '…'
+            ? '<span class="bp-page-btn ellipsis">…</span>'
+            : '<button type="button" class="bp-page-btn' + (p === bpPage ? ' active' : '') +
+              '" onclick="bpGoPage(' + p + ')">' + p + '</button>';
+    });
+    html += '<button type="button" class="bp-page-btn" ' + (bpPage === pages ? 'disabled' : '') +
+        ' onclick="bpGoPage(' + (bpPage + 1) + ')">›</button>';
+    document.getElementById('bp-pages').innerHTML = html;
+}
+
+function bpGoPage(p) {
+    bpPage = p;
+    bpApply(false);
+    document.getElementById('bp-tablewrap').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function bpChangeSize(v) {
+    bpSize = parseInt(v, 10) || 10;
+    bpPage = 1;
+    bpApply(false);
+}
+
+function bpTogglePrem() {
+    bpPremOnly = !bpPremOnly;
+    document.getElementById('bp-prem-filter').classList.toggle('active', bpPremOnly);
+    bpApply();
+}
+
+function bpSelectAll(on) {
+    bpVisibleItems().forEach(tr => {
+        const cb = tr.querySelector('input.bp-check');
+        if (!cb) return;
+        cb.checked = on;
+        tr.classList.toggle('checked', on);
+    });
+    bpSync();
+}
+
+function bpToggleDetail(btn) {
+    const det = btn.closest('tr').nextElementSibling;
+    det.classList.toggle('open');
+    btn.setAttribute('aria-expanded', det.classList.contains('open') ? 'true' : 'false');
+}
+
+function bpSync() {
+    let n = 0;
+    document.querySelectorAll('#bp-tbody input.bp-check').forEach(cb => {
+        const tr = cb.closest('tr.bp-item');
+        tr.classList.toggle('checked', cb.checked);
+        if (cb.checked) n++;
+    });
+    document.getElementById('bp-count-n').textContent = n;
+    document.getElementById('bp-submit').disabled = (n === 0);
+}
+
+/* klik baris (selain kontrol) memilih checkbox */
+document.querySelectorAll('#bp-tbody tr.bp-item').forEach(tr => {
+    tr.addEventListener('click', e => {
+        if (e.target.closest('input, button, a')) return;
+        const cb = tr.querySelector('input.bp-check');
+        if (!cb) return;
+        cb.checked = !cb.checked;
+        bpSync();
+    });
+});
+
+bpApply();
 </script>
 {% endblock %}
