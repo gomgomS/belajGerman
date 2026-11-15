@@ -50,6 +50,36 @@
                     placeholder="Deskripsi singkat tentang paket ini...">{{ package.description if package else '' }}</textarea>
             </div>
 
+            <div class="rounded-xl border p-4" style="border-color:#F0DFC0; background:#FDF6E9">
+                <label class="flex items-start gap-3 cursor-pointer">
+                    <input type="checkbox" name="is_premium" value="1" id="premium-toggle"
+                        {% if package and package.is_premium %}checked{% endif %}
+                        onchange="document.getElementById('premium-cost-wrap').classList.toggle('hidden', !this.checked); if (this.checked) updatePremiumSummary();"
+                        class="mt-1 w-4 h-4 accent-amber-600">
+                    <span>
+                        <span class="block text-sm font-bold" style="color:var(--warn)">⚡ Paket Premium</span>
+                        <span class="block text-xs mt-0.5" style="color:#8A6D1F">Soal di paket ini terkunci — siswa membukanya dengan Kredit AI (didapat dari langganan). Paket non-premium tetap terbuka untuk semua pelanggan.</span>
+                    </span>
+                </label>
+                <div id="premium-cost-wrap" class="mt-3 {% if not package or not package.is_premium %}hidden{% endif %}" style="padding-left:28px">
+                    <label class="block text-xs font-semibold mb-1" style="color:#8A6D1F">Biaya buka (kredit)</label>
+                    <input type="number" name="premium_credit_cost" min="1" max="500" step="1" id="premium-cost-input"
+                        value="{{ package.premium_credit_cost if package and package.premium_credit_cost else 10 }}"
+                        oninput="updatePremiumSummary()"
+                        class="w-32 px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 bg-white"
+                        style="border-color:#F0DFC0">
+                    <p class="text-[11px] mt-1" style="color:#B58A2E">Saran: 5–15 kredit per paket.</p>
+                    <div class="mt-2.5 flex items-start gap-2 rounded-lg px-3 py-2" style="background:#FBEBD3; border:1px dashed #F0DFC0">
+                        <svg class="w-3.5 h-3.5 mt-0.5 shrink-0" style="color:var(--warn)" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                        <p class="text-xs leading-relaxed" style="color:#8A6D1F">
+                            Total kredit untuk membuka paket ini:
+                            <b class="font-display text-[14px]" id="premium-total" style="color:var(--warn)">10 Kredit AI</b><br>
+                            <span style="color:#B58A2E">Dipotong dari saldo kredit siswa — sekali buka, akses selamanya.</span>
+                        </p>
+                    </div>
+                </div>
+            </div>
+
             <p class="text-xs text-gray-400">Bagian ujian (Hören, Lesen, …) dan sub-bagian (Teil 1, 2, …) ditambahkan setelah paket dibuat.</p>
 
             <div class="flex gap-3 pt-2">
@@ -66,4 +96,20 @@
         </form>
     </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function updatePremiumSummary() {
+    const input = document.getElementById('premium-cost-input');
+    const total = document.getElementById('premium-total');
+    if (!input || !total) return;
+    const n = Math.max(1, parseInt(input.value, 10) || 1);
+    total.textContent = n + ' Kredit AI';
+}
+document.getElementById('premium-toggle').addEventListener('change', function () {
+    if (this.checked) updatePremiumSummary();
+});
+updatePremiumSummary();
+</script>
 {% endblock %}

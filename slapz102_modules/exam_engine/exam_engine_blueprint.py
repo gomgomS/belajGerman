@@ -22,6 +22,9 @@ def start_exam(package_pkey):
         from payment import payment_proc
         access = payment_proc.check_user_access(g.current_user["user_id"], package_pkey)
         if not access["has_access"]:
+            if access.get("reason") == "PREMIUM_LOCKED":
+                return redirect("/student#pruefungen")
+            # end if
             return redirect("/student/preise")
         # end if
 

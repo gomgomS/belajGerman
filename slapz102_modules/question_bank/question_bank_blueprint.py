@@ -367,6 +367,7 @@ def _create_one_question(proc, passage_pkey, section_id, expert_id, item, sectio
         sub_type_key   = sub_type_key,
         option_images  = _option_images(sanitize.clean_html_dic(item)),
         answer_text    = answer_text,
+        is_premium     = bool(item.get("is_premium")),
     )
     if result.get("status") != "OK":
         return False
@@ -395,6 +396,25 @@ def list_passages():
         for item in passages:
             _normalize_bank_item(item)
         # end for
+
+        # penanda premium: tugas Sprechen (passage) atau ada soal premium di dalamnya
+        try:
+            import database
+            import config
+            _mgd = database.get_db_conn(config.mainDB)
+            prem_q = {}
+            for row in _mgd.db_toefl_question.aggregate([
+                {"$match": {"is_deleted": False, "is_premium": True}},
+                {"$group": {"_id": "$fk_passage_id", "n": {"$sum": 1}}},
+            ]):
+                prem_q[row["_id"]] = row["n"]
+            # end for
+            for item in passages:
+                item["any_premium"] = bool(item.get("is_premium")) or prem_q.get(item.get("pkey", ""), 0) > 0
+            # end for
+        except Exception:
+            print(traceback.format_exc())
+        # end try
         usage = exam_package_proc.get_passage_usage_map([p.get("pkey") for p in passages])
         for item in passages:
             pkgs = usage.get(item.get("pkey"), [])
@@ -651,6 +671,7 @@ def import_questions_json():
                     image_url        = (item.get("image") or item.get("image_url") or "") if forced_mode == "sprechen" else "",
                     prep_seconds     = item.get("prep_seconds", 0) if forced_mode == "sprechen" else 0,
                     speak_seconds    = item.get("speak_seconds", 0) if forced_mode == "sprechen" else 0,
+                    is_premium       = bool(item.get("is_premium")) if forced_mode == "sprechen" else False,
                 )
                 if result.get("status") != "OK":
                     errors.append("Item %s: gagal membuat passage" % idx)
@@ -841,6 +862,7 @@ def create_passage_post():
             image_url          = params.get("spk_image_url", ""),
             prep_seconds       = params.get("spk_prep_seconds", 0),
             speak_seconds      = params.get("spk_speak_seconds", 0),
+            is_premium         = params.get("is_premium") == "1",
         )
 
         if result["status"] != "OK":
@@ -874,6 +896,7 @@ def create_passage_post():
                 section_key    = section_key,
                 sub_type_key   = sub_type_key,
                 option_images  = _option_images(params, "sq_"),
+                is_premium     = params.get("sq_is_premium") == "1",
             )
             return_to = params.get("return_to", "")
             if return_to.startswith("/expert/"):
@@ -1050,6 +1073,7 @@ def update_passage_post(passage_pkey):
             image_url        = params.get("spk_image_url", "") if is_sprechen else None,
             prep_seconds     = params.get("spk_prep_seconds", 0) if is_sprechen else None,
             speak_seconds    = params.get("spk_speak_seconds", 0) if is_sprechen else None,
+            is_premium       = (params.get("is_premium") == "1") if is_sprechen else None,
         )
 
         # Single mode: update or create the inline question
@@ -1069,6 +1093,7 @@ def update_passage_post(passage_pkey):
                     section_key    = section_key,
                     sub_type_key   = sub_type_key,
                     option_images  = _option_images(params, "sq_"),
+                    is_premium     = params.get("sq_is_premium") == "1",
                 )
             else:
                 question_bank_proc.create_question(
@@ -1085,6 +1110,7 @@ def update_passage_post(passage_pkey):
                     section_key    = section_key,
                     sub_type_key   = sub_type_key,
                     option_images  = _option_images(params, "sq_"),
+                    is_premium     = params.get("sq_is_premium") == "1",
                 )
             # end if
         # end if
@@ -1198,6 +1224,7 @@ def create_question_post(passage_pkey):
             sub_type_key  = p_sub_type_key,
             option_images = _option_images(params),
             answer_text   = params.get("answer_text", ""),
+            is_premium    = params.get("is_premium") == "1",
         )
         return redirect("/expert/question-bank/" + passage_pkey)
     except Exception:
@@ -1233,6 +1260,7 @@ def update_question_post(question_pkey):
             explanation    = explanation,
             option_images  = _option_images(params),
             answer_text    = params.get("answer_text", None),
+            is_premium    = params.get("is_premium") == "1",
         )
         return redirect("/expert/question-bank/" + passage_pkey)
     except Exception:

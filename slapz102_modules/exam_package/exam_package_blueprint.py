@@ -68,6 +68,26 @@ def list_packages():
         from exam_package import exam_package_proc
         result = exam_package_proc.get_all_packages()
         opts   = _settings_options()
+
+        # jumlah seksi per paket (untuk kartu) — satu query agregat
+        sec_counts = {}
+        try:
+            import database
+            import config
+            mgdDB = database.get_db_conn(config.mainDB)
+            for row in mgdDB.db_toefl_package_section.aggregate([
+                {"$match": {"is_deleted": False}},
+                {"$group": {"_id": "$fk_package_id", "n": {"$sum": 1}}},
+            ]):
+                sec_counts[row["_id"]] = row["n"]
+            # end for
+        except Exception:
+            print(traceback.format_exc())
+        # end try
+        for pkg in result.get("data", []):
+            pkg["section_count"] = sec_counts.get(pkg.get("pkey", ""), 0)
+        # end for
+
         return view_exam_package.html_packages_list(
             packages    = result.get("data", []),
             user        = g.current_user,
@@ -106,12 +126,14 @@ def create_package_post():
         params = sanitize.clean_html_dic(request.form.to_dict())
         from exam_package import exam_package_proc
         result = exam_package_proc.create_package(
-            title          = params.get("title", ""),
-            test_type      = params.get("level_code", ""),
-            description    = params.get("description", ""),
-            expert_id      = g.current_user["user_id"],
-            level_code     = params.get("level_code", ""),
-            test_name_code = params.get("test_name_code", ""),
+            title              = params.get("title", ""),
+            test_type          = params.get("level_code", ""),
+            description        = params.get("description", ""),
+            expert_id          = g.current_user["user_id"],
+            level_code         = params.get("level_code", ""),
+            test_name_code     = params.get("test_name_code", ""),
+            is_premium         = params.get("is_premium") == "1",
+            premium_credit_cost = params.get("premium_credit_cost", 10),
         )
         if result["status"] == "OK":
             return redirect("/expert/exam-package/" + str(result["package_no"]))
@@ -183,11 +205,13 @@ def update_package_post(package_ref):
             return redirect("/expert/exam-package")
         # end if
         exam_package_proc.update_package(
-            package_pkey   = package["pkey"],
-            title          = params.get("title", ""),
-            description    = params.get("description", ""),
-            level_code     = params.get("level_code", ""),
-            test_name_code = params.get("test_name_code", ""),
+            package_pkey        = package["pkey"],
+            title               = params.get("title", ""),
+            description         = params.get("description", ""),
+            level_code          = params.get("level_code", ""),
+            test_name_code      = params.get("test_name_code", ""),
+            is_premium          = params.get("is_premium") == "1",
+            premium_credit_cost = params.get("premium_credit_cost", 10),
         )
         return redirect(_package_url(package))
     except Exception:

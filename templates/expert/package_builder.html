@@ -379,6 +379,34 @@
                 <textarea name="description" rows="3"
                     class="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50 focus:bg-white resize-none">{{ package.description }}</textarea>
             </div>
+            <div class="rounded-xl border p-3.5" style="border-color:#F0DFC0; background:#FDF6E9">
+                <label class="flex items-start gap-3 cursor-pointer">
+                    <input type="checkbox" name="is_premium" value="1" id="premium-toggle-edit"
+                        {% if package.is_premium %}checked{% endif %}
+                        onchange="document.getElementById('premium-cost-wrap-edit').classList.toggle('hidden', !this.checked); if (this.checked) updatePremiumSummaryEdit();"
+                        class="mt-1 w-4 h-4 accent-amber-600">
+                    <span>
+                        <span class="block text-sm font-bold" style="color:var(--warn)">⚡ Paket Premium</span>
+                        <span class="block text-xs mt-0.5" style="color:#8A6D1F">Siswa membuka paket ini dengan Kredit AI dari langganannya.</span>
+                    </span>
+                </label>
+                <div id="premium-cost-wrap-edit" class="mt-2.5 {% if not package.is_premium %}hidden{% endif %}" style="padding-left:28px">
+                    <label class="block text-xs font-semibold mb-1" style="color:#8A6D1F">Biaya buka (kredit)</label>
+                    <input type="number" name="premium_credit_cost" min="1" max="500" step="1" id="premium-cost-input-edit"
+                        value="{{ package.premium_credit_cost if package.premium_credit_cost else 10 }}"
+                        oninput="updatePremiumSummaryEdit()"
+                        class="w-32 px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 bg-white"
+                        style="border-color:#F0DFC0">
+                    <div class="mt-2 flex items-start gap-2 rounded-lg px-3 py-2" style="background:#FBEBD3; border:1px dashed #F0DFC0">
+                        <svg class="w-3.5 h-3.5 mt-0.5 shrink-0" style="color:var(--warn)" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                        <p class="text-xs leading-relaxed" style="color:#8A6D1F">
+                            Total kredit untuk membuka paket ini:
+                            <b class="font-display text-[14px]" id="premium-total-edit" style="color:var(--warn)">{{ package.premium_credit_cost or 10 }} Kredit AI</b><br>
+                            <span style="color:#B58A2E">Dipotong dari saldo kredit siswa — sekali buka, akses selamanya.</span>
+                        </p>
+                    </div>
+                </div>
+            </div>
             <div class="flex gap-3 pt-2">
                 <button type="submit" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 rounded-xl text-sm transition">Simpan</button>
                 <button type="button" onclick="document.getElementById('edit-modal').classList.add('hidden')"
@@ -387,6 +415,19 @@
         </form>
     </div>
 </div>
+
+<script>
+function updatePremiumSummaryEdit() {
+    const input = document.getElementById('premium-cost-input-edit');
+    const total = document.getElementById('premium-total-edit');
+    if (!input || !total) return;
+    const n = Math.max(1, parseInt(input.value, 10) || 1);
+    total.textContent = n + ' Kredit AI';
+}
+document.getElementById('premium-toggle-edit').addEventListener('change', function () {
+    if (this.checked) updatePremiumSummaryEdit();
+});
+</script>
 
 <!-- Modal: tambah soal dari bank (inline, tanpa pindah halaman) -->
 <div id="bank-modal" class="hidden fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">

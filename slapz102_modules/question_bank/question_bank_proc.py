@@ -115,7 +115,7 @@ def get_passage_by_id(passage_pkey):
 def create_passage(title, content_type, content_text, audio_url, section_id, expert_id,
                    question_mode="grouped", passage_sub_type="", section_key="", sub_type_key="",
                    answer_type="mc", cloze_answer_mode="",
-                   instruction="", sample_answer="", image_url="", prep_seconds=0, speak_seconds=0):
+                   instruction="", sample_answer="", image_url="", prep_seconds=0, speak_seconds=0, is_premium=False):
     try:
         mgdDB = database.get_db_conn(config.mainDB)
 
@@ -138,6 +138,7 @@ def create_passage(title, content_type, content_text, audio_url, section_id, exp
         rec.put("image_url",             image_url or "")
         rec.put("prep_seconds",          int(prep_seconds or 0))
         rec.put("speak_seconds",         int(speak_seconds or 0))
+        rec.put("is_premium",            bool(is_premium))
         rec.put("sort_order",            next_order)
         rec.put("question_count",        0)
         rec.put("question_mode",         question_mode)
@@ -170,7 +171,7 @@ def update_passage(passage_pkey, title, content_type, content_text, audio_url,
                    question_mode="grouped", passage_sub_type="", section_key=None, sub_type_key=None,
                    section_id=None, cloze_answer_mode=None,
                    instruction=None, sample_answer=None, image_url=None,
-                   prep_seconds=None, speak_seconds=None):
+                   prep_seconds=None, speak_seconds=None, is_premium=None):
     try:
         mgdDB = database.get_db_conn(config.mainDB)
         update_fields = {
@@ -192,6 +193,7 @@ def update_passage(passage_pkey, title, content_type, content_text, audio_url,
         if image_url     is not None: update_fields["image_url"]     = image_url
         if prep_seconds  is not None: update_fields["prep_seconds"]  = int(prep_seconds or 0)
         if speak_seconds is not None: update_fields["speak_seconds"] = int(speak_seconds or 0)
+        if is_premium    is not None: update_fields["is_premium"]    = bool(is_premium)
         # end if
         mgdDB.db_toefl_passage.update_one({"pkey": passage_pkey}, {"$set": update_fields})
         return {"status": "OK"}
@@ -268,7 +270,7 @@ def create_question(passage_pkey, section_id, expert_id, question_text,
                     option_a, option_b, option_c, option_d,
                     correct_answer, explanation,
                     section_key="", sub_type_key="", option_images=None, answer_type=None,
-                    answer_text=""):
+                    answer_text="", is_premium=False):
     try:
         mgdDB = database.get_db_conn(config.mainDB)
         if answer_type is None:
@@ -309,6 +311,7 @@ def create_question(passage_pkey, section_id, expert_id, question_text,
         rec.put("explanation",           explanation)
         rec.put("section_key",           section_key)
         rec.put("sub_type_key",          sub_type_key)
+        rec.put("is_premium",            bool(is_premium))
         rec.put("sort_order",            next_order)
         rec.put("status",                "DRAFT")
         rec.insert()
@@ -330,7 +333,7 @@ def create_question(passage_pkey, section_id, expert_id, question_text,
 
 def update_question(question_pkey, question_text, option_a, option_b, option_c, option_d,
                     correct_answer, explanation, section_key=None, sub_type_key=None,
-                    option_images=None, answer_text=None):
+                    option_images=None, answer_text=None, is_premium=None):
     try:
         mgdDB = database.get_db_conn(config.mainDB)
         existing = mgdDB.db_toefl_question.find_one({"pkey": question_pkey}, {"answer_type": 1, "fk_passage_id": 1}) or {}
@@ -361,6 +364,7 @@ def update_question(question_pkey, question_text, option_a, option_b, option_c, 
         # end if
         if section_key  is not None: update_fields["section_key"]  = section_key
         if sub_type_key is not None: update_fields["sub_type_key"] = sub_type_key
+        if is_premium   is not None: update_fields["is_premium"]   = bool(is_premium)
         if option_images is not None:
             for key in ("a", "b", "c", "d"):
                 update_fields["option_" + key + "_image"] = option_images.get(key, "") or ""

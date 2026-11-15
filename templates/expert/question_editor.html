@@ -195,6 +195,15 @@
     .qe-req{ color:var(--danger); }
     .qe-optional{ font-family:'IBM Plex Sans',sans-serif; font-size:11px; font-weight:500; color:var(--faint); }
     .qe-hint{ font-size:11.5px; color:var(--faint); }
+
+    /* Toggle soal premium — penanda penyusun, tanpa efek akses */
+    .qe-prem{ display:flex; align-items:center; gap:9px; padding:9px 13px; border-radius:10px;
+      background:#FDF6E9; border:1px solid #F0DFC0; cursor:pointer; user-select:none;
+      font-size:12.5px; color:#8A6D1F; font-weight:600; }
+    .qe-prem:hover{ background:#FBEBD3; }
+    .qe-prem input{ width:15px; height:15px; accent-color:#D97706; flex-shrink:0; margin:0; }
+    .qe-prem em{ font-style:normal; font-weight:500; color:#B58A2E; }
+    .pill.gold{ background:#FDF6E9; color:#B45308; }
     .qe-note{ font-size:12px; line-height:1.5; color:var(--muted); background:#F5F7FA; border:1px solid var(--line-soft);
         border-radius:10px; padding:9px 12px; }
     .qe-seg{ display:flex; border:1px solid var(--line); border-radius:8px; overflow:hidden; font-size:11.5px; font-weight:600; flex-shrink:0; }
@@ -540,6 +549,11 @@
                         class="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50 focus:bg-white transition">
                 </div>
             </div>
+
+            <label class="qe-prem" title="Penanda premium untuk kamu sebagai penyusun — tidak mengubah akses siswa maupun harga paket">
+                <input type="checkbox" name="is_premium" value="1" {% if passage and passage.is_premium %}checked{% endif %}>
+                <span>⚡ Tugas premium <em>— penanda penyusun; tetap bisa dipakai di paket mana pun</em></span>
+            </label>
         </section>
 
         {% if passage %}
@@ -849,6 +863,10 @@
                 <div id="quill-sq-question"></div>
                 <input type="hidden" name="sq_question_text" id="sq-question-text-input"
                     value="{{ sq.question_text if sq else '' }}">
+                <label class="qe-prem" style="margin-top:10px" title="Penanda premium untuk kamu sebagai penyusun — tidak mengubah akses siswa maupun harga paket">
+                    <input type="checkbox" name="sq_is_premium" value="1" {% if sq and sq.is_premium %}checked{% endif %}>
+                    <span>⚡ Soal premium <em>— penanda penyusun; tetap bisa dipakai di paket mana pun</em></span>
+                </label>
             </div>
 
             <div class="qe-sec">
@@ -933,6 +951,7 @@
         <article class="qe-qcard">
             <header class="qe-qcard-head">
                 <span class="qe-qnum">{{ loop.index }}</span>
+                {% if q.is_premium %}<span class="pill gold shrink-0" title="Soal premium (penanda penyusun)">⚡</span>{% endif %}
                 <span class="pill ok shrink-0">{% if q.answer_text %}Isian{% elif q_rf %}{{ 'Richtig' if q.correct_answer == 'A' else 'Falsch' }}{% else %}Kunci: {{ q.correct_answer }}{% endif %}</span>
                 <div class="qe-qactions">
                     <button type="button"
@@ -1129,6 +1148,11 @@
                     </div>
                 </div>
 
+                <label class="qe-prem" title="Penanda premium untuk kamu sebagai penyusun — tidak mengubah akses siswa maupun harga paket">
+                    <input type="checkbox" name="is_premium" value="1">
+                    <span>⚡ Soal premium <em>— penanda penyusun; tetap bisa dipakai di paket mana pun</em></span>
+                </label>
+
                 <div class="qe-add-foot">
                     <button type="submit" class="qe-btn-ok">＋ Simpan soal ini</button>
                     <span class="qe-hint">Judul &amp; teks bacaan disimpan lewat tombol Simpan di kanan atas.</span>
@@ -1322,6 +1346,13 @@
                         class="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50 resize-y leading-relaxed"
                         placeholder="&lt;p&gt;Pembahasan...&lt;/p&gt;"></textarea>
                 </div>
+            </div>
+
+            <div style="padding:0 24px 14px">
+                <label class="qe-prem" title="Penanda premium untuk kamu sebagai penyusun — tidak mengubah akses siswa maupun harga paket">
+                    <input type="checkbox" name="is_premium" value="1" id="edit-is-premium">
+                    <span>⚡ Soal premium <em>— penanda penyusun; tetap bisa dipakai di paket mana pun</em></span>
+                </label>
             </div>
 
             <div class="flex gap-3 px-6 py-4 border-t border-gray-100 bg-gray-50 rounded-b-2xl">
@@ -2918,6 +2949,9 @@ function openEditQuestion(btn) {
         if (el) el.checked = (o === correct);
     });
 
+    const premEl = document.getElementById('edit-is-premium');
+    if (premEl) premEl.checked = !!data.is_premium;
+
     document.getElementById('edit-question-modal').classList.remove('hidden');
     // Focus the question editor after a short delay
     setTimeout(() => editQuestionQuill.focus(), 80);
@@ -2932,6 +2966,8 @@ function closeEditModal() {
     setEditExpMode('wysiwyg');
     document.getElementById('edit-html-source').value     = '';
     document.getElementById('edit-exp-html-source').value = '';
+    const premReset = document.getElementById('edit-is-premium');
+    if (premReset) premReset.checked = false;
     // Hide JSON panel
     document.getElementById('edit-json-panel').classList.add('hidden');
     document.getElementById('edit-json-textarea').value = '';

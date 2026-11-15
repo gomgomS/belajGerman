@@ -13,6 +13,154 @@ import config
 import idgen
 
 
+# ─────────────────────────────────────────────────────────────────────────────
+# KREDIT AI — ledger (grant langganan, buka paket premium)
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+def _credit_ledger_insert(user_pkey, delta, trx_type, package_pkey="", notes=""):
+    """Tambah baris ledger kredit; return saldo akhir."""
+    try:
+        mgdDB = database.get_db_conn(config.mainDB)
+        last = mgdDB.db_credit_ledger.find_one(
+            {"fk_user_id": user_pkey}, sort=[("rec_timestamp", -1)]
+        )
+        balance = int((last or {}).get("balance_after", 0) or 0) + int(delta)
+        rec = database.new(mgdDB, "db_credit_ledger")
+        rec.put("ledger_id",     idgen._get_unique_id())
+        rec.put("fk_user_id",    user_pkey)
+        rec.put("delta",         int(delta))
+        rec.put("balance_after", balance)
+        rec.put("trx_type",      trx_type)
+        rec.put("fk_package_id", package_pkey or "")
+        rec.put("notes",         notes or "")
+        rec.insert()
+        return balance
+    except Exception:
+        print(traceback.format_exc())
+        return None
+    # end try
+# end def
+
+
+def get_credit_balance(user_pkey):
+    """Saldo Kredit AI terkini dari ledger."""
+    try:
+        mgdDB = database.get_db_conn(config.mainDB)
+        last = mgdDB.db_credit_ledger.find_one(
+            {"fk_user_id": user_pkey}, sort=[("rec_timestamp", -1)]
+        )
+        return int((last or {}).get("balance_after", 0) or 0)
+    except Exception:
+        print(traceback.format_exc())
+        return 0
+    # end try
+# end def
+
+
+def grant_subscription_credits(user_pkey, plan_code, months=1):
+    """Grant Kredit AI saat langganan dikonfirmasi (bulan × kuota paket)."""
+    try:
+        mgdDB = database.get_db_conn(config.mainDB)
+        plan  = mgdDB.db_subscription_plan.find_one({"code": plan_code, "is_deleted": False}) or {}
+        quota = int(plan.get("ai_credits_monthly", 0) or 0)
+        if quota <= 0 or months <= 0:
+            return {"status": "OK", "granted": 0}
+        # end if
+        balance = _credit_ledger_insert(
+            user_pkey, quota * months, "GRANT_SUBSCRIPTION",
+            notes="Langganan " + str(plan_code) + " × " + str(months) + " bulan",
+        )
+        return {"status": "OK", "granted": quota * months, "balance": balance}
+    except Exception:
+        print(traceback.format_exc())
+        return {"status": "ERROR"}
+    # end try
+# end def
+
+
+def ensure_subscription_credit_backfill(user_pkey):
+    """Berikan grant sekali untuk pelanggan lama yang aktif sebelum sistem kredit ada."""
+    try:
+        mgdDB = database.get_db_conn(config.mainDB)
+        has_grant = mgdDB.db_credit_ledger.count_documents({
+            "fk_user_id": user_pkey,
+            "trx_type"  : {"$in": ["GRANT_SUBSCRIPTION", "GRANT_BACKFILL"]},
+        })
+        if has_grant:
+            return
+        # end if
+        access = mgdDB.db_toefl_access.find_one({
+            "fk_user_id": user_pkey, "scope": "PLATFORM", "status": "ACTIVE",
+        })
+        if not access:
+            return
+        # end if
+        plan  = mgdDB.db_subscription_plan.find_one({"code": access.get("tier", ""), "is_deleted": False}) or {}
+        quota = int(plan.get("ai_credits_monthly", 0) or 0)
+        if quota <= 0:
+            return
+        # end if
+        _credit_ledger_insert(
+            user_pkey, quota, "GRANT_BACKFILL",
+            notes="Grant awal pelanggan aktif (" + str(access.get("tier", "")) + ")",
+        )
+    except Exception:
+        print(traceback.format_exc())
+    # end try
+# end def
+
+
+def has_unlocked_premium(user_pkey, package_pkey):
+    try:
+        mgdDB = database.get_db_conn(config.mainDB)
+        return mgdDB.db_credit_ledger.find_one({
+            "fk_user_id"   : user_pkey,
+            "fk_package_id": package_pkey,
+            "trx_type"     : "EXAM_UNLOCK",
+        }) is not None
+    except Exception:
+        print(traceback.format_exc())
+        return False
+    # end try
+# end def
+
+
+def unlock_premium_exam(user_pkey, package_pkey):
+    """Buka paket premium dengan Kredit AI."""
+    try:
+        mgdDB  = database.get_db_conn(config.mainDB)
+        pkg    = mgdDB.db_toefl_package.find_one({"pkey": package_pkey, "is_deleted": False})
+        if not pkg or not pkg.get("is_premium"):
+            return {"status": "ERROR", "message": "Paket ini tidak butuh kredit untuk dibuka"}
+        # end if
+        sub = get_active_subscription(user_pkey).get("data")
+        if not sub:
+            return {"status": "ERROR", "message": "Butuh langganan aktif untuk membuka paket premium"}
+        # end if
+        if has_unlocked_premium(user_pkey, package_pkey):
+            return {"status": "OK", "already_unlocked": True}
+        # end if
+        cost    = int(pkg.get("premium_credit_cost", 10) or 10)
+        balance = get_credit_balance(user_pkey)
+        if balance < cost:
+            return {"status": "ERROR", "message": "Kredit tidak cukup — butuh " + str(cost) + ", kamu punya " + str(balance)}
+        # end if
+        new_balance = _credit_ledger_insert(
+            user_pkey, -cost, "EXAM_UNLOCK",
+            package_pkey=package_pkey, notes="Buka paket: " + str(pkg.get("title", "")),
+        )
+        if new_balance is None:
+            return {"status": "ERROR", "message": "Gagal memotong kredit"}
+        # end if
+        return {"status": "OK", "cost": cost, "balance": new_balance}
+    except Exception:
+        print(traceback.format_exc())
+        return {"status": "ERROR", "message": "Gagal membuka paket"}
+    # end try
+# end def
+
+
 def get_active_subscription(user_pkey):
     """Akses langganan platform (scope PLATFORM) yang masih berlaku untuk user."""
     try:
@@ -208,6 +356,12 @@ def confirm_order(order_pkey, admin_pkey):
                 rec.put("expire_at",     expire_at)
                 rec.insert()
             # end if
+            # grant Kredit AI bulanan sesuai durasi langganan
+            grant_subscription_credits(
+                order.get("fk_user_id", ""),
+                order.get("plan_code", order.get("tier", "")),
+                months=months,
+            )
             return {"status": "OK"}
         # end if
 
@@ -287,29 +441,33 @@ def get_order_by_id(order_pkey):
 
 
 def check_user_access(user_pkey, package_pkey):
-    """Akses paket ujian: berlaku jika ada langganan platform aktif ATAU akses paket legacy."""
+    """Akses paket ujian: langganan platform aktif (premium = butuh buka dengan kredit) ATAU akses paket legacy."""
     try:
         mgdDB = database.get_db_conn(config.mainDB)
+        pkg   = mgdDB.db_toefl_package.find_one({"pkey": package_pkey}, {"is_premium": 1})
 
-        # 1) langganan platform aktif → semua ujian terbuka
+        # 1) langganan platform aktif → semua ujian terbuka, kecuali paket premium yang belum dibuka
         subscription = get_active_subscription(user_pkey).get("data")
         if subscription:
+            if pkg and pkg.get("is_premium") and not has_unlocked_premium(user_pkey, package_pkey):
+                return {"has_access": False, "tier": subscription.get("tier", "BASIC"), "scope": "PLATFORM", "reason": "PREMIUM_LOCKED"}
+            # end if
             return {"has_access": True, "tier": subscription.get("tier", "BASIC"), "scope": "PLATFORM"}
         # end if
 
-        # 2) akses per paket (model lama) — tetap dihormati
+        # 2) akses per paket (model lama) — tetap dihormati; pembeli lama dianggap sudah membuka
         access = mgdDB.db_toefl_access.find_one({
             "fk_user_id"   : user_pkey,
             "fk_package_id": package_pkey,
             "status"       : "ACTIVE",
         })
         if not access:
-            return {"has_access": False, "tier": None}
+            return {"has_access": False, "tier": None, "reason": "NO_SUBSCRIPTION"}
         # end if
         return {"has_access": True, "tier": access.get("tier", "BASIC"), "scope": "PACKAGE"}
     except Exception:
         print(traceback.format_exc())
-        return {"has_access": False, "tier": None}
+        return {"has_access": False, "tier": None, "reason": "NO_SUBSCRIPTION"}
     # end try
 # end def
 

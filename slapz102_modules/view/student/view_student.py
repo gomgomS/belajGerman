@@ -8,11 +8,13 @@ sys.path.append("slapz102_storage")
 from flask import render_template
 
 
-def html_student_dashboard(stats, results, packages, subscription, sub_plans, user):
+def html_student_dashboard(stats, results, packages, subscription, sub_plans, user,
+                           credit_balance=0, credit_error="", credit_ok=""):
     return render_template(
         "student/dashboard.html",
         stats=stats, results=results, packages=packages,
         subscription=subscription, sub_plans=sub_plans, user=user,
+        credit_balance=credit_balance, credit_error=credit_error, credit_ok=credit_ok,
     )
 # end def
 

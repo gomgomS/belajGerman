@@ -594,6 +594,8 @@ db = {
 
         "speak_seconds"         : 0,           # Sprechen: detik bicara
 
+        "is_premium"            : False,       # penanda premium (info penyusun — khususnya tugas Sprechen)
+
         "sort_order"            : 0,
 
         "question_count"        : 0,
@@ -654,6 +656,8 @@ db = {
 
         "sub_type_key"          : "",
 
+        "is_premium"            : False,       # penanda soal premium (info penyusun — tidak memengaruhi akses/harga)
+
         "sort_order"            : 0,
 
         "status"                : "DRAFT",
@@ -673,6 +677,10 @@ db = {
         "price_basic"           : 0,
 
         "price_premium"         : 0,
+
+        "is_premium"            : False,       # True = siswa membuka paket ini dengan Kredit AI
+
+        "premium_credit_cost"   : 10,          # biaya buka (kredit) untuk paket premium
 
         "status"                : "DRAFT",
 
@@ -965,6 +973,28 @@ db = {
         "status"                : "PENDING",  # PENDING | OK | ERROR
 
         "generated_at"          : 0,
+
+    },
+
+    # ─────────────────────────────────────────────────────────────
+    # GERMAN PLATFORM – KREDIT AI (ledger)
+    # ─────────────────────────────────────────────────────────────
+
+    "db_credit_ledger" : {
+
+        "ledger_id"             : "",
+
+        "fk_user_id"            : "",
+
+        "delta"                 : 0,           # positif = grant, negatif = pemakaian
+
+        "balance_after"         : 0,           # saldo kredit setelah transaksi
+
+        "trx_type"              : "",          # GRANT_SUBSCRIPTION | GRANT_BACKFILL | EXAM_UNLOCK | ADMIN_ADJUST
+
+        "fk_package_id"         : "",          # khusus EXAM_UNLOCK: paket yang dibuka
+
+        "notes"                 : "",
 
     },
 

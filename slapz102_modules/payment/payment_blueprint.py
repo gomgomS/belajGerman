@@ -68,6 +68,30 @@ def subscribe_post():
 # end def
 
 
+@payment_blueprint.route("/student/exam/unlock", methods=["POST"])
+@middleware_privilege(roles=["peserta", "super_admin"])
+def unlock_premium_post():
+    """Buka paket premium dengan Kredit AI."""
+    try:
+        params      = sanitize.clean_html_dic(request.form.to_dict())
+        package_pkey = params.get("package_pkey", "")
+
+        from payment import payment_proc
+        result = payment_proc.unlock_premium_exam(g.current_user["user_id"], package_pkey)
+        if result["status"] != "OK":
+            return redirect("/student?credit_error=" + quote(result.get("message", "Gagal membuka paket")))
+        # end if
+        if result.get("already_unlocked") or params.get("then_start") != "1":
+            return redirect("/student?credit_ok=" + quote("Paket sudah terbuka"))
+        # end if
+        return redirect("/exam/" + package_pkey + "/start")
+    except Exception:
+        print(traceback.format_exc())
+        return redirect("/student?credit_error=" + quote("Gagal membuka paket"))
+    # end try
+# end def
+
+
 @payment_blueprint.route("/order/<order_pkey>", methods=["GET"])
 @middleware_privilege(roles=["peserta", "super_admin"])
 def order_detail(order_pkey):

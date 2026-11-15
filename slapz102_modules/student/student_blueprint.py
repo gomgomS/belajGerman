@@ -32,8 +32,9 @@ def _inject_header_abo():
             payment_proc.get_active_subscription(user_pkey).get("data")
         )
         if subscription:
-            plan   = subscription.get("plan_data") or {}
-            credits = int(plan.get("ai_credits_monthly", 0) or 0)
+            plan = subscription.get("plan_data") or {}
+            payment_proc.ensure_subscription_credit_backfill(user_pkey)
+            credits = payment_proc.get_credit_balance(user_pkey)
             return {"header_abo": {
                 "active"    : True,
                 "plan_label": plan.get("label", subscription.get("tier", "")),
@@ -98,13 +99,38 @@ def student_dashboard():
         stats["avg_score"] = int(round(sum(scores) / float(len(scores)))) if scores else 0
         stats["best_score"] = max(scores) if scores else 0
 
+        # kredit + status buka paket premium
+        payment_proc.ensure_subscription_credit_backfill(g.current_user["user_id"])
+        credit_balance = payment_proc.get_credit_balance(g.current_user["user_id"])
+        unlocked = set()
+        if packages:
+            import database
+            import config
+            mgdDB = database.get_db_conn(config.mainDB)
+            for row in mgdDB.db_credit_ledger.find({
+                "fk_user_id": g.current_user["user_id"], "trx_type": "EXAM_UNLOCK",
+            }, {"fk_package_id": 1}):
+                unlocked.add(row.get("fk_package_id", ""))
+            # end for
+        # end if
+        for pkg in packages:
+            if pkg.get("is_premium"):
+                pkg["premium_locked"] = bool(subscription) and pkg["pkey"] not in unlocked
+            else:
+                pkg["premium_locked"] = False
+            # end if
+        # end for
+
         return view_student.html_student_dashboard(
-            stats        = stats,
-            results      = results[:5],
-            packages     = packages,
-            subscription = subscription,
-            sub_plans    = plans,
-            user         = g.current_user,
+            stats          = stats,
+            results        = results[:5],
+            packages       = packages,
+            subscription   = subscription,
+            sub_plans      = plans,
+            credit_balance = credit_balance,
+            credit_error   = request.args.get("credit_error", ""),
+            credit_ok      = request.args.get("credit_ok", ""),
+            user           = g.current_user,
         )
     except Exception:
         print(traceback.format_exc())

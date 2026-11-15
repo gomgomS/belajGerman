@@ -60,6 +60,16 @@
 {% set first_name = (user.full_name or 'Lernende').split(' ')[0] %}
 <div class="std-wrap">
 
+    {% if credit_error %}
+    <div class="mb-4 flex items-start gap-3 rounded-xl px-4 py-3" style="background:#FDEBE9; border:1px solid #F5C6C0">
+        <span style="color:var(--danger); font-size:13px">{{ credit_error }}</span>
+    </div>
+    {% elif credit_ok %}
+    <div class="mb-4 flex items-start gap-3 rounded-xl px-4 py-3" style="background:#E7F5EF; border:1px solid #BFE3D4">
+        <span style="color:var(--ok); font-size:13px">{{ credit_ok }}</span>
+    </div>
+    {% endif %}
+
     <div class="hero-panel">
         <section class="hero-main">
             <p class="text-[11px] font-bold uppercase tracking-[.16em]" style="color:#C7D6F5">Übersicht · Latihan hari ini</p>
@@ -98,7 +108,7 @@
             {% if subscription %}
             <p>Langganan aktif{% if subscription.expire_at_str %} sampai <strong style="color:var(--ink)">{{ subscription.expire_at_str }}</strong>{% endif %}{% if subscription.days_left is defined and subscription.days_left <= 14 %} · {{ subscription.days_left }} hari lagi{% endif %}.</p>
             <div class="abo-meta">
-                <div><span>Kredit AI</span><strong>{{ (subscription.plan_data.ai_credits_monthly if subscription.plan_data else 0) or 0 }}/bln</strong></div>
+                <div><span>Kredit AI (saldo)</span><strong>⚡ {{ credit_balance }} <span style="font-weight:500; color:var(--faint)">/ {{ (subscription.plan_data.ai_credits_monthly if subscription.plan_data else 0) or 0 }} bln</span></strong></div>
                 <div><span>Akses ujian</span><strong>Semua level</strong></div>
             </div>
             <a href="/student/abo" class="btn-soft cta w-full">Kelola langganan</a>
@@ -130,17 +140,39 @@
             <article class="card pkg-card card-hover">
                 <div class="pkg-meta">
                     <span class="pill brand">{{ pkg.test_type }}</span>
+                    {% if pkg.is_premium %}
+                    <span class="pill gold" title="Paket premium — dibuka sekali dengan Kredit AI">⚡ Premium · {{ pkg.premium_credit_cost or 10 }} ⭐</span>
+                    {% endif %}
                     <span class="text-[12px]" style="color:var(--faint)">{{ pkg.total_questions }} soal</span>
                 </div>
                 <h3>{{ pkg.title }}</h3>
                 <p class="desc">{{ pkg.description or 'Simulasi lengkap sesuai format resmi.' }}</p>
-                {% if subscription %}
-                <a href="/exam/{{ pkg.pkey }}/start" class="btn-primary w-full">Simulation starten</a>
-                {% else %}
+                {% if not subscription %}
                 <a href="/student/preise" class="btn-ghost w-full">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
                     Butuh Abo
                 </a>
+                {% elif pkg.premium_locked %}
+                    {% if credit_balance >= (pkg.premium_credit_cost or 10) %}
+                    <form method="POST" action="/student/exam/unlock" class="w-full"
+                        onsubmit="return confirm('Buka paket ini dengan {{ pkg.premium_credit_cost or 10 }} Kredit AI? Saldo kamu: {{ credit_balance }} — setelah dibuka, paket ini milikmu selamanya.')">
+                        <input type="hidden" name="package_pkey" value="{{ pkg.pkey }}">
+                        <input type="hidden" name="then_start" value="1">
+                        <button type="submit" class="btn-primary w-full">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                            Buka · {{ pkg.premium_credit_cost or 10 }} Kredit
+                        </button>
+                    </form>
+                    <p class="text-[11px] mt-1.5 text-center" style="color:var(--faint)">Saldo ⭐ {{ credit_balance }} — sekali buka, akses selamanya</p>
+                    {% else %}
+                    <span class="btn-ghost w-full" style="cursor:default; opacity:.75">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                        Kredit kurang (butuh {{ pkg.premium_credit_cost or 10 }})
+                    </span>
+                    <p class="text-[11px] mt-1.5 text-center" style="color:var(--faint)">Saldo ⭐ {{ credit_balance }} — kredit penuh tiap bulan langganan</p>
+                    {% endif %}
+                {% else %}
+                <a href="/exam/{{ pkg.pkey }}/start" class="btn-primary w-full">Simulation starten</a>
                 {% endif %}
             </article>
             {% endfor %}

@@ -98,7 +98,7 @@ def get_package_by_id(package_pkey):
 
 
 def create_package(title, test_type, description, price_basic=0, price_premium=0, expert_id="",
-                   level_code="", test_name_code=""):
+                   level_code="", test_name_code="", is_premium=False, premium_credit_cost=10):
     """Seksi tidak lagi dibuat otomatis — expert menambah seksi sendiri di halaman paket."""
     try:
         mgdDB = database.get_db_conn(config.mainDB)
@@ -114,6 +114,8 @@ def create_package(title, test_type, description, price_basic=0, price_premium=0
         rec.put("description",      description)
         rec.put("price_basic",      int(price_basic or 0))
         rec.put("price_premium",    int(price_premium or 0))
+        rec.put("is_premium",       bool(is_premium))
+        rec.put("premium_credit_cost", max(1, int(premium_credit_cost or 10)))
         rec.put("status",           "DRAFT")
         rec.put("fk_expert_id",     expert_id)
         rec.put("total_questions",  0)
@@ -132,7 +134,7 @@ def create_package(title, test_type, description, price_basic=0, price_premium=0
 
 
 def update_package(package_pkey, title, description, price_basic=None, price_premium=None,
-                   level_code=None, test_name_code=None):
+                   level_code=None, test_name_code=None, is_premium=None, premium_credit_cost=None):
     try:
         mgdDB = database.get_db_conn(config.mainDB)
         fields = {"title": title, "description": description}
@@ -141,6 +143,12 @@ def update_package(package_pkey, title, description, price_basic=None, price_pre
         # end if
         if price_premium is not None:
             fields["price_premium"] = int(price_premium or 0)
+        # end if
+        if is_premium is not None:
+            fields["is_premium"] = bool(is_premium)
+        # end if
+        if premium_credit_cost is not None:
+            fields["premium_credit_cost"] = max(1, int(premium_credit_cost or 10))
         # end if
         if level_code is not None:
             fields["level_code"] = str(level_code or "").upper().strip()
@@ -806,6 +814,9 @@ def get_bank_candidates_for_section(section, expert_id=None, part_pkey=None):
             passage["attached"] = is_attached
             passage["in_part_name"] = other_part_name.get(passage.get("pkey"), "")
             passage["question_count"] = len(questions)
+            passage["has_premium_q"] = bool(passage.get("is_premium")) or any(
+                q.get("is_premium") for q in questions
+            )
             result.append(passage)
         # end for
         usage = get_passage_usage_map([p.get("pkey") for p in result], mgdDB)
