@@ -13,8 +13,13 @@ def html_admin_dashboard(stats, user):
 # end def
 
 
-def html_admin_users(users, user):
-    return render_template("admin/users.html", users=users, user=user)
+def html_admin_students(students, user):
+    return render_template("admin/students.html", students=students, user=user)
+# end def
+
+
+def html_admin_staff(staff, user):
+    return render_template("admin/staff.html", staff=staff, user=user)
 # end def
 
 
@@ -83,6 +88,15 @@ def html_admin_settings_type_test_dumps(type_test, dumps, user, ok="", error="",
 # end def
 
 
-def html_admin_settings_sub_plan(sub_plans, user):
-    return render_template("admin/settings_sub_plan.html", sub_plans=sub_plans, user=user)
+def html_admin_settings_dump_preview(type_test, dump, item, user):
+    return render_template("admin/dump_preview_sprechen.html", type_test=type_test,
+                           dump=dump, item=item, user=user)
+# end def
+
+
+def html_admin_settings_sub_plan(sub_plans, user, cycles=None):
+    return render_template(
+        "admin/settings_sub_plan.html",
+        sub_plans=sub_plans, cycles=cycles or [], user=user,
+    )
 # end def

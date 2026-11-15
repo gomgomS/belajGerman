@@ -1,0 +1,341 @@
+{% set back_url   = back_url   | default('') %}
+{% set back_label = back_label | default('Kembali') %}
+{% set heading    = heading    | default('') %}
+{% if not back_url and type_test is defined and type_test %}
+{% set back_url = '/dashboard/admin/settings/test-type/' ~ type_test.pkey ~ '/dumps' %}
+{% endif %}
+{% if not heading and type_test is defined and type_test %}
+{% set heading = type_test.label %}
+{% endif %}
+{% if not heading %}{% set heading = 'Sprechen' %}{% endif %}
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pratinjau Siswa — Sprechen · {{ heading }}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='v2/platform.output.css') }}">
+    <style>
+      :root{
+        --bg:#F3F5F8; --surface:#FFFFFF; --ink:#171A21; --muted:#5B6472; --faint:#98A1AE;
+        --line:#E4E7EC; --line-soft:#EDF0F4;
+        --brand:#1D4ED8; --brand-strong:#1E40AF; --brand-soft:#EFF4FF; --brand-ink:#1E3A8A;
+        --danger:#D92D20; --ok:#12805C; --warn:#B54708;
+      }
+      *{ box-sizing:border-box; }
+      body{ margin:0; background:var(--bg); color:var(--ink);
+        font-family:'IBM Plex Sans','Segoe UI',system-ui,sans-serif; font-size:14.5px; line-height:1.6; }
+      h1,h2,h3,h4,.font-display{ font-family:'Barlow','Arial Narrow',sans-serif; letter-spacing:-.01em; margin:0; }
+      button{ font-family:'Barlow','Arial Narrow',sans-serif; }
+
+      .top{ position:sticky; top:0; z-index:30; background:rgba(255,255,255,.92); backdrop-filter:blur(10px);
+        border-bottom:1px solid var(--line); }
+      .top-inner{ max-width:760px; margin:0 auto; padding:12px 16px; display:flex; align-items:center; gap:12px; }
+      .logo{ display:flex; align-items:center; gap:9px; text-decoration:none; }
+      .logo-ic{ width:32px; height:32px; border-radius:9px; background:var(--brand); color:#fff;
+        display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+      .logo-ic svg{ width:17px; height:17px; }
+      .badge{ font-family:'Barlow'; font-size:11px; font-weight:700; letter-spacing:.08em; text-transform:uppercase;
+        padding:4px 10px; border-radius:99px; background:var(--brand-soft); color:var(--brand-ink); }
+      .back{ margin-left:auto; font-size:12.5px; font-weight:600; color:var(--muted); text-decoration:none;
+        display:inline-flex; align-items:center; gap:6px; padding:7px 12px; border-radius:9px;
+        border:1px solid var(--line); background:#fff; transition:all .15s; }
+      .back:hover{ color:var(--ink); background:#F3F5F8; }
+
+      .wrap{ max-width:760px; margin:0 auto; padding:26px 16px 60px; display:grid; gap:16px; }
+
+      /* ── Kartu tugas ── */
+      .task{ position:relative; overflow:hidden; border-radius:18px; padding:24px 22px; color:#fff;
+        background:radial-gradient(circle at 90% 12%, rgba(255,255,255,.16), transparent 30%),
+          linear-gradient(145deg,#12245A 0%,#1D4ED8 58%,#3B63E8 100%); }
+      .task .k{ font-family:'Barlow'; font-size:11px; font-weight:700; letter-spacing:.16em;
+        text-transform:uppercase; color:#C7D6F5; }
+      .task h1{ margin-top:8px; font-size:clamp(20px,3vw,26px); font-weight:700; line-height:1.25; max-width:34ch; }
+      .task .chips{ display:flex; gap:8px; flex-wrap:wrap; margin-top:16px; }
+      .chip{ display:inline-flex; align-items:center; gap:6px; font-size:12px; font-weight:600;
+        padding:5px 11px; border-radius:99px; background:rgba(255,255,255,.12); border:1px solid rgba(255,255,255,.16);
+        color:#D7E3FF; }
+      .chip svg{ width:13px; height:13px; }
+
+      /* ── Kartu umum ── */
+      .card{ background:var(--surface); border:1px solid var(--line); border-radius:16px; padding:20px; }
+      .card .head{ display:flex; align-items:center; gap:8px; margin-bottom:10px; }
+      .card .head svg{ width:16px; height:16px; color:var(--brand); }
+      .card .head h2{ font-size:15.5px; font-weight:700; }
+      .card .head .de{ font-size:11.5px; font-weight:500; color:var(--faint); }
+      .situation{ font-size:14.5px; color:#242933; line-height:1.7; }
+      .qimg{ margin-top:14px; display:block; max-width:min(420px,100%); border-radius:12px;
+        border:1px solid var(--line); }
+
+      /* ── Perekam suara ── */
+      .rec-status{ display:flex; align-items:center; gap:9px; font-size:13px; color:var(--muted);
+        min-height:22px; }
+      .rec-dot{ width:8px; height:8px; border-radius:99px; background:var(--faint); flex-shrink:0; }
+      .rec-status.live{ color:var(--danger); font-weight:600; }
+      .rec-status.live .rec-dot{ background:var(--danger); animation:blink 1s infinite; }
+      .rec-status.done{ color:var(--ok); }
+      .rec-status.done .rec-dot{ background:var(--ok); }
+      @keyframes blink{ 50%{ opacity:.25; } }
+
+      .rec-center{ display:flex; flex-direction:column; align-items:center; gap:12px; padding:22px 0 6px; }
+      .mic-btn{ width:88px; height:88px; border-radius:999px; border:none; cursor:pointer;
+        background:var(--brand); color:#fff; display:flex; align-items:center; justify-content:center;
+        box-shadow:0 12px 28px rgba(29,78,216,.32); transition:transform .15s, background .15s, box-shadow .15s; }
+      .mic-btn:hover{ transform:translateY(-2px); background:var(--brand-strong); }
+      .mic-btn svg{ width:34px; height:34px; }
+      .mic-btn .stop-ic{ display:none; }
+      .mic-btn.recording{ background:var(--danger); box-shadow:0 12px 28px rgba(217,45,32,.35);
+        animation:pulse 1.4s infinite; }
+      .mic-btn.recording .mic-ic{ display:none; }
+      .mic-btn.recording .stop-ic{ display:block; }
+      @keyframes pulse{ 0%{ box-shadow:0 0 0 0 rgba(217,45,32,.35);} 70%{ box-shadow:0 0 0 22px rgba(217,45,32,0);} 100%{ box-shadow:0 0 0 0 rgba(217,45,32,0);} }
+      .rec-label{ font-family:'Barlow'; font-size:13px; font-weight:600; color:var(--ink); }
+
+      .rec-result{ width:100%; display:grid; gap:10px; }
+      .rec-result audio{ width:100%; }
+      .rec-actions{ display:flex; gap:10px; flex-wrap:wrap; }
+      .btn{ display:inline-flex; align-items:center; justify-content:center; gap:8px; font-size:13px;
+        font-weight:600; padding:10px 16px; border-radius:11px; cursor:pointer; text-decoration:none;
+        border:1px solid transparent; transition:all .15s; }
+      .btn svg{ width:14px; height:14px; }
+      .btn.primary{ background:var(--brand); color:#fff; }
+      .btn.primary:hover{ background:var(--brand-strong); }
+      .btn.ghost{ background:#fff; border-color:var(--line); color:var(--muted); }
+      .btn.ghost:hover{ background:#F3F5F8; color:var(--ink); }
+      .rec-hint{ font-size:11.5px; color:var(--faint); text-align:center; margin-top:4px; }
+
+      /* ── Musterantwort ── */
+      .sample-toggle{ width:100%; display:inline-flex; align-items:center; justify-content:center; gap:8px;
+        font-size:13px; font-weight:600; padding:11px 16px; border-radius:11px; cursor:pointer;
+        border:1px solid #C9D8F3; background:var(--brand-soft); color:var(--brand-ink); transition:all .15s; }
+      .sample-toggle:hover{ background:#E3ECFE; }
+      .sample-toggle svg{ width:15px; height:15px; }
+      .sample-body{ display:none; margin-top:12px; padding:14px 16px; border-radius:12px;
+        background:#E7F5EF; border:1px solid #BFE3D4; color:#0E5A41; font-size:14px; line-height:1.7; }
+      .sample-body.open{ display:block; }
+      .sample-body .lbl{ font-family:'Barlow'; font-size:10.5px; font-weight:700; letter-spacing:.12em;
+        text-transform:uppercase; color:var(--ok); margin-bottom:6px; }
+
+      .foot{ text-align:center; font-size:12px; color:var(--faint); }
+      .foot a{ color:var(--muted); }
+    </style>
+</head>
+<body>
+
+<header class="top">
+    <div class="top-inner">
+        <a href="/" class="logo">
+            <span class="logo-ic">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
+            </span>
+            <span class="font-display font-bold text-[16px]" style="color:var(--ink)">Belaj<span style="color:var(--brand)">Deutsch</span></span>
+        </a>
+        <span class="badge">Pratinjau Siswa · Sprechen</span>
+        <a href="{{ back_url }}" class="back">
+            <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"/></svg>
+            Kembali
+        </a>
+    </div>
+</header>
+
+<main class="wrap">
+
+    <!-- Aufgabe / instruksi -->
+    <section class="task">
+        <div class="k">Sprechen · Aufgabe — {{ heading }}</div>
+        <h1>{{ item.instruction or item.question_text or 'Sprechen Sie bitte.' }}</h1>
+        <div class="chips">
+            {% if item.prep_seconds %}
+            <span class="chip">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                Vorbereitung {{ item.prep_seconds }} dtk
+            </span>
+            {% endif %}
+            {% if item.speak_seconds %}
+            <span class="chip">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0-4a3 3 0 003-3V5a3 3 0 00-6 0v10a3 3 0 003 3z"/></svg>
+                Sprechzeit ± {{ item.speak_seconds }} dtk
+            </span>
+            {% endif %}
+            <span class="chip">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                1 rekaman
+            </span>
+        </div>
+    </section>
+
+    <!-- Situasi + gambar -->
+    {% if item.question_text or item.image %}
+    <section class="card">
+        <div class="head">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+            <h2>Situasi</h2><span class="de">— bacalah lalu bicara</span>
+        </div>
+        {% if item.question_text %}
+        <p class="situation">{{ item.question_text }}</p>
+        {% endif %}
+        {% if item.image %}
+        <img class="qimg" src="{{ item.image }}" alt="Gambar soal">
+        {% endif %}
+    </section>
+    {% endif %}
+
+    <!-- Perekam suara -->
+    <section class="card">
+        <div class="head">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0-4a3 3 0 003-3V5a3 3 0 00-6 0v10a3 3 0 003 3z"/></svg>
+            <h2>Rekaman Suara</h2><span class="de">— deine Antwort</span>
+        </div>
+
+        <div class="rec-status" id="rec-status">
+            <span class="rec-dot"></span>
+            <span id="rec-status-text">Siap — klik mikrofon lalu bicara dengan jelas</span>
+        </div>
+
+        <div class="rec-center">
+            <button type="button" class="mic-btn" id="mic-btn" onclick="toggleRecording()">
+                <svg class="mic-ic" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0-4a3 3 0 003-3V5a3 3 0 00-6 0v10a3 3 0 003 3z"/></svg>
+                <svg class="stop-ic" fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="2" stroke-width="2.5"/></svg>
+            </button>
+            <span class="rec-label" id="rec-label">Mulai merekam</span>
+        </div>
+
+        <div class="rec-result" id="rec-result" style="display:none">
+            <audio id="rec-audio" controls></audio>
+            <div class="rec-actions">
+                <button type="button" class="btn ghost" onclick="resetRecording()">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                    Rekaman ulang
+                </button>
+                <a class="btn primary" id="rec-download" download="sprechen-aufnahme.webm">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                    Unduh audio
+                </a>
+            </div>
+        </div>
+        <p class="rec-hint">Pratinjau admin — rekaman hanya tersimpan di browser ini, tidak dikirim ke server.</p>
+    </section>
+
+    <!-- Musterantwort -->
+    {% if item.sample_answer %}
+    <section class="card">
+        <button type="button" class="sample-toggle" onclick="toggleSample(this)">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg>
+            <span class="sample-toggle-text">Musterantwort anzeigen — lihat contoh jawaban</span>
+        </button>
+        <div class="sample-body" id="sample-body">
+            <div class="lbl">Musterantwort · Contoh jawaban</div>
+            {{ item.sample_answer }}
+        </div>
+    </section>
+    {% endif %}
+
+    <p class="foot">Tampilan pratinjau untuk <strong>{{ heading }}</strong> · kembali ke
+        <a href="{{ back_url }}">{{ back_label }}</a></p>
+
+</main>
+
+<script>
+/* ── Perekam suara (MediaRecorder) ── */
+let mediaRecorder = null;
+let audioChunks   = [];
+let audioBlob     = null;
+let audioURL      = null;
+let timerInterval = null;
+let startedAt     = 0;
+
+const statusEl  = document.getElementById('rec-status');
+const statusTxt = document.getElementById('rec-status-text');
+const micBtn    = document.getElementById('mic-btn');
+const micLabel  = document.getElementById('rec-label');
+const resultEl  = document.getElementById('rec-result');
+const audioEl   = document.getElementById('rec-audio');
+const dlEl      = document.getElementById('rec-download');
+
+function fmt(sec) {
+    const m = Math.floor(sec / 60), s = Math.floor(sec % 60);
+    return String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0');
+}
+
+function setStatus(kind, text) {
+    statusEl.className = 'rec-status' + (kind ? ' ' + kind : '');
+    statusTxt.textContent = text;
+}
+
+function toggleRecording() {
+    if (mediaRecorder && mediaRecorder.state === 'recording') {
+        mediaRecorder.stop();
+        return;
+    }
+    startRecording();
+}
+
+async function startRecording() {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        setStatus('done', 'Browser tidak mendukung perekaman — coba Chrome/Edge terbaru.');
+        return;
+    }
+    if (!window.MediaRecorder) {
+        setStatus('done', 'MediaRecorder tidak tersedia di browser ini.');
+        return;
+    }
+    try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        audioChunks = [];
+        mediaRecorder = new MediaRecorder(stream);
+        mediaRecorder.ondataavailable = (e) => { if (e.data.size) audioChunks.push(e.data); };
+        mediaRecorder.onstop = () => {
+            clearInterval(timerInterval);
+            stream.getTracks().forEach(t => t.stop());
+            audioBlob = new Blob(audioChunks, { type: mediaRecorder.mimeType || 'audio/webm' });
+            audioURL = URL.createObjectURL(audioBlob);
+            const dur = (Date.now() - startedAt) / 1000;
+            const kb = Math.max(1, Math.round(audioBlob.size / 1024));
+            audioEl.src = audioURL;
+            dlEl.href = audioURL;
+            resultEl.style.display = '';
+            micBtn.classList.remove('recording');
+            micLabel.textContent = 'Rekam lagi';
+            setStatus('done', 'Rekaman siap — ' + fmt(dur) + ' (' + kb + ' KB). Dengarkan, ulangi, atau unduh.');
+        };
+        mediaRecorder.start();
+        startedAt = Date.now();
+        micBtn.classList.add('recording');
+        micLabel.textContent = 'Berhenti';
+        resultEl.style.display = 'none';
+        setStatus('live', 'Merekam… 00:00');
+        timerInterval = setInterval(() => {
+            setStatus('live', 'Merekam… ' + fmt((Date.now() - startedAt) / 1000));
+        }, 250);
+    } catch (err) {
+        let msg = 'Tidak bisa mengakses mikrofon.';
+        if (err && err.name === 'NotAllowedError') msg = 'Izin mikrofon ditolak — izinkan akses mic di browser lalu coba lagi.';
+        else if (err && err.name === 'NotFoundError') msg = 'Mikrofon tidak ditemukan di perangkat ini.';
+        setStatus('done', msg);
+    }
+}
+
+function resetRecording() {
+    if (mediaRecorder && mediaRecorder.state === 'recording') { mediaRecorder.stop(); }
+    clearInterval(timerInterval);
+    audioBlob = null; audioChunks = [];
+    if (audioURL) { URL.revokeObjectURL(audioURL); audioURL = null; }
+    resultEl.style.display = 'none';
+    micBtn.classList.remove('recording');
+    micLabel.textContent = 'Mulai merekam';
+    setStatus('', 'Siap — klik mikrofon lalu bicara dengan jelas');
+}
+
+function toggleSample(btn) {
+    const body = document.getElementById('sample-body');
+    const text = btn.querySelector('.sample-toggle-text');
+    const open = body.classList.toggle('open');
+    text.textContent = open ? 'Musterantwort verbergen — sembunyikan contoh'
+                            : 'Musterantwort anzeigen — lihat contoh jawaban';
+}
+</script>
+</body>
+</html>

@@ -26,7 +26,7 @@ def dashboard_redirect():
     elif role == "expert":
         return redirect("/dashboard/expert")
     else:
-        return redirect("/peserta/riwayat")
+        return redirect("/student")
     # end if
 # end def
 
@@ -45,21 +45,51 @@ def admin_dashboard():
 # end def
 
 
-@dashboard_blueprint.route("/dashboard/admin/users", methods=["GET"])
+@dashboard_blueprint.route("/dashboard/admin/students", methods=["GET"])
 @middleware_privilege(roles=["super_admin"])
-def admin_users():
+def admin_students():
+    """Halaman khusus siswa (Lernende) — terpisah dari tim pengelola."""
     try:
-        from auth import auth_proc
-        role_filter = request.args.get("role", "")
-        result      = auth_proc.get_all_users(role_filter=role_filter if role_filter else None)
-        return view_dashboard.html_admin_users(
-            users    = result.get("data", []),
+        from dashboard import dashboard_proc
+        result = dashboard_proc.get_students_with_context()
+        return view_dashboard.html_admin_students(
+            students = result.get("data", []),
             user     = g.current_user,
         )
     except Exception:
         print(traceback.format_exc())
         return "Terjadi kesalahan", 500
     # end try
+# end def
+
+
+@dashboard_blueprint.route("/dashboard/admin/staff", methods=["GET"])
+@middleware_privilege(roles=["super_admin"])
+def admin_staff():
+    """Halaman tim pengelola: admin & guru (penyusun soal)."""
+    try:
+        from auth import auth_proc
+        result = auth_proc.get_all_users(roles=["super_admin", "expert"])
+        return view_dashboard.html_admin_staff(
+            staff = result.get("data", []),
+            user  = g.current_user,
+        )
+    except Exception:
+        print(traceback.format_exc())
+        return "Terjadi kesalahan", 500
+    # end try
+# end def
+
+
+@dashboard_blueprint.route("/dashboard/admin/users", methods=["GET"])
+@middleware_privilege(roles=["super_admin"])
+def admin_users_legacy():
+    # halaman pengguna lama sudah dipecah → siswa & tim pengelola
+    role = request.args.get("role", "")
+    if role in ("expert", "super_admin"):
+        return redirect("/dashboard/admin/staff")
+    # end if
+    return redirect("/dashboard/admin/students")
 # end def
 
 
@@ -499,6 +529,42 @@ def admin_settings_delete_type_test_dump(pkey, dump_pkey):
 # end def
 
 
+@dashboard_blueprint.route("/dashboard/admin/settings/test-type/<pkey>/dumps/<dump_pkey>/preview", methods=["GET"])
+@middleware_privilege(roles=["super_admin"])
+def admin_settings_dump_preview(pkey, dump_pkey):
+    """Pratinjau contoh soal tampilan siswa — khusus Sprechen: dengan perekam suara."""
+    try:
+        from app_settings import app_settings_proc
+        from sanitize import strip_objectid
+        type_test = strip_objectid(app_settings_proc.get_type_test_by_pkey(pkey).get("data"))
+        if not type_test:
+            return redirect("/dashboard/admin/settings/test-type")
+        # end if
+        dump = strip_objectid(app_settings_proc.get_type_test_dump_by_pkey(dump_pkey).get("data"))
+        if not dump or dump.get("fk_test_type_code") != type_test.get("code"):
+            return _dumps_redirect(pkey, error="Contoh soal tidak ditemukan")
+        # end if
+        try:
+            item = json.loads(dump.get("dump_json") or "{}")
+        except Exception:
+            item = {}
+        # end try
+        if isinstance(item, list):
+            item = item[0] if item else {}
+        # end if
+        return view_dashboard.html_admin_settings_dump_preview(
+            type_test = type_test,
+            dump      = dump,
+            item      = item,
+            user      = g.current_user,
+        )
+    except Exception:
+        print(traceback.format_exc())
+        return "Terjadi kesalahan", 500
+    # end try
+# end def
+
+
 @dashboard_blueprint.route("/dashboard/admin/settings/sub-plan", methods=["GET"])
 @middleware_privilege(roles=["super_admin"])
 def admin_settings_sub_plan():
@@ -506,8 +572,12 @@ def admin_settings_sub_plan():
         from app_settings import app_settings_proc
         from sanitize import strip_objectid_list
         plans = app_settings_proc.get_sub_plans().get("data", [])
+        for plan in plans:
+            plan["pricing"] = app_settings_proc.build_pricing_matrix(plan)
+        # end for
         return view_dashboard.html_admin_settings_sub_plan(
             sub_plans = strip_objectid_list(plans),
+            cycles    = app_settings_proc.SUB_CYCLES,
             user      = g.current_user,
         )
     except Exception:
@@ -524,12 +594,18 @@ def admin_settings_create_sub_plan():
         params = sanitize.clean_html_dic(request.form.to_dict())
         from app_settings import app_settings_proc
         app_settings_proc.create_sub_plan(
-            code               = params.get("code", ""),
-            label              = params.get("label", ""),
-            price_idr          = params.get("price_idr", 0),
-            ai_credits_monthly = params.get("ai_credits_monthly", 0),
-            sort_order         = params.get("sort_order", 0),
-            status             = params.get("status", "ACTIVE"),
+            code                  = params.get("code", ""),
+            label                 = params.get("label", ""),
+            tagline               = params.get("tagline", ""),
+            price_idr             = params.get("price_idr", 0),
+            price_quarterly_idr   = params.get("price_quarterly_idr", 0),
+            price_yearly_idr      = params.get("price_yearly_idr", 0),
+            discount_monthly_pct  = params.get("discount_monthly_pct", 0),
+            discount_quarterly_pct = params.get("discount_quarterly_pct", 0),
+            discount_yearly_pct   = params.get("discount_yearly_pct", 0),
+            ai_credits_monthly    = params.get("ai_credits_monthly", 0),
+            sort_order            = params.get("sort_order", 0),
+            status                = params.get("status", "ACTIVE"),
         )
         return redirect("/dashboard/admin/settings/sub-plan")
     except Exception:
@@ -546,12 +622,18 @@ def admin_settings_update_sub_plan(pkey):
         params = sanitize.clean_html_dic(request.form.to_dict())
         from app_settings import app_settings_proc
         app_settings_proc.update_sub_plan(
-            pkey               = pkey,
-            label              = params.get("label", ""),
-            price_idr          = params.get("price_idr", 0),
-            ai_credits_monthly = params.get("ai_credits_monthly", 0),
-            sort_order         = params.get("sort_order", 0),
-            status             = params.get("status", "ACTIVE"),
+            pkey                  = pkey,
+            label                 = params.get("label", ""),
+            tagline               = params.get("tagline", ""),
+            price_idr             = params.get("price_idr", 0),
+            price_quarterly_idr   = params.get("price_quarterly_idr", 0),
+            price_yearly_idr      = params.get("price_yearly_idr", 0),
+            discount_monthly_pct  = params.get("discount_monthly_pct", 0),
+            discount_quarterly_pct = params.get("discount_quarterly_pct", 0),
+            discount_yearly_pct   = params.get("discount_yearly_pct", 0),
+            ai_credits_monthly    = params.get("ai_credits_monthly", 0),
+            sort_order            = params.get("sort_order", 0),
+            status                = params.get("status", "ACTIVE"),
         )
         return redirect("/dashboard/admin/settings/sub-plan")
     except Exception:

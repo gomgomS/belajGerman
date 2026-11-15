@@ -50,6 +50,12 @@
       .lnd .rounded-2xl{ border-radius:12px !important; }
       .lnd .shadow-sm{ box-shadow:0 1px 2px rgba(23,26,33,.05) !important; }
       .lnd .shadow-xl{ box-shadow:0 12px 40px rgba(23,26,33,.14) !important; }
+      /* toggle durasi langganan (macro pricing) */
+      .lnd .cycle-toggle{ display:inline-flex; padding:4px; background:#EFF1F4; border-radius:11px; }
+      .lnd .cycle-btn{ padding:7px 16px; border-radius:8px; font-family:'Barlow'; font-size:13px; font-weight:600;
+        color:#4A5361; transition:all .15s; border:none; background:transparent; cursor:pointer; }
+      .lnd .cycle-btn:hover{ color:var(--ink); }
+      .lnd .cycle-btn.active{ background:var(--surface); color:var(--brand-ink); box-shadow:0 1px 2px rgba(23,26,33,.1); }
     </style>
     {% block head %}{% endblock %}
 </head>
@@ -75,7 +81,7 @@
                 <!-- Desktop Nav -->
                 <div class="hidden md:flex items-center gap-7">
                     <a href="/" class="text-sm font-medium transition {% if request.path == '/' %}font-semibold{% endif %}" style="color:var(--muted)">Beranda</a>
-                    <a href="/catalog" class="text-sm font-medium transition {% if '/catalog' in request.path %}font-semibold{% endif %}" style="color:var(--muted)">Katalog Ujian</a>
+                    <a href="/#harga" class="text-sm font-medium transition" style="color:var(--muted)">Harga</a>
                     <a href="/tentang" class="text-sm font-medium transition {% if '/tentang' in request.path %}font-semibold{% endif %}" style="color:var(--muted)">Tentang</a>
                     <a href="/faq" class="text-sm font-medium transition {% if '/faq' in request.path %}font-semibold{% endif %}" style="color:var(--muted)">FAQ</a>
                 </div>
@@ -106,7 +112,7 @@
             <!-- Mobile menu -->
             <div id="mobile-menu" class="hidden md:hidden pb-4 pt-3 space-y-1" style="border-top:1px solid var(--line-soft)">
                 <a href="/" class="block px-3 py-2 text-sm font-medium rounded-lg" style="color:var(--ink)">Beranda</a>
-                <a href="/catalog" class="block px-3 py-2 text-sm font-medium rounded-lg" style="color:var(--ink)">Katalog Ujian</a>
+                <a href="/#harga" class="block px-3 py-2 text-sm font-medium rounded-lg" style="color:var(--ink)">Harga</a>
                 <a href="/tentang" class="block px-3 py-2 text-sm font-medium rounded-lg" style="color:var(--ink)">Tentang</a>
                 <a href="/faq" class="block px-3 py-2 text-sm font-medium rounded-lg" style="color:var(--ink)">FAQ</a>
                 <div class="flex gap-2 pt-2 mt-2" style="border-top:1px solid var(--line-soft)">
@@ -148,7 +154,7 @@
                 <div>
                     <div class="text-sm font-semibold mb-4 uppercase tracking-wider" style="color:#C6CBD2">Platform</div>
                     <ul class="space-y-2">
-                        <li><a href="/catalog" class="text-sm transition" style="color:#98A1AE">Katalog Ujian</a></li>
+                        <li><a href="/#harga" class="text-sm transition" style="color:#98A1AE">Harga Paket</a></li>
                         <li><a href="/register" class="text-sm transition" style="color:#98A1AE">Daftar Gratis</a></li>
                         <li><a href="/login" class="text-sm transition" style="color:#98A1AE">Masuk</a></li>
                     </ul>

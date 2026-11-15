@@ -2,7 +2,15 @@
 
 {% block title %}Contoh Soal — {{ type_test.label }}{% endblock %}
 {% block page_title %}Contoh Soal — {{ type_test.label }}{% endblock %}
-{% block page_subtitle %}Contoh soal untuk tombol “Ambil dari contoh” di Bank Soal{% endblock %}
+{% block page_subtitle %}Bank contoh soal untuk tombol “Ambil dari contoh” di Bank Soal{% endblock %}
+
+{% block header_actions %}
+<button type="button" onclick="openDumpModal()"
+    class="inline-flex items-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold px-3 py-2 rounded-lg transition">
+    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/></svg>
+    Tambah Contoh
+</button>
+{% endblock %}
 
 {% block breadcrumb %}
 <nav class="flex items-center gap-1.5 text-xs text-gray-400 mb-3 flex-wrap">
@@ -16,117 +24,646 @@
 </nav>
 {% endblock %}
 
+{% block head %}
+<style>
+  /* ── Halaman dumps: ringkasan, filter, kartu expandable ── */
+  .dmp-summary{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:16px; }
+  .dmp-stat{ display:inline-flex; align-items:baseline; gap:6px; padding:8px 14px; border-radius:12px;
+    background:var(--surface); border:1px solid var(--line); }
+  .dmp-stat b{ font-family:'Barlow'; font-size:19px; font-weight:700; color:var(--ink); line-height:1; }
+  .dmp-stat span{ font-size:11.5px; color:var(--muted); }
+  .dmp-divider{ width:1px; height:26px; background:var(--line); margin:0 4px; }
+
+  .pill.violet{ background:#F3EFFE; color:#7C3AED; }
+
+  .dmp-toolbar{ display:flex; align-items:center; justify-content:space-between; gap:12px;
+    flex-wrap:wrap; margin-bottom:14px; }
+  .dmp-pills{ display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
+  .dmp-pill{ display:inline-flex; align-items:center; gap:6px; padding:6.5px 12px; border-radius:9px;
+    border:1px solid var(--line); background:var(--surface); font-family:'Barlow'; font-size:12px;
+    font-weight:600; color:#4A5361; cursor:pointer; transition:all .15s; }
+  .dmp-pill:hover{ background:#F3F5F8; color:var(--ink); }
+  .dmp-pill.active{ background:var(--ink); color:#fff; border-color:var(--ink); }
+  .dmp-pill .n{ font-size:10.5px; font-weight:700; padding:1px 6px; border-radius:99px;
+    background:#EFF1F4; color:#4A5361; }
+  .dmp-pill.active .n{ background:rgba(255,255,255,.18); color:#fff; }
+  .dmp-search{ position:relative; flex:0 1 260px; min-width:200px; }
+  .dmp-search svg{ position:absolute; left:11px; top:50%; transform:translateY(-50%); width:15px; height:15px;
+    color:var(--faint); pointer-events:none; }
+  .dmp-search input{ width:100%; padding:8px 12px 8px 34px; border-radius:10px; border:1px solid var(--line);
+    font-size:12.5px; background:var(--surface); color:var(--ink); outline:none; transition:border .15s, box-shadow .15s; }
+  .dmp-search input:focus{ border-color:var(--brand); box-shadow:0 0 0 3px rgba(29,78,216,.1); }
+
+  .dmp-list{ display:grid; gap:10px; }
+
+  /* ── Area daftar: scroll mandiri ── */
+  .dmp-scroll{ overflow-y:auto; overscroll-behavior:contain;
+    max-height:calc(100vh - 310px); min-height:220px; padding-right:4px; }
+  .dmp-scroll::-webkit-scrollbar{ width:8px; }
+  .dmp-scroll::-webkit-scrollbar-track{ background:transparent; }
+  .dmp-scroll::-webkit-scrollbar-thumb{ background:#D5DBE4; border-radius:99px; }
+  .dmp-scroll::-webkit-scrollbar-thumb:hover{ background:#B9C2CF; }
+
+  /* ── Paginasi ── */
+  .dmp-pager{ display:flex; align-items:center; justify-content:space-between; gap:10px;
+    flex-wrap:wrap; margin-top:12px; }
+  .dmp-pages{ display:flex; align-items:center; gap:4px; flex-wrap:wrap; }
+  .dmp-page{ min-width:30px; height:30px; padding:0 9px; border-radius:8px;
+    border:1px solid var(--line); background:var(--surface); font-family:'Barlow';
+    font-size:12.5px; font-weight:600; color:#4A5361; cursor:pointer; transition:all .13s; }
+  .dmp-page:hover:not(:disabled):not(.active):not(.ellipsis){ background:#F3F5F8; color:var(--ink); }
+  .dmp-page.active{ background:var(--ink); border-color:var(--ink); color:#fff; cursor:default; }
+  .dmp-page:disabled{ opacity:.4; cursor:not-allowed; }
+  .dmp-page.ellipsis{ border:none; background:none; cursor:default; color:var(--faint);
+    min-width:auto; height:auto; padding:0 2px; }
+  .dmp-range{ font-size:11.5px; color:var(--muted); }
+  .dmp-size-wrap{ display:flex; align-items:center; gap:7px; }
+  .dmp-size{ padding:5px 8px; border-radius:8px; border:1px solid var(--line);
+    background:var(--surface); font-family:'Barlow'; font-size:12px; font-weight:600;
+    color:#4A5361; cursor:pointer; outline:none; }
+  details.dmp-card{ background:var(--surface); border:1px solid var(--line); border-radius:13px; overflow:hidden; }
+  details.dmp-card[open]{ border-color:#C9D8F3; box-shadow:0 10px 26px rgba(23,26,33,.07); }
+  .dmp-row{ display:flex; align-items:center; gap:10px; padding:11px 14px; cursor:pointer;
+    list-style:none; user-select:none; transition:background .12s; }
+  .dmp-row::-webkit-details-marker{ display:none; }
+  .dmp-row:hover{ background:#F8FAFD; }
+  details.dmp-card[open] .dmp-row{ background:var(--brand-soft); border-bottom:1px solid #DCE7FB; }
+  .dmp-chev{ width:15px; height:15px; color:var(--faint); flex-shrink:0; transition:transform .18s; }
+  details.dmp-card[open] .dmp-chev{ transform:rotate(90deg); color:var(--brand); }
+  .dmp-title{ flex:1; min-width:0; font-size:13px; font-weight:500; color:var(--ink);
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .dmp-meta{ display:flex; align-items:center; gap:8px; flex-shrink:0; }
+  .dmp-when{ font-size:11px; color:var(--faint); }
+  .dmp-count{ font-family:'Barlow'; font-size:11px; font-weight:700; padding:2px 8px; border-radius:99px;
+    background:#EFF1F4; color:#4A5361; }
+  .dmp-body{ padding:14px 16px 16px; display:grid; gap:12px; }
+  .dmp-json{ margin:0; padding:14px; border-radius:11px; background:#F7F8FB; border:1px solid var(--line-soft);
+    font-family:'IBM Plex Mono','Consolas',monospace; font-size:11.5px; line-height:1.65; color:#242933;
+    overflow:auto; max-height:320px; white-space:pre; }
+  .dmp-actions{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+  .dmp-btn{ display:inline-flex; align-items:center; gap:6px; font-family:'Barlow'; font-size:12px;
+    font-weight:600; padding:7px 12px; border-radius:9px; border:1px solid var(--line);
+    background:var(--surface); color:#4A5361; cursor:pointer; transition:all .15s; }
+  .dmp-btn:hover{ background:#F3F5F8; color:var(--ink); }
+  .dmp-btn.primary{ background:var(--brand); border-color:var(--brand); color:#fff; }
+  .dmp-btn.primary:hover{ background:var(--brand-strong); }
+  .dmp-btn.danger{ color:var(--danger); }
+  .dmp-btn.danger:hover{ background:#FDEBE9; border-color:#F5C6C0; color:var(--danger); }
+  .dmp-btn svg{ width:13px; height:13px; }
+  .dmp-empty{ padding:44px 20px; text-align:center; color:var(--muted); }
+  .dmp-empty .ico{ width:48px; height:48px; border-radius:14px; margin:0 auto 12px;
+    display:flex; align-items:center; justify-content:center; background:var(--brand-soft); color:var(--brand); }
+
+  /* ── Flash ── */
+  .dmp-flash{ display:flex; align-items:center; justify-content:space-between; gap:10px;
+    padding:10px 14px; border-radius:11px; font-size:12.5px; margin-bottom:14px; }
+  .dmp-flash.ok{ background:#E7F5EF; border:1px solid #BFE3D4; color:var(--ok); }
+  .dmp-flash.err{ background:#FDEBE9; border:1px solid #F5C6C0; color:var(--danger); }
+  .dmp-flash button{ background:none; border:none; cursor:pointer; color:inherit; opacity:.6; }
+  .dmp-flash button:hover{ opacity:1; }
+
+  /* ── Modal editor ── */
+  .dmp-modal-box{ width:100%; max-width:720px; border-radius:16px; overflow:hidden; display:flex; flex-direction:column;
+    max-height:calc(100vh - 48px); }
+  .dmp-modal-head{ display:flex; align-items:center; justify-content:space-between; gap:10px;
+    padding:14px 18px; border-bottom:1px solid var(--line-soft); background:#FBFCFE; }
+  .dmp-modal-head h3{ font-size:15px; font-weight:700; color:var(--ink); }
+  .dmp-modal-body{ padding:16px 18px; overflow-y:auto; display:grid; gap:14px; }
+  .dmp-label{ display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:6px; }
+  .dmp-label span{ font-size:11.5px; font-weight:600; color:#4A5361; }
+  .dmp-label .tools{ display:flex; gap:6px; }
+  .dmp-mini{ font-family:'Barlow'; font-size:11px; font-weight:600; padding:4px 9px; border-radius:7px;
+    border:1px solid var(--line); background:var(--surface); color:#4A5361; cursor:pointer; transition:all .13s; }
+  .dmp-mini:hover{ background:var(--brand-soft); border-color:#C9D8F3; color:var(--brand-ink); }
+  .dmp-hint{ font-size:11px; color:var(--muted); line-height:1.55; margin-top:6px; }
+  .dmp-hint code{ background:#EFF1F4; padding:1px 5px; border-radius:5px; font-size:10.5px; }
+  .dmp-editor{ width:100%; min-height:260px; padding:13px 14px; border-radius:11px; border:1px solid var(--line);
+    background:#FBFCFE; font-family:'IBM Plex Mono','Consolas',monospace; font-size:11.5px; line-height:1.65;
+    color:#242933; resize:vertical; outline:none; transition:border .15s, box-shadow .15s; }
+  .dmp-editor:focus{ border-color:var(--brand); box-shadow:0 0 0 3px rgba(29,78,216,.1); background:#fff; }
+  .dmp-editor.invalid{ border-color:#F5C6C0; box-shadow:0 0 0 3px rgba(217,45,32,.08); }
+  .dmp-editor.valid{ border-color:#BFE3D4; }
+  .dmp-check{ display:flex; align-items:center; gap:8px; font-size:12px; min-height:20px; }
+  .dmp-check.ok{ color:var(--ok); }
+  .dmp-check.err{ color:var(--danger); }
+  .dmp-check svg{ width:14px; height:14px; flex-shrink:0; }
+  .dmp-modal-foot{ display:flex; gap:10px; padding:14px 18px; border-top:1px solid var(--line-soft); background:#FBFCFE; }
+  .dmp-modal-foot .save{ flex:1; }
+  .dmp-modal-foot .save:disabled{ opacity:.45; cursor:not-allowed; }
+
+  /* ── Form Sprechen ── */
+  .dmp-input{ width:100%; padding:9px 12px; border-radius:10px; border:1px solid var(--line);
+    background:#FBFCFE; font-size:13px; color:var(--ink); outline:none; font-family:'IBM Plex Sans',sans-serif;
+    transition:border .15s, box-shadow .15s; }
+  .dmp-input:focus{ border-color:var(--brand); box-shadow:0 0 0 3px rgba(29,78,216,.1); background:#fff; }
+  .spk-img-box{ display:grid; gap:8px; }
+  .spk-img-empty{ display:flex; align-items:center; gap:12px; padding:12px 14px; border-radius:11px;
+    border:1.5px dashed var(--line); background:#FBFCFE; color:var(--muted); }
+  .spk-img-empty svg{ width:26px; height:26px; color:var(--faint); flex-shrink:0; }
+  .spk-img-empty p{ font-size:11.5px; margin-bottom:5px; color:var(--faint); }
+  .spk-img-preview-row{ display:flex; align-items:center; gap:12px; padding:10px 12px;
+    border-radius:11px; border:1px solid var(--line); background:#fff; }
+  .spk-img-preview-row img{ max-height:96px; max-width:200px; border-radius:8px; border:1px solid var(--line-soft); }
+  .spk-img-preview-row .dmp-mini{ margin-left:auto; }
+</style>
+{% endblock %}
+
 {% block content %}
-{% if error %}
-<div class="mb-3 px-3 py-2 rounded-lg border border-red-200 bg-red-50 text-sm text-red-700">{{ error }}</div>
-{% elif ok %}
-<div class="mb-3 px-3 py-2 rounded-lg border border-green-200 bg-green-50 text-sm text-green-700">{{ ok }}</div>
-{% endif %}
 
-<div class="grid grid-cols-1 xl:grid-cols-5 gap-4">
+{% set jenis_short = {
+    'single': 'Mandiri', 'grouped': 'Kelompok',
+    'rf_single': 'RF · Mandiri', 'rf_grouped': 'RF · Kelompok',
+    'cloze': 'Lücken · Kartu', 'cloze_select': 'Lücken · Dropdown', 'cloze_input': 'Lücken · Isian',
+    'sprechen': 'Sprechen' } %}
+{% set jenis_tone = {
+    'single': 'neutral', 'grouped': 'brand',
+    'rf_single': 'warn', 'rf_grouped': 'warn',
+    'cloze': 'violet', 'cloze_select': 'violet', 'cloze_input': 'violet',
+    'sprechen': 'ok' } %}
+{% set total_questions = dumps | sum(attribute='question_count') %}
 
-    <div class="xl:col-span-2 bg-white rounded-xl border border-gray-200 p-4 h-fit">
-        <h3 class="font-semibold text-gray-900 text-sm mb-3">Tambah Contoh Soal</h3>
-        <form method="POST" action="/dashboard/admin/settings/test-type/{{ type_test.pkey }}/dumps" class="space-y-3">
-            <div>
-                <label class="block text-xs font-semibold text-gray-600 mb-1">Bentuk soal</label>
-                <select name="question_mode"
-                    class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50 focus:bg-white">
-                    {% for key, label in jenis_labels %}
-                    <option value="{{ key }}">{{ label }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-            <div>
-                <label class="block text-xs font-semibold text-gray-600 mb-1">JSON <span class="text-red-500">*</span></label>
-                <textarea name="dump_json" rows="16" required
-                    class="w-full px-3 py-2 border border-purple-200 rounded-lg text-xs font-mono bg-purple-50/40 focus:bg-white focus:outline-none focus:ring-2 focus:ring-purple-400 resize-y leading-relaxed"
-                    placeholder='[{"question_text":"...","option_a":"...","option_b":"...","option_c":"...","option_d":"...","correct_answer":"A","explanation":"..."}]'></textarea>
-                <p class="text-[11px] text-gray-400 mt-1 leading-relaxed">
-                    Satu objek atau array. Array = beberapa contoh sekaligus.<br>
-                    <strong>Mandiri</strong>: <code class="bg-gray-100 px-1 rounded">question_text, option_a–d, correct_answer, explanation</code><br>
-                    <strong>Kelompok</strong>: <code class="bg-gray-100 px-1 rounded">title, content_text, questions[]</code><br>
-                    <strong>Richtig/Falsch</strong>: tanpa option; <code class="bg-gray-100 px-1 rounded">correct_answer</code> A = Richtig, B = Falsch<br>
-                    <strong>Lückentext</strong>: <code class="bg-gray-100 px-1 rounded">content_text</code> berisi [1], [2], …; tiap soal <code class="bg-gray-100 px-1 rounded">gap_no, option_a–d, correct_answer, explanation</code>
-                </p>
-            </div>
-            <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 rounded-lg text-sm transition">Simpan Contoh</button>
-        </form>
-    </div>
-
-    <div class="xl:col-span-3 space-y-4">
-        {% for mode, mode_label in jenis_labels %}
-        {% set mode_dumps = dumps | selectattr('jenis', 'equalto', mode) | list %}
-        <div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
-            <div class="px-3 py-2 bg-gray-50 border-b border-gray-100 flex items-center gap-2">
-                <h3 class="font-semibold text-gray-900 text-sm">{{ mode_label }}</h3>
-                <span class="text-[10px] text-gray-400">{{ mode_dumps | length }} contoh</span>
-            </div>
-            {% if mode_dumps %}
-            <div class="divide-y divide-gray-100">
-                {% for d in mode_dumps %}
-                <div class="px-3 py-2 flex items-center gap-2 hover:bg-gray-50 transition">
-                    <span class="w-5 h-5 bg-blue-600 text-white text-[10px] font-bold rounded-full flex items-center justify-center shrink-0">{{ loop.index }}</span>
-                    <div class="flex-1 min-w-0 text-xs text-gray-800 truncate">{{ d.title }}</div>
-                    {% if d.question_mode == 'grouped' %}
-                    <span class="text-[10px] text-gray-400 shrink-0">{{ d.question_count }} soal</span>
-                    {% endif %}
-                    <textarea id="dump-src-{{ d.pkey }}" class="hidden">{{ d.dump_pretty }}</textarea>
-                    <button type="button" onclick="openDumpModal('{{ d.pkey }}', '{{ mode }}')"
-                        class="text-[11px] text-blue-600 hover:underline font-medium shrink-0">Ubah</button>
-                    <form method="POST" action="/dashboard/admin/settings/test-type/{{ type_test.pkey }}/dumps/{{ d.pkey }}/delete"
-                        onsubmit="return confirm('Hapus contoh ini?')">
-                        <button type="submit" class="text-[11px] text-red-500 hover:underline font-medium shrink-0">Hapus</button>
-                    </form>
-                </div>
-                {% endfor %}
-            </div>
-            {% else %}
-            <p class="px-3 py-4 text-xs text-gray-400 text-center">Belum ada contoh {{ mode_label | lower }} — tambahkan satu agar guru bisa memulai darinya</p>
-            {% endif %}
-        </div>
-        {% endfor %}
-    </div>
-
+<!-- Flash -->
+<div id="dmp-flash-wrap">
+    {% if error %}
+    <div class="dmp-flash err"><span>{{ error }}</span><button type="button" onclick="this.parentElement.remove()">✕</button></div>
+    {% elif ok %}
+    <div class="dmp-flash ok"><span>{{ ok }}</span><button type="button" onclick="this.parentElement.remove()">✕</button></div>
+    {% endif %}
 </div>
 
+<!-- Ringkasan -->
+<div class="dmp-summary">
+    <div class="dmp-stat"><b>{{ dumps | length }}</b><span>contoh soal</span></div>
+    <div class="dmp-divider"></div>
+    <div class="dmp-stat"><b>{{ total_questions }}</b><span>total butir soal</span></div>
+    <div class="dmp-divider"></div>
+    <div class="dmp-stat"><b>{{ type_test.code }}</b><span>{{ type_test.label }}</span></div>
+</div>
+
+<!-- Toolbar: filter bentuk + pencarian -->
+<div class="dmp-toolbar">
+    <div class="dmp-pills" id="dmp-pills">
+        <button type="button" class="dmp-pill active" data-filter="ALL">Semua <span class="n">{{ dumps | length }}</span></button>
+        {% for key, label in jenis_labels %}
+        {% set n = dumps | selectattr('jenis', 'equalto', key) | list | length %}
+        {% if n %}
+        <button type="button" class="dmp-pill" data-filter="{{ key }}">{{ jenis_short.get(key, label) }} <span class="n">{{ n }}</span></button>
+        {% endif %}
+        {% endfor %}
+    </div>
+    <div class="dmp-search">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+        <input type="text" id="dmp-search" placeholder="Cari judul / isi JSON…" oninput="applyDumpFilter()">
+    </div>
+</div>
+
+<!-- Daftar contoh — scrollable -->
+<div class="dmp-scroll" id="dmp-scroll">
+<div class="dmp-list" id="dmp-list">
+    {% for d in dumps %}
+    <details class="dmp-card" data-jenis="{{ d.jenis }}" data-title="{{ (d.title or '') | lower }}">
+        <summary class="dmp-row">
+            <svg class="dmp-chev" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/></svg>
+            <span class="pill {{ jenis_tone.get(d.jenis, 'neutral') }}">{{ jenis_short.get(d.jenis, d.jenis) }}</span>
+            <span class="dmp-title" title="{{ d.title }}">{{ d.title }}</span>
+            <span class="dmp-meta">
+                {% if d.question_count %}
+                <span class="dmp-count">{{ d.question_count }} soal</span>
+                {% endif %}
+                <span class="dmp-when hidden md:inline">{{ d.rec_timestamp_str }}</span>
+            </span>
+        </summary>
+        <div class="dmp-body">
+            <pre class="dmp-json">{{ d.dump_pretty }}</pre>
+            <div class="dmp-actions">
+                {% if d.jenis == 'sprechen' %}
+                <a class="dmp-btn" href="/dashboard/admin/settings/test-type/{{ type_test.pkey }}/dumps/{{ d.pkey }}/preview">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                    Pratinjau Siswa
+                </a>
+                {% endif %}
+                <button type="button" class="dmp-btn primary" onclick="openDumpModal('{{ d.pkey }}', '{{ d.jenis }}')">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                    Ubah
+                </button>
+                <button type="button" class="dmp-btn" onclick="copyDumpJSON(this)">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+                    Salin JSON
+                </button>
+                <form method="POST" class="ml-auto"
+                    action="/dashboard/admin/settings/test-type/{{ type_test.pkey }}/dumps/{{ d.pkey }}/delete"
+                    onsubmit="return confirm('Hapus contoh ini?')">
+                    <button type="submit" class="dmp-btn danger">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                        Hapus
+                    </button>
+                </form>
+            </div>
+        </div>
+        <textarea id="dump-src-{{ d.pkey }}" class="hidden">{{ d.dump_pretty }}</textarea>
+    </details>
+    {% else %}
+    <div class="dmp-empty" style="background:var(--surface); border:1px dashed var(--line); border-radius:13px;">
+        <div class="ico">
+            <svg style="width:24px;height:24px" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
+        </div>
+        <p class="text-sm font-medium mb-1" style="color:var(--ink)">Belum ada contoh soal untuk {{ type_test.label }}</p>
+        <p class="text-xs mb-4">Tambahkan satu contoh agar guru bisa memulai darinya lewat “Ambil dari contoh”.</p>
+        <button type="button" onclick="openDumpModal()" class="dmp-btn primary">+ Tambah Contoh Pertama</button>
+    </div>
+    {% endfor %}
+</div>
+</div>
+
+<!-- Paginasi -->
+<div class="dmp-pager" id="dmp-pager" style="display:none">
+    <span class="dmp-range" id="dmp-range"></span>
+    <div class="dmp-pages" id="dmp-pages"></div>
+    <div class="dmp-size-wrap">
+        <span class="dmp-range">Per halaman</span>
+        <select id="dmp-size" class="dmp-size" onchange="changeDumpSize(this.value)">
+            <option value="10" selected>10</option>
+            <option value="20">20</option>
+            <option value="50">50</option>
+        </select>
+    </div>
+</div>
+
+<!-- Modal tambah / ubah -->
 <div id="dump-modal" class="hidden fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
-    <div class="bg-white rounded-xl shadow-2xl w-full max-w-3xl p-4 max-h-[90vh] overflow-y-auto">
-        <div class="flex items-center justify-between mb-3">
-            <h3 class="font-semibold text-gray-900">Ubah Contoh Soal</h3>
+    <div class="bg-white shadow-2xl dmp-modal-box">
+        <div class="dmp-modal-head">
+            <h3 id="dump-modal-title">Tambah Contoh Soal</h3>
             <button type="button" onclick="closeDumpModal()" class="text-gray-400 hover:text-gray-600">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
             </button>
         </div>
-        <form id="dump-form" method="POST" class="space-y-3">
+        <form id="dump-form" method="POST" class="dmp-modal-body" action="/dashboard/admin/settings/test-type/{{ type_test.pkey }}/dumps" onsubmit="return onDumpSubmit()">
             <div>
-                <label class="block text-xs font-semibold text-gray-600 mb-1">Bentuk soal</label>
-                <select name="question_mode" id="dump-mode"
-                    class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50 focus:bg-white">
+                <div class="dmp-label">
+                    <span>Bentuk soal</span>
+                    <button type="button" id="spk-json-toggle" class="dmp-mini hidden" onclick="toggleSprechenJsonMode()">Mode JSON</button>
+                </div>
+                <select name="question_mode" id="dump-mode" onchange="onModeChange()"
+                    class="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50 focus:bg-white">
                     {% for key, label in jenis_labels %}
                     <option value="{{ key }}">{{ label }}</option>
                     {% endfor %}
                 </select>
+                <p class="dmp-hint" id="dump-mode-hint"></p>
             </div>
-            <textarea name="dump_json" id="dump-json" rows="20" required
-                class="w-full px-3 py-2 border border-purple-200 rounded-lg text-xs font-mono bg-purple-50/40 focus:bg-white focus:outline-none focus:ring-2 focus:ring-purple-400 resize-y leading-relaxed"></textarea>
-            <div class="flex gap-2">
-                <button type="submit" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 rounded-lg text-sm transition">Simpan</button>
-                <button type="button" onclick="closeDumpModal()"
-                    class="px-4 py-2 border border-gray-200 text-gray-600 rounded-lg text-sm hover:bg-gray-50 transition">Batal</button>
+
+            <!-- ── Form khusus Sprechen ── -->
+            <div id="sprechen-form" style="display:none; grid-gap:14px;">
+                <div>
+                    <div class="dmp-label"><span>Judul kartu <span style="font-weight:400;color:var(--faint)">(opsional)</span></span></div>
+                    <input type="text" id="spk-title" placeholder="Höfliche Bitte"
+                        class="dmp-input" oninput="validateSprechenForm()">
+                </div>
+                <div>
+                    <div class="dmp-label"><span>Instruksi / Aufgabe <span class="text-red-500">*</span></span></div>
+                    <input type="text" id="spk-instruction" placeholder="Make one short polite request in German."
+                        class="dmp-input" oninput="validateSprechenForm()">
+                    <p class="dmp-hint">Kalimat perintah yang tampil besar di halaman siswa.</p>
+                </div>
+                <div>
+                    <div class="dmp-label"><span>Teks soal / situasi</span></div>
+                    <textarea id="spk-question" rows="3" placeholder="Nachbarschaft: Sie möchten, dass Ihr Nachbar abends leiser Musik hört. Bitten Sie ihn höflich."
+                        class="dmp-input" style="resize:vertical" oninput="validateSprechenForm()"></textarea>
+                </div>
+                <div>
+                    <div class="dmp-label"><span>Gambar soal <span style="font-weight:400;color:var(--faint)">(opsional)</span></span></div>
+                    <div class="spk-img-box" id="spk-img-box">
+                        <div class="spk-img-empty" id="spk-img-empty">
+                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                            <div>
+                                <p>PNG · JPG · GIF · WebP — maks 5 MB</p>
+                                <button type="button" class="dmp-mini" onclick="document.getElementById('spk-img-input').click()">Pilih gambar…</button>
+                            </div>
+                        </div>
+                        <div class="spk-img-preview-row hidden" id="spk-img-preview-row">
+                            <img id="spk-img-preview" src="" alt="Pratinjau gambar soal">
+                            <button type="button" class="dmp-mini" onclick="clearSprechenImage()">Hapus</button>
+                        </div>
+                        <input type="file" id="spk-img-input" accept="image/*" class="hidden" onchange="uploadSprechenImage(this)">
+                        <span class="dmp-hint" id="spk-img-status" style="margin:0"></span>
+                    </div>
+                </div>
+                <div>
+                    <div class="dmp-label"><span>Musterantwort (contoh jawaban)</span></div>
+                    <textarea id="spk-sample" rows="3" placeholder="Entschuldigung, könnten Sie bitte die Musik etwas leiser machen?"
+                        class="dmp-input" style="resize:vertical"></textarea>
+                    <p class="dmp-hint">Ditampilkan lewat tombol “Musterantwort anzeigen” di halaman siswa.</p>
+                </div>
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                    <div>
+                        <div class="dmp-label"><span>Persiapan (dtk)</span></div>
+                        <input type="number" id="spk-prep" min="0" step="5" value="30" class="dmp-input">
+                    </div>
+                    <div>
+                        <div class="dmp-label"><span>Bicara (dtk)</span></div>
+                        <input type="number" id="spk-speak" min="10" step="5" value="60" class="dmp-input">
+                    </div>
+                </div>
+                <div class="dmp-check" id="spk-check"></div>
+            </div>
+
+            <!-- ── Editor JSON (semua bentuk; Sprechen via Mode JSON) ── -->
+            <div id="json-editor-wrap">
+                <div class="dmp-label">
+                    <span>JSON <span class="text-red-500">*</span></span>
+                    <span class="tools">
+                        <button type="button" class="dmp-mini" onclick="fillSkeleton()">Isi contoh</button>
+                        <button type="button" class="dmp-mini" onclick="formatJSON()">Rapikan</button>
+                    </span>
+                </div>
+                <textarea name="dump_json" id="dump-json" required
+                    class="dmp-editor"
+                    placeholder='Tempel JSON di sini — satu objek atau array objek…'
+                    oninput="validateDumpJSON(false)"></textarea>
+                <div class="dmp-check" id="dump-check"></div>
+            </div>
+            <div class="dmp-modal-foot" style="padding:0; border:none; background:none;">
+                <button type="submit" id="dump-submit" disabled
+                    class="dmp-btn primary save">Simpan Contoh</button>
+                <button type="button" onclick="closeDumpModal()" class="dmp-btn">Batal</button>
             </div>
         </form>
     </div>
 </div>
+
 {% endblock %}
 
 {% block scripts %}
 <script>
+const BASE_URL   = '/dashboard/admin/settings/test-type/{{ type_test.pkey }}/dumps';
+const OK_ICON    = '<svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>';
+const ERR_ICON   = '<svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>';
+
+const MODE_HINTS = {
+    single:       'Soal Mandiri — satu pertanyaan dengan 4 opsi (A–D).',
+    grouped:      'Kelompok Soal — satu teks/audio pembuka, lalu beberapa pertanyaan di dalamnya.',
+    rf_single:    'Richtig/Falsch mandiri — tanpa opsi. correct_answer: A = Richtig, B = Falsch.',
+    rf_grouped:   'Richtig/Falsch kelompok — teks pembuka + beberapa pernyataan benar/salah.',
+    cloze:        'Lückentext kartu — content_text berisi rumpang [1], [2], …; tiap gap punya 4 opsi.',
+    cloze_select: 'Lückentext dropdown — opsi tampil inline sebagai pilihan di teks.',
+    cloze_input:  'Lückentext isian — jawaban diketik; tiap gap wajib punya answer_text.',
+    sprechen:     'Soal bicara — siswa melihat instruksi + situasi/gambar, lalu MEREAM suaranya. Isi form di bawah.',
+};
+
+const SKELETONS = {
+    single: [{ question_text: 'Was passt am besten? ___ Sie morgen Zeit?', option_a: 'Habt', option_b: 'Haben', option_c: 'Hat', option_d: 'Hättet', correct_answer: 'B', explanation: 'Haben Sie morgen Zeit? — bentuk hormat (Sie) memakai haben.' }],
+    grouped: [{ title: 'Dialog im Café', content_text: 'Lesen Sie das Gespräch.', questions: [
+        { question_text: 'Was bestellt der Mann?', option_a: 'Einen Kaffee', option_b: 'Einen Tee', option_c: 'Ein Wasser', option_d: 'Einen Saft', correct_answer: 'A', explanation: '„Einen Kaffee, bitte.“' },
+        { question_text: 'Wann kommt die Bestellung?', option_a: 'Sofort', option_b: 'In 5 Minuten', option_c: 'Morgen', option_d: 'Nie', correct_answer: 'B', explanation: '„Ich komme in fünf Minuten.“' },
+    ] }],
+    rf_single: [{ question_text: 'Der Termin findet am Montag statt.', correct_answer: 'A', explanation: 'A = Richtig (sesuai teks), B = Falsch.' }],
+    rf_grouped: [{ title: 'Aussagen zum Text', content_text: 'Lesen Sie die Aussagen.', questions: [
+        { question_text: 'Anna kommt aus Wien.', correct_answer: 'B', explanation: 'Anna kommt aus Berlin — jadi Falsch (B).' },
+        { question_text: 'Sie studiert Medizin.', correct_answer: 'A', explanation: 'Sesuai teks — Richtig (A).' },
+    ] }],
+    cloze: [{ title: 'Lückentext Alltag', content_text: 'Ich [1] jeden Morgen um sieben Uhr auf und [2] dann Frühstück.', questions: [
+        { gap_no: 1, option_a: 'stehe', option_b: 'steht', option_c: 'stand', option_d: 'stehe nicht', correct_answer: 'A', explanation: 'ich stehe auf.' },
+        { gap_no: 2, option_a: 'mache', option_b: 'machst', option_c: 'macht', option_d: 'gemacht', correct_answer: 'A', explanation: 'ich mache das Frühstück.' },
+    ] }],
+    cloze_select: [{ title: 'Lückentext Dropdown', content_text: 'Wir [1] nächstes Jahr nach Deutschland [2].', questions: [
+        { gap_no: 1, option_a: 'fahren', option_b: 'fährst', option_c: 'fährt', option_d: 'fuhren', correct_answer: 'A', explanation: 'wir fahren.' },
+        { gap_no: 2, option_a: 'zusammen', option_b: 'zusammen ', option_c: 'alleine nur', option_d: 'gar nicht', correct_answer: 'A', explanation: 'fahren zusammen.' },
+    ] }],
+    cloze_input: [{ title: 'Lückentext Isian', content_text: 'Sie heißt Anna und kommt aus [1]. Sie arbeitet als [2].', questions: [
+        { gap_no: 1, answer_text: 'Berlin', explanation: 'Nama kota.' },
+        { gap_no: 2, answer_text: 'Lehrerin', explanation: 'Profesi.' },
+    ] }],
+    sprechen: { title: 'Höfliche Bitte', instruction: 'Make one short polite request in German.',
+        question_text: 'Nachbarschaft: Sie möchten, dass Ihr Nachbar abends leiser Musik hört. Bitten Sie ihn höflich.',
+        image: '', sample_answer: 'Entschuldigung, könnten Sie bitte die Musik etwas leiser machen? Ich muss morgen früh arbeiten. Vielen Dank!',
+        prep_seconds: 30, speak_seconds: 60 },
+};
+
+/* ── Mode Sprechen: form terstruktur ↔ JSON ── */
+let sprechenJsonMode = false;
+let sprechenImageUrl = '';
+
+function isSprechenMode() {
+    return document.getElementById('dump-mode').value === 'sprechen';
+}
+
+function setSprechenImage(url) {
+    sprechenImageUrl = url || '';
+    const row   = document.getElementById('spk-img-preview-row');
+    const empty = document.getElementById('spk-img-empty');
+    const img   = document.getElementById('spk-img-preview');
+    if (url) {
+        img.src = url;
+        row.classList.remove('hidden');
+        empty.style.display = 'none';
+    } else {
+        img.removeAttribute('src');
+        row.classList.add('hidden');
+        empty.style.display = '';
+    }
+}
+
+function clearSprechenImage() {
+    setSprechenImage('');
+    document.getElementById('spk-img-input').value = '';
+}
+
+async function uploadSprechenImage(input) {
+    const file = input.files && input.files[0];
+    if (!file) return;
+    const status = document.getElementById('spk-img-status');
+    status.textContent = 'Mengunggah…';
+    try {
+        const fd = new FormData();
+        fd.append('file', file);
+        const res  = await fetch('/expert/upload-image', { method: 'POST', body: fd });
+        const data = await res.json();
+        if (data.status === 'ok') {
+            setSprechenImage(data.url);
+            status.textContent = 'Gambar siap ✓';
+        } else {
+            status.textContent = '';
+            alert(data.message || 'Upload gagal');
+        }
+    } catch (e) {
+        status.textContent = '';
+        alert('Upload gagal — periksa koneksi lalu coba lagi.');
+    }
+}
+
+function composeSprechenJSON() {
+    return JSON.stringify({
+        title:          document.getElementById('spk-title').value.trim(),
+        instruction:    document.getElementById('spk-instruction').value.trim(),
+        question_text:  document.getElementById('spk-question').value.trim(),
+        image:          sprechenImageUrl,
+        sample_answer:  document.getElementById('spk-sample').value.trim(),
+        prep_seconds:   parseInt(document.getElementById('spk-prep').value, 10) || 0,
+        speak_seconds:  parseInt(document.getElementById('spk-speak').value, 10) || 0,
+    }, null, 2);
+}
+
+function populateSprechenForm(obj) {
+    obj = obj || {};
+    document.getElementById('spk-title').value       = obj.title || '';
+    document.getElementById('spk-instruction').value = obj.instruction || '';
+    document.getElementById('spk-question').value    = obj.question_text || '';
+    document.getElementById('spk-sample').value      = obj.sample_answer || '';
+    document.getElementById('spk-prep').value        = obj.prep_seconds != null ? obj.prep_seconds : 30;
+    document.getElementById('spk-speak').value       = obj.speak_seconds != null ? obj.speak_seconds : 60;
+    setSprechenImage(obj.image || '');
+    document.getElementById('spk-img-status').textContent = '';
+}
+
+function validateSprechenForm() {
+    const check = document.getElementById('dump-check');
+    const btn   = document.getElementById('dump-submit');
+    const hasInstr = document.getElementById('spk-instruction').value.trim();
+    const hasText  = document.getElementById('spk-question').value.trim();
+    const spkCheck = document.getElementById('spk-check');
+    if (hasInstr || hasText) {
+        spkCheck.className = 'dmp-check ok';
+        spkCheck.innerHTML = OK_ICON + '<span>Siap — tugas Sprechen lengkap' +
+            (document.getElementById('spk-sample').value.trim() ? ' dengan Musterantwort' : '') + '</span>';
+        btn.disabled = false;
+    } else {
+        spkCheck.className = 'dmp-check err';
+        spkCheck.innerHTML = ERR_ICON + '<span>Isi minimal salah satu: instruksi (Aufgabe) atau teks soal</span>';
+        btn.disabled = true;
+    }
+    check.className = 'dmp-check'; check.innerHTML = '';
+    return !btn.disabled;
+}
+
+function toggleSprechenJsonMode() {
+    sprechenJsonMode = !sprechenJsonMode;
+    if (sprechenJsonMode) {
+        document.getElementById('dump-json').value = composeSprechenJSON();
+        validateDumpJSON(false);
+    } else {
+        try { populateSprechenForm(JSON.parse(document.getElementById('dump-json').value)); }
+        catch (e) { /* biarkan form apa adanya */ }
+        validateSprechenForm();
+    }
+    refreshEditorMode();
+}
+
+function refreshEditorMode() {
+    const spk   = isSprechenMode();
+    const form  = document.getElementById('sprechen-form');
+    const jsonW = document.getElementById('json-editor-wrap');
+    const tog   = document.getElementById('spk-json-toggle');
+    const showJson = !spk || sprechenJsonMode;
+    form.style.display  = (spk && !sprechenJsonMode) ? 'grid' : 'none';
+    jsonW.style.display = showJson ? '' : 'none';
+    tog.classList.toggle('hidden', !spk);
+    tog.textContent = sprechenJsonMode ? '✓ Mode JSON' : 'Mode JSON';
+    document.getElementById('dump-json').required = showJson;
+}
+
+function onDumpSubmit() {
+    if (isSprechenMode() && !sprechenJsonMode) {
+        if (!validateSprechenForm()) return false;
+        document.getElementById('dump-json').value = composeSprechenJSON();
+    }
+    return true;
+}
+
+function onModeChange() {
+    const mode = document.getElementById('dump-mode').value;
+    document.getElementById('dump-mode-hint').textContent = MODE_HINTS[mode] || '';
+    sprechenJsonMode = false;
+    refreshEditorMode();
+    if (isSprechenMode()) { validateSprechenForm(); }
+    else { validateDumpJSON(false); }
+}
+onModeChange();
+
+function countItems(data) {
+    const items = Array.isArray(data) ? data : [data];
+    let questions = 0;
+    items.forEach(it => { questions += (it && Array.isArray(it.questions)) ? it.questions.length : 1; });
+    return { objects: items.length, questions: questions };
+}
+
+function validateDumpJSON(fromSkeleton) {
+    const ta    = document.getElementById('dump-json');
+    const check = document.getElementById('dump-check');
+    const btn   = document.getElementById('dump-submit');
+    const raw   = ta.value.trim();
+    if (!raw) {
+        ta.classList.remove('valid', 'invalid');
+        check.className = 'dmp-check'; check.innerHTML = '';
+        btn.disabled = true;
+        return false;
+    }
+    try {
+        const data = JSON.parse(raw);
+        const { objects, questions } = countItems(data);
+        check.className = 'dmp-check ok';
+        check.innerHTML = OK_ICON + '<span>JSON valid — ' + objects + ' contoh, ' + questions + ' butir soal</span>';
+        ta.classList.add('valid'); ta.classList.remove('invalid');
+        btn.disabled = false;
+        return true;
+    } catch (e) {
+        check.className = 'dmp-check err';
+        check.innerHTML = ERR_ICON + '<span>JSON tidak valid: ' + e.message + '</span>';
+        ta.classList.add('invalid'); ta.classList.remove('valid');
+        btn.disabled = true;
+        return false;
+    }
+}
+
+function fillSkeleton() {
+    const mode = document.getElementById('dump-mode').value;
+    const skel = SKELETONS[mode];
+    if (!skel) return;
+    if (mode === 'sprechen') {
+        populateSprechenForm(skel);
+        document.getElementById('dump-json').value = '';
+        validateSprechenForm();
+    } else {
+        document.getElementById('dump-json').value = JSON.stringify(skel, null, 2);
+        validateDumpJSON(true);
+    }
+}
+
+function formatJSON() {
+    const ta = document.getElementById('dump-json');
+    try {
+        const data = JSON.parse(ta.value);
+        ta.value = JSON.stringify(data, null, 2);
+        validateDumpJSON(false);
+    } catch (e) { /* biarkan pesan error validasi tampil */ }
+}
+
 function openDumpModal(dumpPkey, mode) {
-    document.getElementById('dump-form').action =
-        '/dashboard/admin/settings/test-type/{{ type_test.pkey }}/dumps/' + dumpPkey + '/update';
-    document.getElementById('dump-mode').value = mode;
-    document.getElementById('dump-json').value = document.getElementById('dump-src-' + dumpPkey).value;
+    const form  = document.getElementById('dump-form');
+    const title = document.getElementById('dump-modal-title');
+    const modeEl  = document.getElementById('dump-mode');
+    const jsonEl  = document.getElementById('dump-json');
+    sprechenJsonMode = false;
+    if (dumpPkey) {
+        title.textContent = 'Ubah Contoh Soal';
+        form.action = BASE_URL + '/' + dumpPkey + '/update';
+        modeEl.value = mode;
+        jsonEl.value = document.getElementById('dump-src-' + dumpPkey).value;
+        onModeChange();
+        if (isSprechenMode()) {
+            let obj = {};
+            try { const parsed = JSON.parse(jsonEl.value); obj = Array.isArray(parsed) ? (parsed[0] || {}) : parsed; } catch (e) {}
+            populateSprechenForm(obj);
+            validateSprechenForm();
+        }
+    } else {
+        title.textContent = 'Tambah Contoh Soal';
+        form.action = BASE_URL;
+        jsonEl.value = '';
+        onModeChange();
+        if (isSprechenMode()) { fillSkeleton(); }
+        else { validateDumpJSON(false); }
+    }
     document.getElementById('dump-modal').classList.remove('hidden');
 }
 
@@ -134,8 +671,116 @@ function closeDumpModal() {
     document.getElementById('dump-modal').classList.add('hidden');
 }
 
-document.getElementById('dump-modal').addEventListener('click', function(e) {
+document.getElementById('dump-modal').addEventListener('click', function (e) {
     if (e.target === this) closeDumpModal();
 });
+document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') closeDumpModal();
+});
+
+function copyDumpJSON(btn) {
+    const card  = btn.closest('details');
+    const src   = card.querySelector('textarea[id^="dump-src-"]');
+    const label = btn.innerHTML;
+    const done  = () => { btn.innerHTML = '✓ Tersalin'; setTimeout(() => { btn.innerHTML = label; }, 1400); };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(src.value).then(done);
+    } else {
+        src.select(); document.execCommand('copy'); done();
+    }
+}
+
+/* filter + pencarian + paginasi */
+let dumpFilter = 'ALL';
+let dumpPage   = 1;
+let dumpSize   = 10;
+
+function applyDumpFilter(resetPage) {
+    if (resetPage !== false) { dumpPage = 1; }
+    const q   = document.getElementById('dmp-search').value.trim().toLowerCase();
+    const all = Array.from(document.querySelectorAll('#dmp-list details.dmp-card'));
+
+    const visible = [];
+    all.forEach(card => {
+        const matchJenis = dumpFilter === 'ALL' || card.dataset.jenis === dumpFilter;
+        const matchText  = !q || card.dataset.title.indexOf(q) >= 0 || card.textContent.toLowerCase().indexOf(q) >= 0;
+        if (matchJenis && matchText) { visible.push(card); }
+    });
+
+    const total = visible.length;
+    const pages = Math.max(1, Math.ceil(total / dumpSize));
+    if (dumpPage > pages) { dumpPage = pages; }
+    const start = (dumpPage - 1) * dumpSize;
+
+    all.forEach(card => { card.style.display = 'none'; });
+    visible.forEach((card, i) => {
+        card.style.display = (i >= start && i < start + dumpSize) ? '' : 'none';
+    });
+
+    renderDumpPager(total, pages);
+
+    /* empty state saat filter menutup semua */
+    const emptyEl = document.getElementById('dmp-empty-filter');
+    if (!total && all.length) {
+        if (!emptyEl) {
+            const div = document.createElement('div');
+            div.id = 'dmp-empty-filter';
+            div.className = 'dmp-empty';
+            div.style.cssText = 'background:var(--surface); border:1px dashed var(--line); border-radius:13px;';
+            div.innerHTML = 'Tidak ada contoh yang cocok dengan filter / pencarian.';
+            document.getElementById('dmp-list').appendChild(div);
+        }
+    } else if (emptyEl) { emptyEl.remove(); }
+}
+
+function pageWindow(current, pages) {
+    const out = [];
+    for (let i = 1; i <= pages; i++) {
+        if (i === 1 || i === pages || Math.abs(i - current) <= 1) { out.push(i); }
+        else if (out[out.length - 1] !== '…') { out.push('…'); }
+    }
+    return out;
+}
+
+function renderDumpPager(total, pages) {
+    const bar = document.getElementById('dmp-pager');
+    if (total <= dumpSize) { bar.style.display = 'none'; return; }
+    bar.style.display = '';
+    document.getElementById('dmp-range').textContent =
+        'Menampilkan ' + ((dumpPage - 1) * dumpSize + 1) + '–' + Math.min(total, dumpPage * dumpSize) + ' dari ' + total;
+
+    let html = '<button type="button" class="dmp-page" ' + (dumpPage === 1 ? 'disabled' : '') +
+        ' onclick="goDumpPage(' + (dumpPage - 1) + ')">&#8592;</button>';
+    pageWindow(dumpPage, pages).forEach(p => {
+        if (p === '…') { html += '<span class="dmp-page ellipsis">…</span>'; }
+        else { html += '<button type="button" class="dmp-page' + (p === dumpPage ? ' active' : '') +
+            '" onclick="goDumpPage(' + p + ')">' + p + '</button>'; }
+    });
+    html += '<button type="button" class="dmp-page" ' + (dumpPage === pages ? 'disabled' : '') +
+        ' onclick="goDumpPage(' + (dumpPage + 1) + ')">&#8594;</button>';
+    document.getElementById('dmp-pages').innerHTML = html;
+}
+
+function goDumpPage(p) {
+    dumpPage = p;
+    applyDumpFilter(false);
+    document.getElementById('dmp-scroll').scrollTop = 0;
+}
+
+function changeDumpSize(v) {
+    dumpSize = parseInt(v, 10) || 10;
+    dumpPage = 1;
+    applyDumpFilter(false);
+}
+
+document.querySelectorAll('#dmp-pills .dmp-pill').forEach(pill => {
+    pill.addEventListener('click', () => {
+        document.querySelectorAll('#dmp-pills .dmp-pill').forEach(p => p.classList.remove('active'));
+        pill.classList.add('active');
+        dumpFilter = pill.dataset.filter;
+        applyDumpFilter();
+    });
+});
+applyDumpFilter();
 </script>
 {% endblock %}

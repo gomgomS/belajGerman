@@ -109,8 +109,10 @@
                 <div class="min-w-0">
                     <div class="text-sm font-semibold text-gray-800 truncate">{{ passage.title }}</div>
                     <div class="flex items-center flex-wrap gap-1.5 mt-0.5">
-                        <span class="text-xs text-gray-400">{{ passage.questions | length }} soal</span>
-                        {% if passage.question_mode == 'single' %}
+                        <span class="text-xs text-gray-400">{% if passage.question_mode == 'sprechen' %}1 tugas bicara{% else %}{{ passage.questions | length }} soal{% endif %}</span>
+                        {% if passage.question_mode == 'sprechen' %}
+                        <span class="text-xs bg-green-100 text-green-700 font-semibold px-1.5 py-0.5 rounded">Sprechen · Rekam Suara</span>
+                        {% elif passage.question_mode == 'single' %}
                         <span class="text-xs bg-amber-100 text-amber-700 font-semibold px-1.5 py-0.5 rounded">Mandiri</span>
                         {% else %}
                         <span class="text-xs bg-blue-100 text-blue-700 font-semibold px-1.5 py-0.5 rounded">Kelompok</span>
@@ -123,6 +125,9 @@
                 <div class="flex items-center gap-1.5 shrink-0">
                     <button type="button" class="pk-arrow" onclick="pkMoveItem(this, 'up')" title="Naikkan">↑</button>
                     <button type="button" class="pk-arrow" onclick="pkMoveItem(this, 'down')" title="Turunkan">↓</button>
+                    {% if passage.question_mode == 'sprechen' %}
+                    <a href="/expert/question-bank/{{ passage.pkey }}/preview" target="_blank" rel="noopener" class="text-xs text-green-700 hover:underline ml-1">Pratinjau</a>
+                    {% endif %}
                     <a href="/expert/question-bank/{{ passage.pkey }}" class="text-xs text-blue-600 hover:underline ml-1">Edit</a>
                     <form method="POST" action="{{ pkg_url }}/section/{{ section.pkey }}/detach"
                         onsubmit="return confirm('Lepas dari paket ini? Soal tetap ada di Bank Soal.')">

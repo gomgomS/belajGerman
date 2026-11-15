@@ -42,6 +42,10 @@ app.register_blueprint(exam_engine_blueprint, url_prefix="/")
 from payment.payment_blueprint import payment_blueprint
 app.register_blueprint(payment_blueprint, url_prefix="/")
 
+# ─── Blueprints: Student (area siswa — /student) ──────────────────────────────
+from student.student_blueprint import student_blueprint
+app.register_blueprint(student_blueprint, url_prefix="/")
+
 # ─── Context: lencana sidebar (order menunggu konfirmasi) ────────────────────
 import traceback
 from flask import session as flask_session

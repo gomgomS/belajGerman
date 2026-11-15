@@ -2,12 +2,12 @@
 
 {% block title %}Paket Langganan{% endblock %}
 {% block page_title %}Paket Langganan{% endblock %}
-{% block page_subtitle %}Atur paket Free, Basic, Pro, Premium — harga bulanan & kredit AI{% endblock %}
+{% block page_subtitle %}Bandingkan &amp; atur harga bulanan · 3 bulan · tahunan — preview final langsung terlihat{% endblock %}
 
 {% block header_actions %}
 <button type="button" onclick="openPlanModal()"
-    class="inline-flex items-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold px-3 py-2 rounded-lg transition">
-    + Paket
+    class="inline-flex items-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold px-3.5 py-2 rounded-lg transition">
+    + Paket baru
 </button>
 {% endblock %}
 
@@ -21,112 +21,312 @@
 </nav>
 {% endblock %}
 
+{% block head %}
+<style>
+  .sp-summary{ display:grid; gap:10px; margin-bottom:16px; }
+  @media (min-width:720px){ .sp-summary{ grid-template-columns:repeat(4,1fr); } }
+  .sp-stat{ background:#fff; border:1px solid #E5E7EB; border-radius:12px; padding:14px 16px; }
+  .sp-stat .lbl{ font-size:11px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:#9CA3AF; }
+  .sp-stat .val{ margin-top:6px; font-size:22px; font-weight:700; color:#111827; line-height:1; }
+  .sp-stat .hint{ margin-top:4px; font-size:11.5px; color:#6B7280; }
+
+  .sp-matrix-wrap{ background:#fff; border:1px solid #E5E7EB; border-radius:14px; overflow:hidden; margin-bottom:16px; }
+  .sp-matrix-head{ display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;
+    padding:14px 16px; border-bottom:1px solid #F3F4F6; background:#F9FAFB; }
+  .sp-matrix-head h3{ font-size:14px; font-weight:700; color:#111827; }
+  .sp-matrix-head p{ font-size:12px; color:#6B7280; margin-top:2px; }
+  .sp-table{ width:100%; border-collapse:collapse; font-size:13px; }
+  .sp-table th{ text-align:left; padding:10px 14px; font-size:11px; font-weight:700; letter-spacing:.06em;
+    text-transform:uppercase; color:#9CA3AF; background:#F9FAFB; border-bottom:1px solid #E5E7EB; white-space:nowrap; }
+  .sp-table td{ padding:12px 14px; border-bottom:1px solid #F3F4F6; vertical-align:middle; color:#374151; }
+  .sp-table tr:last-child td{ border-bottom:none; }
+  .sp-table tr:hover td{ background:#F9FAFB; }
+  .sp-plan-name{ font-weight:700; color:#111827; }
+  .sp-plan-meta{ font-size:11.5px; color:#9CA3AF; margin-top:2px; }
+  .sp-price{ font-weight:700; color:#111827; white-space:nowrap; }
+  .sp-price .pm{ display:block; font-size:11px; font-weight:500; color:#9CA3AF; margin-top:2px; }
+  .sp-actions{ display:flex; gap:6px; justify-content:flex-end; }
+  .sp-btn{ font-size:11.5px; font-weight:600; padding:5px 10px; border-radius:8px; border:1px solid #E5E7EB;
+    background:#fff; color:#4B5563; transition:all .15s; cursor:pointer; }
+  .sp-btn:hover{ border-color:#BFDBFE; color:#1D4ED8; background:#EFF6FF; }
+  .sp-btn.danger:hover{ border-color:#FECACA; color:#DC2626; background:#FEF2F2; }
+
+  .sp-hint{ display:flex; gap:10px; align-items:flex-start; padding:12px 14px; border-radius:12px;
+    background:#EFF6FF; border:1px solid #BFDBFE; color:#1E3A8A; font-size:12.5px; margin-bottom:16px; }
+
+  .sp-modal{ position:fixed; inset:0; z-index:50; background:rgba(15,23,42,.45);
+    display:flex; align-items:center; justify-content:center; padding:16px; }
+  .sp-modal.hidden{ display:none; }
+  .sp-dialog{ background:#fff; border-radius:16px; width:100%; max-width:640px;
+    max-height:90vh; overflow:auto; box-shadow:0 24px 48px rgba(15,23,42,.2); }
+  .sp-dialog-head{ position:sticky; top:0; z-index:1; background:#fff; padding:16px 20px;
+    border-bottom:1px solid #F3F4F6; display:flex; justify-content:space-between; gap:12px; }
+  .sp-dialog-head h3{ font-size:16px; font-weight:700; color:#111827; }
+  .sp-dialog-head p{ font-size:12px; color:#9CA3AF; margin-top:2px; }
+  .sp-dialog-body{ padding:18px 20px 20px; }
+  .sp-field label{ display:block; font-size:11.5px; font-weight:700; color:#4B5563; margin-bottom:5px; }
+  .sp-field input, .sp-field select{
+    width:100%; padding:9px 11px; border:1px solid #E5E7EB; border-radius:10px; font-size:13.5px;
+    background:#F9FAFB; outline:none; }
+  .sp-field input:focus, .sp-field select:focus{ border-color:#93C5FD; background:#fff; box-shadow:0 0 0 3px rgba(59,130,246,.15); }
+  .sp-cycle{ border:1px solid #E5E7EB; border-radius:12px; padding:12px; background:#F9FAFB; }
+  .sp-cycle-top{ display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:10px; }
+  .sp-cycle-top .name{ font-size:13px; font-weight:700; color:#111827; }
+  .sp-cycle-top .preview{ font-size:14px; font-weight:700; color:#1D4ED8; }
+  .sp-live{ margin-top:14px; padding:12px 14px; border-radius:12px; background:#111827; color:#fff; }
+  .sp-live .ttl{ font-size:11px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:#9CA3AF; margin-bottom:8px; }
+  .sp-live-grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:8px; }
+  .sp-live-grid div{ font-size:12px; }
+  .sp-live-grid b{ display:block; font-size:14px; margin-top:2px; }
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+{% set active_plans = sub_plans | selectattr('status', 'equalto', 'ACTIVE') | list %}
 
-    {% for plan in sub_plans %}
-    <div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
-        <div class="px-3 py-2 flex items-center justify-between gap-2 bg-gray-50 border-b border-gray-100">
-            <div class="flex items-center gap-2 min-w-0">
-                <h3 class="font-semibold text-gray-900 text-sm truncate">{{ plan.label }}</h3>
-                <span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-blue-100 text-blue-700 shrink-0">{{ plan.code }}</span>
-                {% if plan.status == "ACTIVE" %}
-                <span class="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-blue-100 text-blue-700 shrink-0">Aktif</span>
-                {% else %}
-                <span class="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-gray-100 text-gray-500 shrink-0">Nonaktif</span>
-                {% endif %}
-            </div>
-            <div class="flex items-center gap-1.5 shrink-0">
-                <button type="button"
-                    onclick="openPlanModal({pkey:'{{ plan.pkey }}', code:'{{ plan.code }}', label:{{ plan.label | tojson }}, price:{{ plan.price_idr or 0 }}, credits:{{ plan.ai_credits_monthly or 0 }}, sort:{{ plan.sort_order or 0 }}, status:{{ plan.status | tojson }})"
-                    class="text-[11px] text-gray-600 hover:text-blue-600 font-medium px-1.5 py-0.5">Ubah</button>
-                <form method="POST" action="/dashboard/admin/settings/sub-plan/{{ plan.pkey }}/delete"
-                    onsubmit="return confirm('Hapus paket {{ plan.label }}?')">
-                    <button type="submit" class="text-[11px] text-red-500 hover:text-red-700 font-medium px-1.5 py-0.5">Hapus</button>
-                </form>
-            </div>
-        </div>
-        <div class="px-3 py-3">
-            <div class="flex items-baseline gap-1">
-                {% if plan.price_idr and plan.price_idr > 0 %}
-                <span class="text-lg font-bold text-gray-900">Rp{{ "{:,}".format(plan.price_idr) }}</span>
-                <span class="text-[11px] text-gray-400">/bulan</span>
-                {% else %}
-                <span class="text-lg font-bold text-gray-900">Gratis</span>
-                {% endif %}
-            </div>
-            <div class="mt-2 flex items-center gap-2">
-                <span class="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-gray-100 text-gray-500 shrink-0">Kredit AI</span>
-                <span class="text-xs text-gray-600">{{ plan.ai_credits_monthly or 0 }} kredit / bulan</span>
-            </div>
-        </div>
+<div class="sp-summary">
+    <div class="sp-stat">
+        <div class="lbl">Total paket</div>
+        <div class="val">{{ sub_plans|length }}</div>
+        <div class="hint">Termasuk Free &amp; berbayar</div>
     </div>
-    {% else %}
-    <div class="col-span-full py-10 text-center bg-white rounded-xl border border-gray-100">
-        <p class="text-sm text-gray-500 mb-3">Belum ada paket langganan</p>
-        <button type="button" onclick="openPlanModal()"
-            class="text-xs bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2 rounded-lg transition">
-            + Paket
-        </button>
+    <div class="sp-stat">
+        <div class="lbl">Aktif di landing</div>
+        <div class="val">{{ active_plans|length }}</div>
+        <div class="hint">Status ACTIVE</div>
     </div>
-    {% endfor %}
-
+    <div class="sp-stat">
+        <div class="lbl">Durasi harga</div>
+        <div class="val">3</div>
+        <div class="hint">Bulanan · 3 bln · Tahunan</div>
+    </div>
+    <div class="sp-stat">
+        <div class="lbl">Pembulatan</div>
+        <div class="val" style="font-size:18px">Rp500</div>
+        <div class="hint">Final = daftar − diskon</div>
+    </div>
 </div>
 
-<div id="plan-modal" class="hidden fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
-    <div class="bg-white rounded-xl shadow-2xl w-full max-w-md p-4">
-        <div class="flex items-center justify-between mb-3">
-            <h3 id="plan-modal-title" class="font-semibold text-gray-900">Paket Baru</h3>
+<div class="sp-hint">
+    <svg class="w-4 h-4 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+    <span>Satu baris = satu paket. Edit harga di modal — preview final &amp; per-bulan langsung ikut berubah sebelum disimpan. Paket <strong>PRO</strong> otomatis ditandai populer di area siswa.</span>
+</div>
+
+<div class="sp-matrix-wrap">
+    <div class="sp-matrix-head">
+        <div>
+            <h3>Matriks perbandingan paket</h3>
+            <p>Scan cepat harga final per durasi, kredit AI, dan status.</p>
+        </div>
+        <button type="button" onclick="openPlanModal()" class="sp-btn">+ Tambah</button>
+    </div>
+
+    {% if sub_plans %}
+    <div class="overflow-x-auto">
+        <table class="sp-table">
+            <thead>
+                <tr>
+                    <th>Paket</th>
+                    <th>Bulanan</th>
+                    <th>3 Bulan</th>
+                    <th>Tahunan</th>
+                    <th>AI / bln</th>
+                    <th>Status</th>
+                    <th style="text-align:right">Aksi</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for plan in sub_plans %}
+                {% set m = plan.pricing.get('MONTHLY') if plan.pricing else none %}
+                {% set q = plan.pricing.get('QUARTERLY') if plan.pricing else none %}
+                {% set y = plan.pricing.get('YEARLY') if plan.pricing else none %}
+                <tr>
+                    <td>
+                        <div class="flex items-center gap-2 flex-wrap">
+                            <span class="sp-plan-name">{{ plan.label }}</span>
+                            <span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-blue-100 text-blue-700">{{ plan.code }}</span>
+                            {% if plan.code == 'PRO' %}<span class="pill brand">Populer</span>{% endif %}
+                        </div>
+                        <div class="sp-plan-meta">Urutan {{ plan.sort_order or 0 }}{% if plan.tagline %} · {{ plan.tagline }}{% endif %}</div>
+                    </td>
+                    <td>
+                        {% if m and m.final_price > 0 %}
+                        <div class="sp-price">Rp {{ "{:,}".format(m.final_price) }}
+                            {% if m.discount_pct > 0 %}<span class="pill gold ml-1">−{{ m.discount_pct | int }}%</span>{% endif %}
+                        </div>
+                        {% else %}
+                        <div class="sp-price">Gratis</div>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if q and q.final_price > 0 %}
+                        <div class="sp-price">Rp {{ "{:,}".format(q.final_price) }}
+                            {% if q.save_pct > 0 %}<span class="pill ok ml-1">hemat {{ q.save_pct }}%</span>{% endif %}
+                            <span class="pm">± Rp {{ "{:,}".format(q.per_month) }}/bln</span>
+                        </div>
+                        {% elif q %}
+                        <div class="sp-price">Gratis</div>
+                        {% else %}—{% endif %}
+                    </td>
+                    <td>
+                        {% if y and y.final_price > 0 %}
+                        <div class="sp-price">Rp {{ "{:,}".format(y.final_price) }}
+                            {% if y.save_pct > 0 %}<span class="pill ok ml-1">hemat {{ y.save_pct }}%</span>{% endif %}
+                            <span class="pm">± Rp {{ "{:,}".format(y.per_month) }}/bln</span>
+                        </div>
+                        {% elif y %}
+                        <div class="sp-price">Gratis</div>
+                        {% else %}—{% endif %}
+                    </td>
+                    <td><strong>{{ plan.ai_credits_monthly or 0 }}</strong></td>
+                    <td>
+                        {% if plan.status == 'ACTIVE' %}<span class="pill ok">Aktif</span>
+                        {% else %}<span class="pill neutral">Nonaktif</span>{% endif %}
+                    </td>
+                    <td>
+                        <div class="sp-actions">
+                            <button type="button" class="sp-btn"
+                                onclick="openPlanModal({pkey:'{{ plan.pkey }}', code:'{{ plan.code }}', label:{{ plan.label | tojson }}, tagline:{{ (plan.tagline or '') | tojson }}, priceMonthly:{{ plan.price_idr or 0 }}, priceQuarterly:{{ plan.price_quarterly_idr or 0 }}, priceYearly:{{ plan.price_yearly_idr or 0 }}, discMonthly:{{ plan.discount_monthly_pct or 0 }}, discQuarterly:{{ plan.discount_quarterly_pct or 0 }}, discYearly:{{ plan.discount_yearly_pct or 0 }}, credits:{{ plan.ai_credits_monthly or 0 }}, sort:{{ plan.sort_order or 0 }}, status:{{ plan.status | tojson }})">Ubah</button>
+                            <form method="POST" action="/dashboard/admin/settings/sub-plan/{{ plan.pkey }}/delete"
+                                onsubmit="return confirm('Hapus paket {{ plan.label }}?')">
+                                <button type="submit" class="sp-btn danger">Hapus</button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="py-12 text-center">
+        <p class="text-sm text-gray-500 mb-3">Belum ada paket langganan</p>
+        <button type="button" onclick="openPlanModal()"
+            class="text-xs bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2 rounded-lg transition">+ Paket baru</button>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Modal -->
+<div id="plan-modal" class="sp-modal hidden">
+    <div class="sp-dialog">
+        <div class="sp-dialog-head">
+            <div>
+                <h3 id="plan-modal-title">Paket Baru</h3>
+                <p>Harga final = daftar − diskon, dibulatkan ke Rp500. Preview live di bawah.</p>
+            </div>
             <button type="button" onclick="closeModal('plan-modal')" class="text-gray-400 hover:text-gray-600">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
             </button>
         </div>
-        <form id="plan-form" method="POST" action="/dashboard/admin/settings/sub-plan" class="space-y-3">
-            <div id="plan-code-wrap">
-                <label class="block text-xs font-semibold text-gray-600 mb-1">Kode <span class="text-red-500">*</span></label>
-                <input type="text" name="code" id="plan-code" placeholder="BASIC"
-                    class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50 focus:bg-white uppercase">
-            </div>
-            <div id="plan-code-readonly" class="hidden">
-                <label class="block text-xs font-semibold text-gray-600 mb-1">Kode</label>
-                <p id="plan-code-label" class="text-sm font-bold text-blue-700"></p>
-            </div>
-            <div>
-                <label class="block text-xs font-semibold text-gray-600 mb-1">Nama tampilan <span class="text-red-500">*</span></label>
-                <input type="text" name="label" id="plan-label" required placeholder="Basic"
-                    class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50 focus:bg-white">
-            </div>
-            <div class="grid grid-cols-2 gap-2">
-                <div>
-                    <label class="block text-xs font-semibold text-gray-600 mb-1">Harga / bulan (Rp)</label>
-                    <input type="number" name="price_idr" id="plan-price" min="0" step="1000" value="0"
-                        class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50 focus:bg-white">
+        <form id="plan-form" method="POST" action="/dashboard/admin/settings/sub-plan" class="sp-dialog-body space-y-4">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div id="plan-code-wrap" class="sp-field">
+                    <label>Kode <span class="text-red-500">*</span></label>
+                    <input type="text" name="code" id="plan-code" placeholder="BASIC" class="uppercase">
                 </div>
-                <div>
-                    <label class="block text-xs font-semibold text-gray-600 mb-1">Kredit AI / bulan</label>
-                    <input type="number" name="ai_credits_monthly" id="plan-credits" min="0" value="0"
-                        class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50 focus:bg-white">
+                <div id="plan-code-readonly" class="sp-field hidden">
+                    <label>Kode</label>
+                    <p id="plan-code-label" class="text-sm font-bold text-blue-700 pt-2"></p>
+                </div>
+                <div class="sp-field">
+                    <label>Nama tampilan <span class="text-red-500">*</span></label>
+                    <input type="text" name="label" id="plan-label" required placeholder="Basic">
                 </div>
             </div>
-            <div class="grid grid-cols-2 gap-2">
-                <div>
-                    <label class="block text-xs font-semibold text-gray-600 mb-1">Urutan</label>
-                    <input type="number" name="sort_order" id="plan-sort" min="0" value="{{ sub_plans|length + 1 }}"
-                        class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50 focus:bg-white">
+            <div class="sp-field">
+                <label>Tagline</label>
+                <input type="text" name="tagline" id="plan-tagline" placeholder="Latihan rutin semua level">
+            </div>
+
+            <div class="space-y-3">
+                <div class="text-[10.5px] font-bold uppercase tracking-wider text-gray-400">Harga &amp; diskon per durasi</div>
+
+                <div class="sp-cycle">
+                    <div class="sp-cycle-top">
+                        <span class="name">Bulanan · Monatlich</span>
+                        <span class="preview" id="preview-MONTHLY">Rp 0</span>
+                    </div>
+                    <div class="grid grid-cols-2 gap-2">
+                        <div class="sp-field">
+                            <label>Harga daftar (Rp)</label>
+                            <input type="number" name="price_idr" id="plan-price-monthly" min="0" step="1000" value="0" data-price="MONTHLY">
+                        </div>
+                        <div class="sp-field">
+                            <label>Diskon (%)</label>
+                            <input type="number" name="discount_monthly_pct" id="plan-disc-monthly" min="0" max="90" step="1" value="0" data-disc="MONTHLY">
+                        </div>
+                    </div>
                 </div>
-                <div>
-                    <label class="block text-xs font-semibold text-gray-600 mb-1">Status</label>
-                    <select name="status" id="plan-status"
-                        class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50 focus:bg-white">
+
+                <div class="sp-cycle">
+                    <div class="sp-cycle-top">
+                        <span class="name">3 Bulan · Quartal</span>
+                        <span class="preview" id="preview-QUARTERLY">Rp 0</span>
+                    </div>
+                    <div class="grid grid-cols-2 gap-2">
+                        <div class="sp-field">
+                            <label>Harga daftar (Rp) <span class="font-normal text-gray-400">— kosong = ×3</span></label>
+                            <input type="number" name="price_quarterly_idr" id="plan-price-quarterly" min="0" step="1000" value="0" data-price="QUARTERLY">
+                        </div>
+                        <div class="sp-field">
+                            <label>Diskon (%)</label>
+                            <input type="number" name="discount_quarterly_pct" id="plan-disc-quarterly" min="0" max="90" step="1" value="0" data-disc="QUARTERLY">
+                        </div>
+                    </div>
+                    <p class="text-[11px] mt-2 text-gray-400">Per bulan: <span id="permonth-QUARTERLY">Rp 0</span></p>
+                </div>
+
+                <div class="sp-cycle">
+                    <div class="sp-cycle-top">
+                        <span class="name">Tahunan · Jährlich</span>
+                        <span class="preview" id="preview-YEARLY">Rp 0</span>
+                    </div>
+                    <div class="grid grid-cols-2 gap-2">
+                        <div class="sp-field">
+                            <label>Harga daftar (Rp) <span class="font-normal text-gray-400">— kosong = ×12</span></label>
+                            <input type="number" name="price_yearly_idr" id="plan-price-yearly" min="0" step="1000" value="0" data-price="YEARLY">
+                        </div>
+                        <div class="sp-field">
+                            <label>Diskon (%)</label>
+                            <input type="number" name="discount_yearly_pct" id="plan-disc-yearly" min="0" max="90" step="1" value="0" data-disc="YEARLY">
+                        </div>
+                    </div>
+                    <p class="text-[11px] mt-2 text-gray-400">Per bulan: <span id="permonth-YEARLY">Rp 0</span></p>
+                </div>
+            </div>
+
+            <div class="sp-live">
+                <div class="ttl">Preview yang siswa lihat</div>
+                <div class="sp-live-grid">
+                    <div>Bulanan<b id="live-MONTHLY">Rp 0</b></div>
+                    <div>3 Bulan<b id="live-QUARTERLY">Rp 0</b></div>
+                    <div>Tahunan<b id="live-YEARLY">Rp 0</b></div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-3 gap-2">
+                <div class="sp-field">
+                    <label>Kredit AI / bln</label>
+                    <input type="number" name="ai_credits_monthly" id="plan-credits" min="0" value="0">
+                </div>
+                <div class="sp-field">
+                    <label>Urutan</label>
+                    <input type="number" name="sort_order" id="plan-sort" min="0" value="{{ sub_plans|length + 1 }}">
+                </div>
+                <div class="sp-field">
+                    <label>Status</label>
+                    <select name="status" id="plan-status">
                         <option value="ACTIVE">Aktif</option>
                         <option value="INACTIVE">Nonaktif</option>
                     </select>
                 </div>
             </div>
+
             <div class="flex gap-2 pt-1">
-                <button type="submit" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 rounded-lg text-sm transition">Simpan</button>
+                <button type="submit" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 rounded-lg text-sm transition">Simpan paket</button>
                 <button type="button" onclick="closeModal('plan-modal')"
-                    class="px-4 py-2 border border-gray-200 text-gray-600 rounded-lg text-sm hover:bg-gray-50 transition">Batal</button>
+                    class="px-4 py-2.5 border border-gray-200 text-gray-600 rounded-lg text-sm hover:bg-gray-50 transition">Batal</button>
             </div>
         </form>
     </div>
@@ -139,6 +339,32 @@ function closeModal(id) {
     document.getElementById(id).classList.add('hidden');
 }
 
+const MONTHS = { MONTHLY: 1, QUARTERLY: 3, YEARLY: 12 };
+
+function fmtIDR(n) {
+    return 'Rp ' + Number(n || 0).toLocaleString('id-ID');
+}
+
+function round500(n) {
+    return Math.round(n / 500) * 500;
+}
+
+function refreshPreview() {
+    const monthly = Number(document.getElementById('plan-price-monthly').value) || 0;
+    for (const cycle in MONTHS) {
+        let list = Number(document.querySelector('[data-price="' + cycle + '"]').value) || 0;
+        if (!list) list = monthly * MONTHS[cycle];
+        const disc = Math.min(90, Math.max(0, Number(document.querySelector('[data-disc="' + cycle + '"]').value) || 0));
+        const final = Math.max(0, round500(list * (100 - disc) / 100));
+        document.getElementById('preview-' + cycle).textContent = fmtIDR(final);
+        const live = document.getElementById('live-' + cycle);
+        if (live) live.textContent = fmtIDR(final);
+        if (MONTHS[cycle] > 1) {
+            document.getElementById('permonth-' + cycle).textContent = fmtIDR(Math.round(final / MONTHS[cycle]));
+        }
+    }
+}
+
 function openPlanModal(data) {
     const modal = document.getElementById('plan-modal');
     const form  = document.getElementById('plan-form');
@@ -147,32 +373,49 @@ function openPlanModal(data) {
     const read  = document.getElementById('plan-code-readonly');
     const code  = document.getElementById('plan-code');
     if (data && data.pkey) {
-        title.textContent = 'Ubah Paket';
+        title.textContent = 'Ubah paket';
         form.action = '/dashboard/admin/settings/sub-plan/' + data.pkey + '/update';
         wrap.classList.add('hidden');
         read.classList.remove('hidden');
         document.getElementById('plan-code-label').textContent = data.code || '';
         code.removeAttribute('required');
-        document.getElementById('plan-label').value   = data.label || '';
-        document.getElementById('plan-price').value   = data.price || 0;
-        document.getElementById('plan-credits').value = data.credits || 0;
-        document.getElementById('plan-sort').value    = data.sort || 0;
-        document.getElementById('plan-status').value  = data.status || 'ACTIVE';
+        document.getElementById('plan-label').value           = data.label || '';
+        document.getElementById('plan-tagline').value         = data.tagline || '';
+        document.getElementById('plan-price-monthly').value   = data.priceMonthly || 0;
+        document.getElementById('plan-price-quarterly').value = data.priceQuarterly || 0;
+        document.getElementById('plan-price-yearly').value    = data.priceYearly || 0;
+        document.getElementById('plan-disc-monthly').value    = data.discMonthly || 0;
+        document.getElementById('plan-disc-quarterly').value  = data.discQuarterly || 0;
+        document.getElementById('plan-disc-yearly').value     = data.discYearly || 0;
+        document.getElementById('plan-credits').value         = data.credits || 0;
+        document.getElementById('plan-sort').value            = data.sort || 0;
+        document.getElementById('plan-status').value          = data.status || 'ACTIVE';
     } else {
-        title.textContent = 'Paket Baru';
+        title.textContent = 'Paket baru';
         form.action = '/dashboard/admin/settings/sub-plan';
         wrap.classList.remove('hidden');
         read.classList.add('hidden');
         code.setAttribute('required', '');
         code.value = '';
-        document.getElementById('plan-label').value   = '';
-        document.getElementById('plan-price').value   = 0;
-        document.getElementById('plan-credits').value = 0;
-        document.getElementById('plan-sort').value    = {{ sub_plans|length + 1 }};
-        document.getElementById('plan-status').value  = 'ACTIVE';
+        document.getElementById('plan-label').value           = '';
+        document.getElementById('plan-tagline').value         = '';
+        document.getElementById('plan-price-monthly').value   = 0;
+        document.getElementById('plan-price-quarterly').value = 0;
+        document.getElementById('plan-price-yearly').value    = 0;
+        document.getElementById('plan-disc-monthly').value    = 0;
+        document.getElementById('plan-disc-quarterly').value  = 0;
+        document.getElementById('plan-disc-yearly').value     = 0;
+        document.getElementById('plan-credits').value         = 0;
+        document.getElementById('plan-sort').value            = {{ sub_plans|length + 1 }};
+        document.getElementById('plan-status').value          = 'ACTIVE';
     }
+    refreshPreview();
     modal.classList.remove('hidden');
 }
+
+document.querySelectorAll('[data-price], [data-disc]').forEach(function (input) {
+    input.addEventListener('input', refreshPreview);
+});
 
 ['plan-modal'].forEach(function(id) {
     const el = document.getElementById(id);

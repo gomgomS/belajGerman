@@ -14,7 +14,7 @@ import idgen
 import sanitize
 
 
-ANSWER_TYPES = ("mc", "rf", "cloze")
+ANSWER_TYPES = ("mc", "rf", "cloze", "speak")
 
 # Cara menjawab rumpang Lückentext: "mc" = pilihan A–D (kartu soal, default),
 # "input" = peserta mengetik jawaban (isian, dinilai otomatis via answer_text),
@@ -114,7 +114,8 @@ def get_passage_by_id(passage_pkey):
 
 def create_passage(title, content_type, content_text, audio_url, section_id, expert_id,
                    question_mode="grouped", passage_sub_type="", section_key="", sub_type_key="",
-                   answer_type="mc", cloze_answer_mode=""):
+                   answer_type="mc", cloze_answer_mode="",
+                   instruction="", sample_answer="", image_url="", prep_seconds=0, speak_seconds=0):
     try:
         mgdDB = database.get_db_conn(config.mainDB)
 
@@ -132,6 +133,11 @@ def create_passage(title, content_type, content_text, audio_url, section_id, exp
         rec.put("content_type",          content_type)
         rec.put("content_text",          content_text)
         rec.put("audio_url",             audio_url)
+        rec.put("instruction",           instruction or "")
+        rec.put("sample_answer",         sample_answer or "")
+        rec.put("image_url",             image_url or "")
+        rec.put("prep_seconds",          int(prep_seconds or 0))
+        rec.put("speak_seconds",         int(speak_seconds or 0))
         rec.put("sort_order",            next_order)
         rec.put("question_count",        0)
         rec.put("question_mode",         question_mode)
@@ -162,7 +168,9 @@ def create_passage(title, content_type, content_text, audio_url, section_id, exp
 
 def update_passage(passage_pkey, title, content_type, content_text, audio_url,
                    question_mode="grouped", passage_sub_type="", section_key=None, sub_type_key=None,
-                   section_id=None, cloze_answer_mode=None):
+                   section_id=None, cloze_answer_mode=None,
+                   instruction=None, sample_answer=None, image_url=None,
+                   prep_seconds=None, speak_seconds=None):
     try:
         mgdDB = database.get_db_conn(config.mainDB)
         update_fields = {
@@ -178,6 +186,12 @@ def update_passage(passage_pkey, title, content_type, content_text, audio_url,
         if sub_type_key is not None: update_fields["sub_type_key"] = sub_type_key
         if cloze_answer_mode is not None:
             update_fields["cloze_answer_mode"] = normalize_cloze_answer_mode(cloze_answer_mode)
+        # end if
+        if instruction   is not None: update_fields["instruction"]   = instruction
+        if sample_answer is not None: update_fields["sample_answer"] = sample_answer
+        if image_url     is not None: update_fields["image_url"]     = image_url
+        if prep_seconds  is not None: update_fields["prep_seconds"]  = int(prep_seconds or 0)
+        if speak_seconds is not None: update_fields["speak_seconds"] = int(speak_seconds or 0)
         # end if
         mgdDB.db_toefl_passage.update_one({"pkey": passage_pkey}, {"$set": update_fields})
         return {"status": "OK"}

@@ -793,7 +793,8 @@ def get_bank_candidates_for_section(section, expert_id=None, part_pkey=None):
                     {"fk_passage_id": passage.get("pkey"), "is_deleted": False}
                 ).sort("sort_order", 1)
             )
-            if not questions:
+            is_sprechen = (passage.get("question_mode") or "") == "sprechen"
+            if not questions and not is_sprechen:
                 continue
             # end if
             sk = (passage.get("section_key") or "").lower().strip()

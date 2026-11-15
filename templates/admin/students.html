@@ -1,0 +1,114 @@
+{% extends "admin/base_admin.html" %}
+
+{% block title %}Siswa{% endblock %}
+{% block page_title %}Siswa{% endblock %}
+{% block page_subtitle %}Lernende — akun siswa terdaftar, status Abo &amp; aktivitas ujian{% endblock %}
+
+{% block header_actions %}
+<div class="flex items-center gap-2">
+    <span class="pill neutral">{{ students|length }} siswa</span>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="bg-white rounded-2xl border overflow-hidden" style="border-color:var(--line)">
+    <div class="overflow-x-auto">
+        <table class="adm-table">
+            <thead>
+                <tr>
+                    <th>Siswa</th>
+                    <th>Abo</th>
+                    <th>Ujian</th>
+                    <th>Status</th>
+                    <th class="text-right">Aksi</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for s in students %}
+                <tr id="user-row-{{ s.pkey }}">
+                    <td>
+                        <div class="flex items-center gap-3">
+                            <div class="w-8 h-8 rounded-full flex items-center justify-center font-display font-bold text-xs flex-shrink-0"
+                                style="background:var(--brand-soft); color:var(--brand-ink)">
+                                {{ s.full_name[0].upper() if s.full_name else 'U' }}
+                            </div>
+                            <div>
+                                <div class="font-medium" style="color:var(--ink)">{{ s.full_name }}</div>
+                                <div class="text-xs" style="color:var(--faint)">{{ s.email }}</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td>
+                        {% if s.abo_active %}
+                        <span class="pill brand">{{ s.abo_label }}</span>
+                        {% if s.abo_expire_str %}
+                        <div class="text-[11px] mt-1" style="color:var(--faint)">sampai {{ s.abo_expire_str }}</div>
+                        {% endif %}
+                        {% else %}
+                        <span class="pill neutral">{{ s.abo_label }}</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <span class="font-display font-semibold" style="color:var(--ink)">{{ s.exam_count }}</span>
+                        <span class="text-xs" style="color:var(--faint)"> ujian</span>
+                    </td>
+                    <td>
+                        {% if s.status == 'ACTIVE' %}<span class="pill ok">Aktif</span>
+                        {% else %}<span class="pill err">Ditangguhkan</span>{% endif %}
+                    </td>
+                    <td class="text-right">
+                        <div class="flex items-center justify-end gap-3">
+                            <select onchange="updateRole('{{ s.pkey }}', this.value)"
+                                class="text-xs font-semibold px-2 py-1.5 rounded-lg border cursor-pointer focus:outline-none"
+                                style="border-color:var(--line); background:var(--surface); color:var(--ink)"
+                                title="Ubah peran — pindah ke Tim Pengelola bila dijadikan Guru/Admin">
+                                <option value="peserta" selected>Peserta</option>
+                                <option value="expert">Guru</option>
+                                <option value="super_admin">Admin</option>
+                            </select>
+                            {% if s.status == 'ACTIVE' %}
+                            <button onclick="updateStatus('{{ s.pkey }}', 'SUSPENDED')"
+                                class="text-xs font-semibold transition hover:underline" style="color:var(--danger)">Tangguhkan</button>
+                            {% else %}
+                            <button onclick="updateStatus('{{ s.pkey }}', 'ACTIVE')"
+                                class="text-xs font-semibold transition hover:underline" style="color:var(--ok)">Aktifkan kembali</button>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% else %}
+                <tr><td colspan="5" class="text-center py-14" style="color:var(--faint)">
+                    Belum ada siswa terdaftar
+                </td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function updateRole(userPkey, newRole) {
+    fetch('/api/admin/users/' + userPkey + '/role', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+        body: 'role=' + encodeURIComponent(newRole)
+    })
+        .then(r => r.json())
+        .then(data => {
+            if (data.status !== 'OK') alert('Gagal mengubah peran: ' + (data.message || ''));
+            else if (newRole !== 'peserta') location.href = '/dashboard/admin/staff';
+        });
+}
+function updateStatus(userPkey, newStatus) {
+    fetch('/api/admin/users/' + userPkey + '/status', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+        body: 'status=' + encodeURIComponent(newStatus)
+    })
+        .then(r => r.json())
+        .then(data => { if (data.status === 'OK') location.reload(); });
+}
+</script>
+{% endblock %}

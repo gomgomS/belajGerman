@@ -584,13 +584,23 @@ db = {
 
         "audio_url"             : "",
 
+        "instruction"           : "",          # Sprechen: Aufgabe/instruksi yang tampil ke siswa
+
+        "image_url"             : "",          # Sprechen: gambar soal
+
+        "sample_answer"         : "",          # Sprechen: Musterantwort (contoh jawaban)
+
+        "prep_seconds"          : 0,           # Sprechen: detik persiapan
+
+        "speak_seconds"         : 0,           # Sprechen: detik bicara
+
         "sort_order"            : 0,
 
         "question_count"        : 0,
 
-        "question_mode"         : "grouped",
+        "question_mode"         : "grouped",   # single | grouped | sprechen
 
-        "answer_type"           : "mc",        # mc = pilihan ganda A–D | rf = Richtig/Falsch | cloze = Lückentext
+        "answer_type"           : "mc",        # mc = pilihan ganda A–D | rf = Richtig/Falsch | cloze = Lückentext | speak = Sprechen (rekam suara)
 
         "cloze_answer_mode"     : "mc",        # cara menjawab rumpang Lückentext: mc = pilihan A–D | input = ketik jawaban (isian)
 
@@ -796,6 +806,8 @@ db = {
 
         "order_id"              : "",
 
+        "order_type"            : "EXAM",      # EXAM (per paket, legacy) | SUBSCRIPTION (langganan)
+
         "fk_user_id"            : "",
 
         "fk_package_id"         : "",
@@ -803,6 +815,12 @@ db = {
         "package_title"         : "",
 
         "tier"                  : "BASIC",
+
+        "plan_code"             : "",          # SUBSCRIPTION: FREE | BASIC | PRO | PREMIUM
+
+        "cycle"                 : "",          # SUBSCRIPTION: MONTHLY | QUARTERLY | YEARLY
+
+        "months"                : 0,           # SUBSCRIPTION: 1 | 3 | 12
 
         "amount"                : 0,
 
@@ -902,13 +920,15 @@ db = {
 
         "fk_order_id"           : "",
 
+        "scope"                 : "PACKAGE",   # PACKAGE (satu paket, legacy) | PLATFORM (semua ujian via langganan)
+
         "tier"                  : "BASIC",
 
         "status"                : "ACTIVE",
 
         "granted_at"            : 0,
 
-        "expire_at"             : 0,
+        "expire_at"             : 0,           # epoch ms; 0 = tanpa batas (legacy EXAM)
 
     },
 
@@ -958,7 +978,19 @@ db = {
 
         "label"                 : "",
 
-        "price_idr"             : 0,           # harga per bulan (IDR), 0 = gratis
+        "tagline"               : "",          # deskripsi singkat untuk kartu harga
+
+        "price_idr"             : 0,           # harga bulanan (IDR), 0 = gratis
+
+        "price_quarterly_idr"   : 0,           # harga 3 bulan; 0 = otomatis (bulanan x 3)
+
+        "price_yearly_idr"      : 0,           # harga 12 bulan; 0 = otomatis (bulanan x 12)
+
+        "discount_monthly_pct"  : 0,           # diskon bulanan (%)
+
+        "discount_quarterly_pct": 0,           # diskon 3 bulan (%)
+
+        "discount_yearly_pct"   : 0,           # diskon tahunan (%)
 
         "ai_credits_monthly"    : 0,           # kredit AI per bulan
 

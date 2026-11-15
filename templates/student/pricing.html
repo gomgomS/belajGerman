@@ -1,0 +1,173 @@
+{% extends "student/base_student.html" %}
+{% from "macros/pricing.html" import pricing_cards %}
+
+{% block title %}Preise{% endblock %}
+
+{% block head %}
+<style>
+  /* ── Kopf: judul kiri, status Abo kanan ── */
+  .pr-head{ display:grid; gap:16px; align-items:end; margin-bottom:26px; }
+  @media (min-width:880px){ .pr-head{ grid-template-columns:minmax(0,1fr) auto; } }
+  .pr-status{ display:flex; align-items:center; gap:12px; padding:12px 16px; border-radius:14px;
+    background:var(--surface); border:1px solid var(--line); }
+  .pr-status .ico{ width:38px; height:38px; border-radius:11px; display:flex; align-items:center;
+    justify-content:center; flex-shrink:0; background:var(--brand-soft); color:var(--brand); }
+  .pr-status .ico svg{ width:19px; height:19px; }
+  .pr-status .t1{ font-family:'Barlow'; font-weight:700; font-size:14.5px; color:var(--ink); line-height:1.2; }
+  .pr-status .t2{ font-size:12px; color:var(--muted); }
+  .pr-status a{ font-size:12.5px; font-weight:600; color:var(--brand); white-space:nowrap; }
+
+  /* ── Banner error / info ── */
+  .pr-alert{ display:flex; align-items:flex-start; gap:10px; padding:12px 16px; border-radius:13px;
+    font-size:13px; margin-bottom:22px; }
+  .pr-alert svg{ width:17px; height:17px; flex-shrink:0; margin-top:2px; }
+  .pr-alert.err{ background:#FDEBE9; border:1px solid #F5C6C0; color:var(--danger); }
+  .pr-alert.ok{ background:#E7F5EF; border:1px solid #BFE3D4; color:var(--ok); }
+
+  .pr-plans{ margin-bottom:34px; }
+
+  /* ── Strip "ada di semua paket" ── */
+  .pr-incl{ margin-bottom:34px; }
+  .pr-incl-title{ display:flex; align-items:center; gap:12px; margin-bottom:14px; color:var(--faint);
+    font-family:'Barlow'; font-size:11px; font-weight:700; letter-spacing:.14em; text-transform:uppercase; }
+  .pr-incl-title::before, .pr-incl-title::after{ content:""; flex:1; height:1px; background:var(--line); }
+  .pr-incl-grid{ display:grid; grid-template-columns:1fr 1fr; gap:10px 18px; }
+  @media (min-width:880px){ .pr-incl-grid{ grid-template-columns:repeat(4,1fr); } }
+  .pr-incl-item{ display:flex; align-items:center; gap:10px; font-size:12.5px; color:var(--muted); }
+  .pr-incl-item svg{ width:16px; height:16px; color:var(--ok); flex-shrink:0; }
+
+  /* ── Panel cara bayar: dua kolom ── */
+  .pr-pay{ display:grid; gap:0; overflow:hidden; }
+  @media (min-width:880px){ .pr-pay{ grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr); } }
+  .pr-pay-left{ padding:22px; background:linear-gradient(160deg,#12245A 0%,#1D4ED8 58%,#3B63E8 100%); color:#fff; }
+  .pr-pay-left .k{ font-size:10.5px; font-weight:700; letter-spacing:.14em; text-transform:uppercase; color:#C7D6F5; }
+  .pr-pay-left h3{ margin-top:6px; font-size:19px; font-weight:700; }
+  .pr-channel{ margin-top:16px; display:grid; gap:8px; }
+  .pr-ch{ display:flex; align-items:center; justify-content:space-between; gap:10px; padding:11px 14px;
+    border-radius:11px; background:rgba(255,255,255,.1); border:1px solid rgba(255,255,255,.14); font-size:13px; }
+  .pr-ch b{ font-family:'Barlow'; letter-spacing:.02em; }
+  .pr-pay-note{ margin-top:14px; font-size:11.5px; color:#C7D6F5; }
+  .pr-pay-right{ padding:22px; display:flex; flex-direction:column; }
+  .pr-pay-right h4{ font-size:15px; font-weight:700; color:var(--ink); }
+  .pr-steps{ margin-top:12px; display:grid; gap:12px; flex:1; align-content:center; }
+  .pr-step{ display:flex; gap:12px; align-items:flex-start; }
+  .pr-step .n{ width:24px; height:24px; border-radius:8px; flex-shrink:0; display:flex; align-items:center;
+    justify-content:center; background:var(--brand-soft); color:var(--brand-ink);
+    font-family:'Barlow'; font-size:12px; font-weight:700; }
+  .pr-step .t{ font-size:13px; color:var(--muted); line-height:1.5; }
+  .pr-step .t b{ color:var(--ink); font-weight:600; }
+  .pr-trust{ margin-top:22px; text-align:center; font-size:12px; color:var(--faint);
+    display:flex; justify-content:center; gap:18px; flex-wrap:wrap; }
+  .pr-trust span{ display:inline-flex; align-items:center; gap:6px; }
+  .pr-trust svg{ width:13px; height:13px; color:var(--ok); }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="std-wrap">
+
+    <!-- Kopf -->
+    <div class="pr-head">
+        <div>
+            <div class="std-kicker">Abo &amp; Preise</div>
+            <h1 class="std-title">Pilih paket, buka semua simulasi</h1>
+            <p class="std-sub">Satu langganan untuk seluruh ujian — tanpa beli per paket. Durasi lebih panjang, harga per bulan lebih hemat.</p>
+        </div>
+        <a href="/student/abo" class="pr-status">
+            <span class="ico">
+                {% if subscription %}
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+                {% else %}
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+                {% endif %}
+            </span>
+            <span class="min-w-0">
+                <span class="t1 block">{% if subscription %}Abo aktif — {{ subscription.plan_data.label if subscription.plan_data else subscription.tier }}{% else %}Status: Free Plan{% endif %}</span>
+                <span class="t2 block">{% if subscription %}{{ subscription.expire_at_str or 'Berlaku selama masa aktif' }}{% else %}Upgrade kapan saja, tanpa ribet{% endif %}</span>
+            </span>
+            <span class="text-[12.5px] font-semibold" style="color:var(--brand)">Detail →</span>
+        </a>
+    </div>
+
+    {% if error %}
+    <div class="pr-alert err">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+        <span>{{ error }}</span>
+    </div>
+    {% endif %}
+
+    <!-- Kartu harga + toggle durasi -->
+    <div class="pr-plans">
+        {{ pricing_cards(sub_plans, mode='student', current_code=(subscription.tier if subscription else '')) }}
+    </div>
+
+    <!-- Strip: termasuk di semua paket -->
+    <div class="pr-incl">
+        <div class="pr-incl-title">In jedem Paket — ada di semua paket</div>
+        <div class="pr-incl-grid">
+            <div class="pr-incl-item">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+                Semua jenis simulasi (Goethe · telc · TestDaF)
+            </div>
+            <div class="pr-incl-item">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+                Skor prediksi &amp; laporan per seksi
+            </div>
+            <div class="pr-incl-item">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+                Auto-save jawaban saat ujian
+            </div>
+            <div class="pr-incl-item">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+                Perpanjang = masa aktif ditumpuk
+            </div>
+        </div>
+    </div>
+
+    <!-- Cara bayar -->
+    <section class="card pr-pay">
+        <div class="pr-pay-left">
+            <div class="k">Zahlungsart</div>
+            <h3>Transfer Bank / E-Wallet</h3>
+            <div class="pr-channel">
+                <div class="pr-ch"><span>BCA</span><b>1234567890</b></div>
+                <div class="pr-ch"><span>OVO · GoPay · DANA</span><b>08xxxxxxxx</b></div>
+            </div>
+            <p class="pr-pay-note">a.n. BelajDeutsch — pastikan nominal sama persis dengan order.</p>
+        </div>
+        <div class="pr-pay-right">
+            <h4>Cara berlangganan</h4>
+            <div class="pr-steps">
+                <div class="pr-step">
+                    <span class="n">1</span>
+                    <span class="t"><b>Pilih paket &amp; durasi</b> — klik tombol <em>Pilih paket</em> di kartu atas.</span>
+                </div>
+                <div class="pr-step">
+                    <span class="n">2</span>
+                    <span class="t"><b>Transfer sesuai nominal</b> — admin memverifikasi maks. 1×24 jam.</span>
+                </div>
+                <div class="pr-step">
+                    <span class="n">3</span>
+                    <span class="t"><b>Abo aktif</b> — semua simulasi terbuka sampai masa berlaku habis.</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <div class="pr-trust">
+        <span>
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+            Aktivasi maks. 1×24 jam
+        </span>
+        <span>
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+            Tanpa biaya tersembunyi
+        </span>
+        <span>
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+            Free Plan selalu gratis
+        </span>
+    </div>
+
+</div>
+{% endblock %}

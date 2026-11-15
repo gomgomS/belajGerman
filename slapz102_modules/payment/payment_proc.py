@@ -13,6 +13,103 @@ import config
 import idgen
 
 
+def get_active_subscription(user_pkey):
+    """Akses langganan platform (scope PLATFORM) yang masih berlaku untuk user."""
+    try:
+        mgdDB = database.get_db_conn(config.mainDB)
+        now   = int(time.time() * 1000)
+        access = mgdDB.db_toefl_access.find_one({
+            "fk_user_id": user_pkey,
+            "scope"     : "PLATFORM",
+            "status"    : "ACTIVE",
+            "expire_at" : {"$gt": now},
+        })
+        if not access:
+            # akses PLATFORM tanpa expire (legacy) tetap dianggap aktif
+            access = mgdDB.db_toefl_access.find_one({
+                "fk_user_id": user_pkey,
+                "scope"     : "PLATFORM",
+                "status"    : "ACTIVE",
+                "expire_at" : 0,
+            })
+        # end if
+        if not access:
+            return {"status": "OK", "data": None}
+        # end if
+        plan = mgdDB.db_subscription_plan.find_one({"code": access.get("tier", ""), "is_deleted": False})
+        access["plan_data"] = plan or None
+        return {"status": "OK", "data": access}
+    except Exception:
+        print(traceback.format_exc())
+        return {"status": "ERROR", "data": None}
+    # end try
+# end def
+
+
+def create_subscription_order(user_pkey, plan_code, cycle):
+    """Buat order langganan (order_type=SUBSCRIPTION) — model bayar per siklus, bukan per paket ujian."""
+    try:
+        from app_settings import app_settings_proc
+        mgdDB = database.get_db_conn(config.mainDB)
+
+        plan_code = str(plan_code or "").upper().strip()
+        plan      = mgdDB.db_subscription_plan.find_one({"code": plan_code, "is_deleted": False})
+        if not plan:
+            return {"status": "ERROR", "message": "Paket langganan tidak ditemukan"}
+        # end if
+        if str(plan.get("status", "ACTIVE")).upper() != "ACTIVE":
+            return {"status": "ERROR", "message": "Paket langganan sedang tidak tersedia"}
+        # end if
+        if int(plan.get("price_idr", 0) or 0) <= 0:
+            return {"status": "ERROR", "message": "Paket gratis tidak perlu dipesan — cukup daftar"}
+        # end if
+
+        pricing = app_settings_proc.compute_cycle_pricing(plan, cycle)
+        if not pricing:
+            return {"status": "ERROR", "message": "Durasi langganan tidak valid"}
+        # end if
+
+        pending = mgdDB.db_toefl_order.find_one({
+            "fk_user_id": user_pkey,
+            "order_type" : "SUBSCRIPTION",
+            "status"     : "PENDING",
+        })
+        if pending:
+            return {"status": "OK", "order_pkey": pending.get("pkey", ""), "amount": pending.get("amount", 0)}
+        # end if
+
+        cycle_label = {
+            "MONTHLY": "1 bulan", "QUARTERLY": "3 bulan", "YEARLY": "12 bulan",
+        }.get(pricing["cycle"], "")
+
+        rec = database.new(mgdDB, "db_toefl_order")
+        rec.put("order_id",       idgen._get_unique_id())
+        rec.put("order_type",     "SUBSCRIPTION")
+        rec.put("fk_user_id",     user_pkey)
+        rec.put("fk_package_id",  "")
+        rec.put("package_title",  "Langganan " + plan.get("label", plan_code) + " — " + cycle_label)
+        rec.put("tier",           plan_code)
+        rec.put("plan_code",      plan_code)
+        rec.put("cycle",          pricing["cycle"])
+        rec.put("months",         pricing["months"])
+        rec.put("amount",         pricing["final_price"])
+        rec.put("status",         "PENDING")
+        rec.put("payment_method", "MANUAL")
+        rec.put("payment_proof",  "")
+        rec.put("confirmed_by",   "")
+        rec.put("confirmed_at",   0)
+        rec.put("notes",          "")
+        order_pkey = rec._mongo_record.get("pkey", "")
+        rec.insert()
+
+        return {"status": "OK", "order_pkey": order_pkey, "amount": pricing["final_price"]}
+    except Exception:
+        print(traceback.format_exc())
+        return {"status": "ERROR", "message": "Gagal membuat order langganan"}
+    # end try
+# end def
+
+
 def create_order(user_pkey, package_pkey, tier):
     try:
         mgdDB = database.get_db_conn(config.mainDB)
@@ -79,11 +176,47 @@ def confirm_order(order_pkey, admin_pkey):
             }}
         )
 
+        if order.get("order_type") == "SUBSCRIPTION":
+            # langganan: akses seluruh ujian, berlaku sampai expire_at (ditumpuk jika sudah ada)
+            months      = int(order.get("months", 1) or 1)
+            existing    = mgdDB.db_toefl_access.find_one({
+                "fk_user_id": order.get("fk_user_id", ""),
+                "scope"     : "PLATFORM",
+                "status"    : "ACTIVE",
+            })
+            base        = max(now, (existing or {}).get("expire_at", 0) or 0)
+            expire_at   = base + months * 30 * 24 * 60 * 60 * 1000  # 1 bulan = 30 hari
+            if existing:
+                mgdDB.db_toefl_access.update_one(
+                    {"pkey": existing.get("pkey")},
+                    {"$set": {
+                        "tier"      : order.get("plan_code", order.get("tier", "BASIC")),
+                        "expire_at" : expire_at,
+                        "fk_order_id": order_pkey,
+                    }}
+                )
+            else:
+                rec = database.new(mgdDB, "db_toefl_access")
+                rec.put("access_id",     idgen._get_unique_id())
+                rec.put("fk_user_id",    order.get("fk_user_id", ""))
+                rec.put("fk_package_id", "")
+                rec.put("fk_order_id",   order_pkey)
+                rec.put("scope",         "PLATFORM")
+                rec.put("tier",          order.get("plan_code", order.get("tier", "BASIC")))
+                rec.put("status",        "ACTIVE")
+                rec.put("granted_at",    now)
+                rec.put("expire_at",     expire_at)
+                rec.insert()
+            # end if
+            return {"status": "OK"}
+        # end if
+
         rec = database.new(mgdDB, "db_toefl_access")
         rec.put("access_id",     idgen._get_unique_id())
         rec.put("fk_user_id",    order.get("fk_user_id", ""))
         rec.put("fk_package_id", order.get("fk_package_id", ""))
         rec.put("fk_order_id",   order_pkey)
+        rec.put("scope",         "PACKAGE")
         rec.put("tier",          order.get("tier", "BASIC"))
         rec.put("status",        "ACTIVE")
         rec.put("granted_at",    now)
@@ -154,8 +287,17 @@ def get_order_by_id(order_pkey):
 
 
 def check_user_access(user_pkey, package_pkey):
+    """Akses paket ujian: berlaku jika ada langganan platform aktif ATAU akses paket legacy."""
     try:
-        mgdDB  = database.get_db_conn(config.mainDB)
+        mgdDB = database.get_db_conn(config.mainDB)
+
+        # 1) langganan platform aktif → semua ujian terbuka
+        subscription = get_active_subscription(user_pkey).get("data")
+        if subscription:
+            return {"has_access": True, "tier": subscription.get("tier", "BASIC"), "scope": "PLATFORM"}
+        # end if
+
+        # 2) akses per paket (model lama) — tetap dihormati
         access = mgdDB.db_toefl_access.find_one({
             "fk_user_id"   : user_pkey,
             "fk_package_id": package_pkey,
@@ -164,7 +306,7 @@ def check_user_access(user_pkey, package_pkey):
         if not access:
             return {"has_access": False, "tier": None}
         # end if
-        return {"has_access": True, "tier": access.get("tier", "BASIC")}
+        return {"has_access": True, "tier": access.get("tier", "BASIC"), "scope": "PACKAGE"}
     except Exception:
         print(traceback.format_exc())
         return {"has_access": False, "tier": None}

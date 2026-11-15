@@ -1,0 +1,2668 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DeutschPrüfung – Goethe-Zertifikat A1 | Hören Teil 1</title>
+  <!-- Clean Inter font with system-ui fallback -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+  <style>
+    /* ==========================================================================
+       1. DESIGN TOKENS & BASE RESET
+       ========================================================================== */
+    :root {
+      --bg-page: #F6F8FB;
+      --bg-card: #FFFFFF;
+      --bg-subtle: #F8FAFC;
+      --bg-muted: #F1F5F9;
+
+      --border-default: #E2E8F0;
+      --border-strong: #CBD5E1;
+
+      --text-primary: #0F172A;
+      --text-secondary: #475569;
+      --text-muted: #64748B;
+
+      --brand-blue: #1D63DC;
+      --brand-blue-hover: #1752B8;
+      --brand-blue-tint: #EFF6FF;
+      --brand-blue-border: #BFDBFE;
+
+      --cta-navy: #0F1E36;
+      --cta-navy-hover: #1E293B;
+
+      --success-green: #16A34A;
+      --success-tint: #F0FDF4;
+      --success-pill: #DCFCE7;
+      --success-border: #86EFAC;
+
+      --error-red: #DC2626;
+      --error-tint: #FEF2F2;
+      --error-pill: #FEE2E2;
+      --error-border: #FCA5A5;
+
+      --radius-card: 12px;
+      --radius-md: 8px;
+      --radius-pill: 9999px;
+
+      --shadow-card: 0 1px 3px rgba(15, 23, 42, 0.04), 0 1px 2px rgba(15, 23, 42, 0.02);
+      --shadow-float: 0 10px 25px -5px rgba(15, 30, 54, 0.22), 0 4px 10px -2px rgba(15, 30, 54, 0.12);
+      --transition-fast: 160ms cubic-bezier(0.4, 0, 0.2, 1);
+      --transition-smooth: 240ms cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html {
+      scroll-behavior: smooth;
+      font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      color: var(--text-primary);
+      background-color: var(--bg-page);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    body {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      background-color: var(--bg-page);
+      line-height: 1.5;
+      overflow-x: hidden;
+    }
+
+    button {
+      font-family: inherit;
+      cursor: pointer;
+      border: none;
+      background: none;
+      color: inherit;
+    }
+
+    /* ==========================================================================
+       2. TOP NAVIGATION HEADER
+       ========================================================================== */
+    .top-header {
+      position: sticky;
+      top: 0;
+      z-index: 40;
+      background-color: var(--bg-card);
+      border-bottom: 1px solid var(--border-default);
+      box-shadow: 0 1px 2px rgba(15, 23, 42, 0.02);
+    }
+
+    .header-inner {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 20px;
+      height: 62px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      text-decoration: none;
+      color: var(--text-primary);
+    }
+
+    .brand-icon {
+      width: 34px;
+      height: 34px;
+      border-radius: 9px;
+      background: linear-gradient(135deg, var(--brand-blue) 0%, #1347A6 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #FFFFFF;
+      flex-shrink: 0;
+      box-shadow: 0 2px 6px rgba(29, 99, 220, 0.25);
+    }
+
+    .brand-title {
+      font-weight: 700;
+      font-size: 1.05rem;
+      letter-spacing: -0.02em;
+      color: var(--cta-navy);
+    }
+
+    .brand-title span {
+      color: var(--brand-blue);
+    }
+
+    .exam-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 5px 14px;
+      border-radius: var(--radius-pill);
+      background-color: var(--brand-blue-tint);
+      border: 1px solid var(--brand-blue-border);
+      color: var(--brand-blue);
+      font-weight: 600;
+      font-size: 0.84rem;
+      letter-spacing: -0.01em;
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .timer-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 6px 13px;
+      border-radius: var(--radius-pill);
+      background-color: var(--bg-subtle);
+      border: 1px solid var(--border-default);
+      font-size: 0.85rem;
+      font-weight: 600;
+      font-variant-numeric: tabular-nums;
+      color: var(--text-primary);
+      transition: var(--transition-fast);
+    }
+
+    .timer-pill:hover {
+      border-color: var(--border-strong);
+      background-color: var(--bg-muted);
+    }
+
+    .timer-pill.warning {
+      background-color: #FEF3C7;
+      border-color: #FCD34D;
+      color: #B45309;
+    }
+
+    .help-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 13px;
+      border-radius: var(--radius-pill);
+      background-color: var(--bg-card);
+      border: 1px solid var(--border-default);
+      color: var(--text-secondary);
+      font-size: 0.84rem;
+      font-weight: 500;
+      transition: var(--transition-fast);
+    }
+
+    .help-btn:hover {
+      background-color: var(--bg-subtle);
+      color: var(--text-primary);
+      border-color: var(--border-strong);
+    }
+
+    /* ==========================================================================
+       3. MODULE & PART NAVIGATION BAR
+       ========================================================================== */
+    .subnav-wrapper {
+      background-color: var(--bg-card);
+      border-bottom: 1px solid var(--border-default);
+    }
+
+    .subnav-inner {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 14px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .module-tabs {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .module-tab {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 14px;
+      border-radius: 10px;
+      border: 1px solid var(--border-default);
+      background-color: var(--bg-card);
+      text-align: left;
+      transition: var(--transition-fast);
+    }
+
+    .module-tab:hover {
+      border-color: var(--border-strong);
+      background-color: var(--bg-subtle);
+    }
+
+    .module-tab.active {
+      border-color: var(--brand-blue);
+      background-color: var(--brand-blue-tint);
+      box-shadow: 0 0 0 1px rgba(29, 99, 220, 0.12);
+    }
+
+    .module-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      background-color: var(--bg-muted);
+      color: var(--text-secondary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: var(--transition-fast);
+    }
+
+    .module-tab.active .module-icon {
+      background-color: var(--brand-blue);
+      color: #FFFFFF;
+    }
+
+    .module-meta {
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+    }
+
+    .module-name {
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      line-height: 1.25;
+    }
+
+    .module-tab.active .module-name {
+      color: var(--brand-blue);
+    }
+
+    .module-duration {
+      font-size: 0.74rem;
+      color: var(--text-muted);
+    }
+
+    .part-pills {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .part-pill {
+      padding: 6px 16px;
+      border-radius: var(--radius-pill);
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      background-color: var(--bg-muted);
+      border: 1px solid transparent;
+      transition: var(--transition-fast);
+    }
+
+    .part-pill:hover {
+      background-color: #E2E8F0;
+      color: var(--text-primary);
+    }
+
+    .part-pill.active {
+      background-color: var(--brand-blue);
+      color: #FFFFFF;
+      box-shadow: 0 2px 5px rgba(29, 99, 220, 0.25);
+    }
+
+    /* ==========================================================================
+       4. TWO-COLUMN MAIN WORKSPACE
+       ========================================================================== */
+    .workspace {
+      max-width: 1200px;
+      width: 100%;
+      margin: 24px auto 48px;
+      padding: 0 20px;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 300px;
+      gap: 24px;
+      align-items: start;
+      flex: 1;
+    }
+
+    .main-column {
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+      min-width: 0;
+    }
+
+    .card {
+      background-color: var(--bg-card);
+      border: 1px solid var(--border-default);
+      border-radius: var(--radius-card);
+      box-shadow: var(--shadow-card);
+    }
+
+    /* Instruction Card */
+    .instruction-card {
+      padding: 18px 20px;
+    }
+
+    .instruction-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 14px;
+    }
+
+    .instruction-title-group {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 8px;
+      flex-wrap: wrap;
+    }
+
+    .part-tag {
+      padding: 3px 10px;
+      border-radius: 6px;
+      background-color: var(--cta-navy);
+      color: #FFFFFF;
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.01em;
+    }
+
+    .instruction-title {
+      font-size: 1.02rem;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+
+    .instruction-text {
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+      line-height: 1.55;
+    }
+
+    .anleitung-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border-default);
+      background-color: var(--bg-subtle);
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--brand-blue);
+      white-space: nowrap;
+      flex-shrink: 0;
+      transition: var(--transition-fast);
+    }
+
+    .anleitung-btn:hover {
+      background-color: var(--brand-blue-tint);
+      border-color: var(--brand-blue-border);
+    }
+
+    .anleitung-btn svg {
+      transition: transform var(--transition-fast);
+    }
+
+    .anleitung-btn[aria-expanded="true"] svg {
+      transform: rotate(180deg);
+    }
+
+    .anleitung-drawer {
+      display: none;
+      margin-top: 14px;
+      padding-top: 14px;
+      border-top: 1px dashed var(--border-default);
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+    }
+
+    .anleitung-drawer.open {
+      display: block;
+      animation: fadeSlideDown 180ms ease-out;
+    }
+
+    .anleitung-list {
+      padding-left: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    /* ==========================================================================
+       5. QUESTION CARDS (AUFGABE 1 - 6)
+       ========================================================================== */
+    .question-card {
+      padding: 20px;
+      transition: border-color var(--transition-smooth), box-shadow var(--transition-smooth);
+      scroll-margin-top: 84px;
+    }
+
+    .question-card.highlight-pulse {
+      border-color: var(--brand-blue);
+      box-shadow: 0 0 0 3px rgba(29, 99, 220, 0.14);
+    }
+
+    .question-card.graded-correct {
+      border-color: var(--success-border);
+    }
+
+    .question-card.graded-incorrect {
+      border-color: var(--error-border);
+    }
+
+    .question-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+
+    .question-title-wrap {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .q-number-badge {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      background-color: var(--success-pill);
+      color: var(--success-green);
+      font-weight: 700;
+      font-size: 0.86rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: var(--transition-fast);
+    }
+
+    .question-card.answered .q-number-badge {
+      background-color: var(--brand-blue-tint);
+      color: var(--brand-blue);
+    }
+
+    .question-card.graded-correct .q-number-badge {
+      background-color: var(--success-green);
+      color: #FFFFFF;
+    }
+
+    .question-card.graded-incorrect .q-number-badge {
+      background-color: var(--error-red);
+      color: #FFFFFF;
+    }
+
+    .q-label-eyebrow {
+      display: block;
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 1px;
+    }
+
+    .q-title {
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+
+    .status-tag {
+      display: none;
+      align-items: center;
+      gap: 5px;
+      padding: 4px 10px;
+      border-radius: var(--radius-pill);
+      font-size: 0.78rem;
+      font-weight: 600;
+      flex-shrink: 0;
+    }
+
+    .question-card.graded-correct .status-tag.correct {
+      display: inline-flex;
+      background-color: var(--success-pill);
+      color: var(--success-green);
+    }
+
+    .question-card.graded-incorrect .status-tag.incorrect {
+      display: inline-flex;
+      background-color: var(--error-pill);
+      color: var(--error-red);
+    }
+
+    /* Custom Audio Player Bar */
+    .audio-bar {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 9px 14px;
+      border-radius: 10px;
+      background-color: var(--bg-subtle);
+      border: 1px solid var(--border-default);
+      margin-bottom: 10px;
+    }
+
+    .play-btn {
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      background-color: var(--brand-blue);
+      color: #FFFFFF;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: var(--transition-fast);
+      box-shadow: 0 2px 5px rgba(29, 99, 220, 0.25);
+    }
+
+    .play-btn:hover {
+      background-color: var(--brand-blue-hover);
+      transform: scale(1.04);
+    }
+
+    .play-btn.playing {
+      background-color: var(--cta-navy);
+    }
+
+    .audio-track-wrap {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+    }
+
+    .audio-progress-container {
+      flex: 1;
+      height: 20px;
+      display: flex;
+      align-items: center;
+      cursor: pointer;
+      position: relative;
+    }
+
+    .audio-track {
+      width: 100%;
+      height: 5px;
+      border-radius: var(--radius-pill);
+      background-color: #CBD5E1;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .audio-fill {
+      height: 100%;
+      width: 0%;
+      background-color: var(--brand-blue);
+      border-radius: var(--radius-pill);
+      transition: width 80ms linear;
+    }
+
+    .audio-time {
+      font-size: 0.78rem;
+      font-weight: 500;
+      font-variant-numeric: tabular-nums;
+      color: var(--text-secondary);
+      white-space: nowrap;
+    }
+
+    .speed-btn {
+      padding: 4px 8px;
+      border-radius: 6px;
+      border: 1px solid var(--border-default);
+      background-color: var(--bg-card);
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      transition: var(--transition-fast);
+      flex-shrink: 0;
+    }
+
+    .speed-btn:hover {
+      border-color: var(--brand-blue);
+      color: var(--brand-blue);
+    }
+
+    .speed-btn.slow {
+      background-color: var(--brand-blue-tint);
+      border-color: var(--brand-blue-border);
+      color: var(--brand-blue);
+    }
+
+    /* Transcript Accordion */
+    .transcript-row {
+      margin-bottom: 14px;
+    }
+
+    .transcript-toggle {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 11px;
+      border-radius: 7px;
+      border: 1px solid var(--border-default);
+      background-color: var(--bg-card);
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: var(--brand-blue);
+      transition: var(--transition-fast);
+    }
+
+    .transcript-toggle:hover {
+      background-color: var(--brand-blue-tint);
+      border-color: var(--brand-blue-border);
+    }
+
+    .transcript-toggle .chevron {
+      transition: transform var(--transition-fast);
+    }
+
+    .transcript-toggle[aria-expanded="true"] .chevron {
+      transform: rotate(180deg);
+    }
+
+    .transcript-box {
+      display: none;
+      margin-top: 8px;
+      padding: 12px 14px;
+      border-radius: 9px;
+      background-color: var(--bg-subtle);
+      border: 1px solid var(--border-default);
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+      line-height: 1.55;
+    }
+
+    .transcript-box.open {
+      display: block;
+      animation: fadeSlideDown 180ms ease-out;
+    }
+
+    .transcript-line + .transcript-line {
+      margin-top: 4px;
+    }
+
+    /* Exam Mode hides transcripts cleanly */
+    body.exam-mode .transcript-row {
+      display: none;
+    }
+
+    /* Visual Option Cards (A, B, C) */
+    .visual-options-box {
+      background-color: var(--bg-subtle);
+      border: 1px solid var(--border-default);
+      border-radius: 10px;
+      padding: 14px;
+      margin-bottom: 14px;
+    }
+
+    .visual-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .visual-card {
+      background-color: var(--bg-card);
+      border: 1.5px solid var(--border-default);
+      border-radius: 9px;
+      padding: 10px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      cursor: pointer;
+      position: relative;
+      transition: var(--transition-fast);
+    }
+
+    .visual-card:hover {
+      border-color: #94A3B8;
+      transform: translateY(-1px);
+      box-shadow: 0 3px 8px rgba(15, 23, 42, 0.05);
+    }
+
+    .visual-card.selected {
+      border-color: var(--brand-blue);
+      background-color: var(--brand-blue-tint);
+      box-shadow: 0 0 0 2px rgba(29, 99, 220, 0.14);
+    }
+
+    .visual-card.correct-choice {
+      border-color: var(--success-green);
+      background-color: var(--success-tint);
+      box-shadow: 0 0 0 2px rgba(22, 163, 74, 0.14);
+    }
+
+    .visual-card.wrong-choice {
+      border-color: var(--error-red);
+      background-color: var(--error-tint);
+      box-shadow: 0 0 0 2px rgba(220, 38, 38, 0.14);
+    }
+
+    .visual-letter {
+      align-self: flex-start;
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: var(--text-secondary);
+      background-color: var(--bg-muted);
+      width: 22px;
+      height: 22px;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 6px;
+      transition: var(--transition-fast);
+    }
+
+    .visual-card.selected .visual-letter {
+      background-color: var(--brand-blue);
+      color: #FFFFFF;
+    }
+
+    .visual-card.correct-choice .visual-letter {
+      background-color: var(--success-green);
+      color: #FFFFFF;
+    }
+
+    .visual-card.wrong-choice .visual-letter {
+      background-color: var(--error-red);
+      color: #FFFFFF;
+    }
+
+    .visual-svg-wrap {
+      width: 100%;
+      max-width: 150px;
+      aspect-ratio: 4 / 3;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .visual-svg-wrap svg {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    /* Radio Option Rows (a, b, c) */
+    .radio-options {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .radio-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 11px 14px;
+      border-radius: 9px;
+      border: 1.5px solid var(--border-default);
+      background-color: var(--bg-card);
+      cursor: pointer;
+      transition: var(--transition-fast);
+      min-height: 46px;
+    }
+
+    .radio-row:hover {
+      background-color: var(--bg-subtle);
+      border-color: var(--border-strong);
+    }
+
+    .radio-row.selected {
+      border-color: var(--brand-blue);
+      background-color: var(--brand-blue-tint);
+    }
+
+    .radio-row.correct-choice {
+      border-color: var(--success-green);
+      background-color: var(--success-tint);
+    }
+
+    .radio-row.wrong-choice {
+      border-color: var(--error-red);
+      background-color: var(--error-tint);
+    }
+
+    .radio-left {
+      display: flex;
+      align-items: center;
+      gap: 11px;
+    }
+
+    .radio-circle {
+      width: 19px;
+      height: 19px;
+      border-radius: 50%;
+      border: 2px solid #94A3B8;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      background-color: #FFFFFF;
+      transition: var(--transition-fast);
+    }
+
+    .radio-circle::after {
+      content: '';
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background-color: var(--brand-blue);
+      transform: scale(0);
+      transition: transform var(--transition-fast);
+    }
+
+    .radio-row.selected .radio-circle {
+      border-color: var(--brand-blue);
+    }
+
+    .radio-row.selected .radio-circle::after {
+      transform: scale(1);
+    }
+
+    .radio-row.correct-choice .radio-circle {
+      border-color: var(--success-green);
+    }
+
+    .radio-row.correct-choice .radio-circle::after {
+      background-color: var(--success-green);
+      transform: scale(1);
+    }
+
+    .radio-row.wrong-choice .radio-circle {
+      border-color: var(--error-red);
+    }
+
+    .radio-row.wrong-choice .radio-circle::after {
+      background-color: var(--error-red);
+      transform: scale(1);
+    }
+
+    .radio-key {
+      font-weight: 700;
+      font-size: 0.84rem;
+      color: var(--text-muted);
+      min-width: 18px;
+    }
+
+    .radio-row.selected .radio-key {
+      color: var(--brand-blue);
+    }
+
+    .radio-label {
+      font-size: 0.92rem;
+      font-weight: 500;
+      color: var(--text-primary);
+    }
+
+    .row-feedback-badge {
+      font-size: 0.76rem;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: var(--radius-pill);
+      display: none;
+    }
+
+    .radio-row.correct-choice .row-feedback-badge.correct {
+      display: inline-block;
+      background-color: var(--success-pill);
+      color: var(--success-green);
+    }
+
+    .radio-row.wrong-choice .row-feedback-badge.wrong {
+      display: inline-block;
+      background-color: var(--error-pill);
+      color: var(--error-red);
+    }
+
+    /* Explanation Box (Revealed after grading) */
+    .explanation-box {
+      display: none;
+      margin-top: 12px;
+      padding: 11px 14px;
+      border-radius: 8px;
+      background-color: #F8FAFC;
+      border-left: 3px solid var(--brand-blue);
+      font-size: 0.84rem;
+      color: var(--text-secondary);
+    }
+
+    .explanation-box.visible {
+      display: block;
+      animation: fadeSlideDown 200ms ease-out;
+    }
+
+    /* Sticky Floating Bottom CTA Pill Button */
+    .floating-cta-wrap {
+      position: sticky;
+      bottom: 18px;
+      z-index: 25;
+      margin-top: 6px;
+    }
+
+    .cta-pill-btn {
+      width: 100%;
+      padding: 15px 24px;
+      border-radius: var(--radius-pill);
+      background-color: var(--cta-navy);
+      color: #FFFFFF;
+      font-size: 0.95rem;
+      font-weight: 700;
+      letter-spacing: 0.01em;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 9px;
+      box-shadow: var(--shadow-float);
+      transition: background-color var(--transition-fast), transform var(--transition-fast);
+    }
+
+    .cta-pill-btn:hover {
+      background-color: var(--cta-navy-hover);
+      transform: translateY(-1px);
+    }
+
+    .cta-pill-btn:active {
+      transform: translateY(0);
+    }
+
+    /* ==========================================================================
+       6. RIGHT STICKY SIDEBAR
+       ========================================================================== */
+    .sidebar {
+      position: sticky;
+      top: 82px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .sidebar-card {
+      padding: 16px 18px;
+    }
+
+    .sidebar-heading {
+      font-size: 0.8rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      margin-bottom: 12px;
+    }
+
+    /* Score Summary Card */
+    .score-pills-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    .score-pill {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 8px 10px;
+      border-radius: 9px;
+      font-size: 0.82rem;
+      font-weight: 700;
+    }
+
+    .score-pill.green {
+      background-color: var(--success-pill);
+      color: var(--success-green);
+    }
+
+    .score-pill.red {
+      background-color: var(--error-pill);
+      color: var(--error-red);
+    }
+
+    .score-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background-color: currentColor;
+    }
+
+    .overall-score-box {
+      padding: 10px 12px;
+      border-radius: 9px;
+      background-color: var(--bg-subtle);
+      border: 1px solid var(--border-default);
+      text-align: center;
+    }
+
+    .overall-score-text {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 6px;
+    }
+
+    .score-meter {
+      width: 100%;
+      height: 6px;
+      border-radius: var(--radius-pill);
+      background-color: #E2E8F0;
+      overflow: hidden;
+    }
+
+    .score-meter-fill {
+      height: 100%;
+      width: 0%;
+      background-color: var(--success-green);
+      transition: width 350ms ease;
+    }
+
+    /* Controls Card */
+    .toggle-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding-bottom: 14px;
+      margin-bottom: 14px;
+      border-bottom: 1px solid var(--border-default);
+    }
+
+    .toggle-info {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .toggle-title {
+      font-size: 0.88rem;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .toggle-desc {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    .switch {
+      position: relative;
+      display: inline-block;
+      width: 42px;
+      height: 24px;
+      flex-shrink: 0;
+    }
+
+    .switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      inset: 0;
+      background-color: #CBD5E1;
+      border-radius: var(--radius-pill);
+      transition: var(--transition-fast);
+    }
+
+    .slider::before {
+      content: '';
+      position: absolute;
+      height: 18px;
+      width: 18px;
+      left: 3px;
+      bottom: 3px;
+      background-color: #FFFFFF;
+      border-radius: 50%;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+      transition: var(--transition-fast);
+    }
+
+    .switch input:checked + .slider {
+      background-color: var(--brand-blue);
+    }
+
+    .switch input:checked + .slider::before {
+      transform: translateX(18px);
+    }
+
+    .reset-btn {
+      width: 100%;
+      padding: 9px 14px;
+      border-radius: 9px;
+      border: 1px solid var(--border-default);
+      background-color: var(--bg-subtle);
+      font-size: 0.84rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      transition: var(--transition-fast);
+    }
+
+    .reset-btn:hover {
+      background-color: var(--bg-muted);
+      color: var(--text-primary);
+      border-color: var(--border-strong);
+    }
+
+    /* Question Navigator ("Fragenübersicht") */
+    .nav-group + .nav-group {
+      margin-top: 14px;
+      padding-top: 12px;
+      border-top: 1px solid var(--border-default);
+    }
+
+    .nav-group-label {
+      font-size: 0.76rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .nav-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 6px;
+    }
+
+    .nav-btn {
+      height: 34px;
+      border-radius: 8px;
+      border: 1.5px solid var(--border-default);
+      background-color: var(--bg-card);
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: var(--transition-fast);
+    }
+
+    .nav-btn:hover {
+      border-color: var(--brand-blue);
+      color: var(--brand-blue);
+    }
+
+    .nav-btn.active-focus {
+      border-color: var(--brand-blue);
+      box-shadow: 0 0 0 2px rgba(29, 99, 220, 0.16);
+      color: var(--brand-blue);
+    }
+
+    .nav-btn.answered {
+      background-color: var(--brand-blue);
+      border-color: var(--brand-blue);
+      color: #FFFFFF;
+    }
+
+    .nav-btn.graded-correct {
+      background-color: var(--success-green);
+      border-color: var(--success-green);
+      color: #FFFFFF;
+    }
+
+    .nav-btn.graded-incorrect {
+      background-color: var(--error-red);
+      border-color: var(--error-red);
+      color: #FFFFFF;
+    }
+
+    .nav-btn.inactive-part {
+      background-color: var(--bg-subtle);
+      color: #94A3B8;
+      border-color: #E2E8F0;
+    }
+
+    /* ==========================================================================
+       7. PLACEHOLDER VIEW FOR OTHER MODULES / PARTS & MODALS / TOASTS
+       ========================================================================== */
+    .context-placeholder {
+      padding: 36px 24px;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .placeholder-icon {
+      width: 52px;
+      height: 52px;
+      border-radius: 14px;
+      background-color: var(--brand-blue-tint);
+      color: var(--brand-blue);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .placeholder-btn {
+      margin-top: 6px;
+      padding: 10px 20px;
+      border-radius: var(--radius-pill);
+      background-color: var(--brand-blue);
+      color: #FFFFFF;
+      font-size: 0.88rem;
+      font-weight: 600;
+      transition: var(--transition-fast);
+    }
+
+    .placeholder-btn:hover {
+      background-color: var(--brand-blue-hover);
+    }
+
+    /* Toast Banner */
+    .toast {
+      position: fixed;
+      top: 76px;
+      left: 50%;
+      transform: translateX(-50%) translateY(-16px);
+      background-color: var(--cta-navy);
+      color: #FFFFFF;
+      padding: 10px 18px;
+      border-radius: var(--radius-pill);
+      font-size: 0.86rem;
+      font-weight: 600;
+      box-shadow: var(--shadow-float);
+      opacity: 0;
+      pointer-events: none;
+      z-index: 60;
+      transition: opacity 220ms ease, transform 220ms ease;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      max-width: calc(100vw - 32px);
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    /* Help Modal */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background-color: rgba(15, 23, 42, 0.45);
+      backdrop-filter: blur(2px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      z-index: 70;
+    }
+
+    .modal-backdrop.open {
+      display: flex;
+    }
+
+    .modal-card {
+      background-color: var(--bg-card);
+      border: 1px solid var(--border-default);
+      border-radius: 14px;
+      max-width: 480px;
+      width: 100%;
+      padding: 22px;
+      box-shadow: 0 20px 35px rgba(15, 23, 42, 0.2);
+      animation: fadeSlideDown 180ms ease-out;
+    }
+
+    .modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+
+    .modal-title {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+
+    .modal-close {
+      width: 30px;
+      height: 30px;
+      border-radius: 8px;
+      background-color: var(--bg-muted);
+      color: var(--text-secondary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .modal-body {
+      font-size: 0.88rem;
+      color: var(--text-secondary);
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    @keyframes fadeSlideDown {
+      from {
+        opacity: 0;
+        transform: translateY(-6px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    /* ==========================================================================
+       8. RESPONSIVE ADAPTATIONS (TABLET & MOBILE)
+       ========================================================================== */
+    @media (max-width: 960px) {
+      .workspace {
+        grid-template-columns: 1fr;
+      }
+
+      .sidebar {
+        position: static;
+        order: -1;
+      }
+
+      .sidebar-grid-mobile {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 14px;
+      }
+    }
+
+    @media (max-width: 680px) {
+      .header-inner {
+        padding: 0 14px;
+      }
+
+      .exam-badge {
+        display: none;
+      }
+
+      .module-tabs {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .workspace {
+        padding: 0 14px;
+        margin-top: 16px;
+      }
+
+      .visual-grid {
+        gap: 8px;
+      }
+
+      .visual-card {
+        padding: 8px 6px;
+      }
+
+      .question-card {
+        padding: 16px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ========================================================================
+       1. TOP NAVIGATION HEADER
+       ======================================================================== -->
+  <header class="top-header">
+    <div class="header-inner">
+      <a href="#top" class="brand" aria-label="DeutschPrüfung Startseite">
+        <div class="brand-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M22 10v6M2 10l10-5 10 5-10 5z"/>
+            <path d="M6 12v5c3 3 9 3 12 0v-5"/>
+          </svg>
+        </div>
+        <span class="brand-title">Deutsch<span>Prüfung</span></span>
+      </a>
+
+      <div class="exam-badge">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="8" r="6"/>
+          <path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11"/>
+        </svg>
+        <span>Goethe-Zertifikat A1</span>
+      </div>
+
+      <div class="header-actions">
+        <button type="button" id="timerPill" class="timer-pill" title="Klicken zum Pausieren / Fortsetzen">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"/>
+            <polyline points="12 6 12 12 16 14"/>
+          </svg>
+          <span id="timerDisplay">20:00</span>
+        </button>
+
+        <button type="button" id="helpBtn" class="help-btn" aria-label="Hilfe zur Prüfung">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"/>
+            <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
+            <line x1="12" y1="17" x2="12.01" y2="17"/>
+          </svg>
+          <span>Hilfe</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ========================================================================
+       2. MODULE & PART NAVIGATION BAR
+       ======================================================================== -->
+  <nav class="subnav-wrapper" aria-label="Prüfungsmodule und Teile">
+    <div class="subnav-inner">
+      <div class="module-tabs" role="tablist" aria-label="Prüfungsmodule">
+        <button type="button" class="module-tab active" data-module="Hören" role="tab" aria-selected="true">
+          <div class="module-icon">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 18v-6a9 9 0 0 1 18 0v6"/>
+              <path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"/>
+            </svg>
+          </div>
+          <div class="module-meta">
+            <span class="module-name">Hören</span>
+            <span class="module-duration">ca. 20 Min.</span>
+          </div>
+        </button>
+
+        <button type="button" class="module-tab" data-module="Lesen" role="tab" aria-selected="false">
+          <div class="module-icon">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/>
+              <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
+            </svg>
+          </div>
+          <div class="module-meta">
+            <span class="module-name">Lesen</span>
+            <span class="module-duration">ca. 25 Min.</span>
+          </div>
+        </button>
+
+        <button type="button" class="module-tab" data-module="Schreiben" role="tab" aria-selected="false">
+          <div class="module-icon">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 20h9"/>
+              <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
+            </svg>
+          </div>
+          <div class="module-meta">
+            <span class="module-name">Schreiben</span>
+            <span class="module-duration">ca. 20 Min.</span>
+          </div>
+        </button>
+
+        <button type="button" class="module-tab" data-module="Sprechen" role="tab" aria-selected="false">
+          <div class="module-icon">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+            </svg>
+          </div>
+          <div class="module-meta">
+            <span class="module-name">Sprechen</span>
+            <span class="module-duration">ca. 15 Min.</span>
+          </div>
+        </button>
+      </div>
+
+      <div class="part-pills" id="partPillsBar" role="tablist" aria-label="Prüfungsteile">
+        <button type="button" class="part-pill active" data-part="Teil 1" role="tab" aria-selected="true">Teil 1</button>
+        <button type="button" class="part-pill" data-part="Teil 2" role="tab" aria-selected="false">Teil 2</button>
+        <button type="button" class="part-pill" data-part="Teil 3" role="tab" aria-selected="false">Teil 3</button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ========================================================================
+       3. TWO-COLUMN MAIN WORKSPACE
+       ======================================================================== -->
+  <main class="workspace">
+    <!-- Left Column (~72% fluid) -->
+    <div class="main-column" id="mainColumn">
+      <!-- Instruction Card for Teil 1 -->
+      <section class="card instruction-card" id="instructionCard">
+        <div class="instruction-header">
+          <div>
+            <div class="instruction-title-group">
+              <span class="part-tag">Teil 1</span>
+              <h1 class="instruction-title">Kurze Alltagsgespräche verstehen</h1>
+            </div>
+            <p class="instruction-text">
+              Sie hören nun fünf kurze Texte. Sie hören jeden Text zweimal. Wählen Sie für die Aufgaben 1 bis 6 die richtige Lösung <strong>a</strong>, <strong>b</strong> oder <strong>c</strong>.
+            </p>
+          </div>
+
+          <button type="button" class="anleitung-btn" id="anleitungToggle" aria-expanded="false" aria-controls="anleitungDrawer">
+            <span>Anleitung</span>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="6 9 12 15 18 9"/>
+            </svg>
+          </button>
+        </div>
+
+        <div class="anleitung-drawer" id="anleitungDrawer">
+          <ul class="anleitung-list">
+            <li>Lesen Sie zuerst die Frage und schauen Sie sich die drei Bilder <strong>A</strong>, <strong>B</strong> und <strong>C</strong> genau an.</li>
+            <li>Klicken Sie auf den blauen Play-Button, um den Hörtext abzuspielen (Geschwindigkeit <strong>1x</strong> oder <strong>0.8x</strong> wählbar).</li>
+            <li>Wählen Sie die passende Antwort durch Klick auf das Bild oder die entsprechende Antwortzeile darunter.</li>
+            <li>Klicken Sie unten auf <strong>„Lösungen prüfen“</strong>, um Ihre Ergebnisse und Erklärungen anzuzeigen.</li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- Container for Question Cards 1–6 -->
+      <div id="questionsContainer" style="display: flex; flex-direction: column; gap: 18px;"></div>
+
+      <!-- Context Switch Placeholder (shown when switching to other modules/parts) -->
+      <section class="card context-placeholder" id="contextPlaceholder" style="display: none;"></section>
+
+      <!-- Sticky Floating Bottom Pill Button -->
+      <div class="floating-cta-wrap" id="floatingCtaWrap">
+        <button type="button" class="cta-pill-btn" id="checkAnswersBtn">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="20 6 9 17 4 12"/>
+          </svg>
+          <span>Lösungen prüfen</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Right Sticky Sidebar (300px) -->
+    <aside class="sidebar" aria-label="Auswertung und Fragenübersicht">
+      <div class="sidebar-grid-mobile">
+        <!-- Score Summary Card -->
+        <section class="card sidebar-card">
+          <h2 class="sidebar-heading">Auswertung</h2>
+          <div class="score-pills-row">
+            <div class="score-pill green">
+              <span class="score-dot"></span>
+              <span>Richtig: <strong id="correctCount">0</strong></span>
+            </div>
+            <div class="score-pill red">
+              <span class="score-dot"></span>
+              <span>Falsch: <strong id="wrongCount">0</strong></span>
+            </div>
+          </div>
+          <div class="overall-score-box">
+            <div class="overall-score-text" id="overallScoreText">0 / 6 Punkte</div>
+            <div class="score-meter">
+              <div class="score-meter-fill" id="scoreMeterFill"></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Controls Card -->
+        <section class="card sidebar-card">
+          <h2 class="sidebar-heading">Einstellungen</h2>
+          <div class="toggle-row">
+            <div class="toggle-info">
+              <span class="toggle-title">Prüfungsmodus</span>
+              <span class="toggle-desc">Verbirgt Transkripte &amp; Hinweise</span>
+            </div>
+            <label class="switch" aria-label="Prüfungsmodus umschalten">
+              <input type="checkbox" id="examModeToggle" />
+              <span class="slider"></span>
+            </label>
+          </div>
+          <button type="button" class="reset-btn" id="resetBtn">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+              <path d="M3 3v5h5"/>
+            </svg>
+            <span>Zurücksetzen</span>
+          </button>
+        </section>
+
+        <!-- Question Navigator ("Fragenübersicht") -->
+        <section class="card sidebar-card">
+          <h2 class="sidebar-heading">Fragenübersicht</h2>
+
+          <div class="nav-group">
+            <div class="nav-group-label">
+              <span>Teil 1</span>
+              <span id="teil1ProgressLabel">0 / 6</span>
+            </div>
+            <div class="nav-grid" id="navGridTeil1"></div>
+          </div>
+
+          <div class="nav-group">
+            <div class="nav-group-label">
+              <span>Teil 2</span>
+              <span>4 Aufgaben</span>
+            </div>
+            <div class="nav-grid">
+              <button type="button" class="nav-btn inactive-part" data-jump-part="Teil 2">7</button>
+              <button type="button" class="nav-btn inactive-part" data-jump-part="Teil 2">8</button>
+              <button type="button" class="nav-btn inactive-part" data-jump-part="Teil 2">9</button>
+              <button type="button" class="nav-btn inactive-part" data-jump-part="Teil 2">10</button>
+            </div>
+          </div>
+
+          <div class="nav-group">
+            <div class="nav-group-label">
+              <span>Teil 3</span>
+              <span>5 Aufgaben</span>
+            </div>
+            <div class="nav-grid">
+              <button type="button" class="nav-btn inactive-part" data-jump-part="Teil 3">11</button>
+              <button type="button" class="nav-btn inactive-part" data-jump-part="Teil 3">12</button>
+              <button type="button" class="nav-btn inactive-part" data-jump-part="Teil 3">13</button>
+              <button type="button" class="nav-btn inactive-part" data-jump-part="Teil 3">14</button>
+              <button type="button" class="nav-btn inactive-part" data-jump-part="Teil 3">15</button>
+            </div>
+          </div>
+        </section>
+      </div>
+    </aside>
+  </main>
+
+  <!-- Toast Notification -->
+  <div class="toast" id="toastBanner" role="status" aria-live="polite"></div>
+
+  <!-- Help Modal -->
+  <div class="modal-backdrop" id="helpModal" role="dialog" aria-modal="true" aria-labelledby="helpModalTitle">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 class="modal-title" id="helpModalTitle">Hinweise zu Goethe-Zertifikat A1 – Hören</h3>
+        <button type="button" class="modal-close" id="closeHelpModal" aria-label="Schließen">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"/>
+            <line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <p>In <strong>Hören Teil 1</strong> hören Sie kurze Alltagsgespräche. Zu jedem Text gibt es eine Frage mit drei Bild- und Textoptionen (<strong>a</strong>, <strong>b</strong> oder <strong>c</strong>).</p>
+        <p><strong>Funktionen dieser Übung:</strong></p>
+        <ul style="padding-left: 18px; display: flex; flex-direction: column; gap: 6px;">
+          <li><strong>Audio-Player:</strong> Klicken Sie auf den blauen Play-Button oder auf die Fortschrittsleiste, um eine Stelle erneut zu hören.</li>
+          <li><strong>Transkript:</strong> Lesen Sie bei Bedarf den Dialog mit (im <em>Prüfungsmodus</em> ausgeblendet).</li>
+          <li><strong>Fragenübersicht:</strong> Springen Sie rechts direkt zu jeder Aufgabe (1–6).</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    /* ==========================================================================
+       1. MINIMALIST BLACK & WHITE LINE-ART SVG ILLUSTRATIONS
+       ========================================================================== */
+    const SVG_ART = {
+      // Aufgabe 1: Was möchten die Freunde essen?
+      q1_a: `
+        <svg viewBox="0 0 160 120" fill="none" stroke="#1E293B" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <!-- Park ground & tree -->
+          <path d="M10 98 Q80 90 150 98" stroke="#64748B"/>
+          <path d="M32 95 V54" stroke-width="2.4"/>
+          <circle cx="32" cy="40" r="18" fill="#F1F5F9"/>
+          <circle cx="22" cy="46" r="11" fill="#F1F5F9"/>
+          <circle cx="43" cy="45" r="11" fill="#F1F5F9"/>
+          <!-- Picnic blanket -->
+          <polygon points="56,96 104,96 96,82 64,82" fill="#E2E8F0"/>
+          <line x1="74" y1="82" x2="70" y2="96" stroke="#64748B" stroke-width="1.2"/>
+          <line x1="86" y1="82" x2="90" y2="96" stroke="#64748B" stroke-width="1.2"/>
+          <!-- Kettle BBQ grill -->
+          <path d="M112 72 H140 A14 14 0 0 1 112 72 Z" fill="#CBD5E1"/>
+          <line x1="118" y1="84" x2="114" y2="96"/>
+          <line x1="134" y1="84" x2="138" y2="96"/>
+          <!-- Steam wisps -->
+          <path d="M121 65 Q118 59 122 53" stroke="#64748B" stroke-width="1.4"/>
+          <path d="M131 65 Q134 59 130 53" stroke="#64748B" stroke-width="1.4"/>
+          <!-- Sun -->
+          <circle cx="134" cy="24" r="7" fill="#F8FAFC"/>
+        </svg>`,
+      q1_b: `
+        <svg viewBox="0 0 160 120" fill="none" stroke="#1E293B" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <!-- Kitchen counter & wall cabinet -->
+          <rect x="24" y="16" width="52" height="24" rx="2" fill="#F1F5F9"/>
+          <line x1="50" y1="16" x2="50" y2="40"/>
+          <rect x="96" y="18" width="40" height="28" rx="2" fill="#F8FAFC"/>
+          <line x1="116" y1="18" x2="116" y2="46" stroke="#94A3B8"/>
+          <line x1="96" y1="32" x2="136" y2="32" stroke="#94A3B8"/>
+          <!-- Countertop & Stove -->
+          <rect x="20" y="66" width="120" height="36" rx="2" fill="#F1F5F9"/>
+          <rect x="34" y="74" width="38" height="22" rx="2" fill="#FFFFFF"/>
+          <!-- Cooking pot -->
+          <rect x="41" y="52" width="24" height="14" rx="2" fill="#E2E8F0"/>
+          <line x1="37" y1="56" x2="41" y2="56"/>
+          <line x1="65" y1="56" x2="69" y2="56"/>
+          <path d="M49 46 Q47 41 50 37" stroke="#64748B" stroke-width="1.4"/>
+          <path d="M57 46 Q59 41 56 37" stroke="#64748B" stroke-width="1.4"/>
+        </svg>`,
+      q1_c: `
+        <svg viewBox="0 0 160 120" fill="none" stroke="#1E293B" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <!-- Hanging restaurant lamp -->
+          <line x1="80" y1="8" x2="80" y2="22"/>
+          <path d="M66 32 A14 10 0 0 1 94 32 Z" fill="#E2E8F0"/>
+          <!-- Dining table with tablecloth -->
+          <path d="M32 68 H128 L122 98 H38 Z" fill="#F1F5F9"/>
+          <line x1="28" y1="68" x2="132" y2="68" stroke-width="2.2"/>
+          <!-- Wine glasses & candle -->
+          <path d="M54 52 H62 L60 60 H56 Z"/>
+          <line x1="58" y1="60" x2="58" y2="68"/>
+          <path d="M98 52 H106 L104 60 H100 Z"/>
+          <line x1="102" y1="60" x2="102" y2="68"/>
+          <!-- Center candle -->
+          <rect x="77" y="56" width="6" height="12" fill="#FFFFFF"/>
+          <path d="M80 48 Q83 52 80 55 Q77 52 80 48 Z" fill="#CBD5E1"/>
+        </svg>`,
+
+      // Aufgabe 2: Wann fährt der Zug? (Clocks 14:15, 15:15, 16:15)
+      q2_a: `
+        <svg viewBox="0 0 160 120" fill="none" stroke="#1E293B" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <!-- Station roof -->
+          <path d="M14 26 L80 14 L146 26" stroke-width="2.2"/>
+          <!-- Digital departure board -->
+          <rect x="26" y="34" width="64" height="28" rx="4" fill="#0F172A"/>
+          <text x="58" y="53" text-anchor="middle" fill="#FFFFFF" stroke="none" font-family="Inter, sans-serif" font-weight="700" font-size="14">14:15</text>
+          <!-- Analog station clock -->
+          <circle cx="118" cy="48" r="15" fill="#FFFFFF"/>
+          <line x1="118" y1="48" x2="128" y2="48" stroke-width="2"/>
+          <line x1="118" y1="48" x2="122" y2="55" stroke-width="2"/>
+          <!-- Train front -->
+          <rect x="34" y="70" width="92" height="32" rx="6" fill="#F1F5F9"/>
+          <rect x="44" y="76" width="32" height="12" rx="2" fill="#FFFFFF"/>
+          <rect x="84" y="76" width="32" height="12" rx="2" fill="#FFFFFF"/>
+          <circle cx="46" cy="95" r="2.5" fill="#1E293B"/>
+          <circle cx="114" cy="95" r="2.5" fill="#1E293B"/>
+        </svg>`,
+      q2_b: `
+        <svg viewBox="0 0 160 120" fill="none" stroke="#1E293B" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M14 26 L80 14 L146 26" stroke-width="2.2"/>
+          <rect x="26" y="34" width="64" height="28" rx="4" fill="#0F172A"/>
+          <text x="58" y="53" text-anchor="middle" fill="#FFFFFF" stroke="none" font-family="Inter, sans-serif" font-weight="700" font-size="14">15:15</text>
+          <circle cx="118" cy="48" r="15" fill="#FFFFFF"/>
+          <line x1="118" y1="48" x2="128" y2="48" stroke-width="2"/>
+          <line x1="118" y1="48" x2="126" y2="51" stroke-width="2"/>
+          <rect x="34" y="70" width="92" height="32" rx="6" fill="#F1F5F9"/>
+          <rect x="44" y="76" width="32" height="12" rx="2" fill="#FFFFFF"/>
+          <rect x="84" y="76" width="32" height="12" rx="2" fill="#FFFFFF"/>
+          <circle cx="46" cy="95" r="2.5" fill="#1E293B"/>
+          <circle cx="114" cy="95" r="2.5" fill="#1E293B"/>
+        </svg>`,
+      q2_c: `
+        <svg viewBox="0 0 160 120" fill="none" stroke="#1E293B" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M14 26 L80 14 L146 26" stroke-width="2.2"/>
+          <rect x="26" y="34" width="64" height="28" rx="4" fill="#0F172A"/>
+          <text x="58" y="53" text-anchor="middle" fill="#FFFFFF" stroke="none" font-family="Inter, sans-serif" font-weight="700" font-size="14">16:15</text>
+          <circle cx="118" cy="48" r="15" fill="#FFFFFF"/>
+          <line x1="118" y1="48" x2="128" y2="48" stroke-width="2"/>
+          <line x1="118" y1="48" x2="124" y2="56" stroke-width="2"/>
+          <rect x="34" y="70" width="92" height="32" rx="6" fill="#F1F5F9"/>
+          <rect x="44" y="76" width="32" height="12" rx="2" fill="#FFFFFF"/>
+          <rect x="84" y="76" width="32" height="12" rx="2" fill="#FFFFFF"/>
+          <circle cx="46" cy="95" r="2.5" fill="#1E293B"/>
+          <circle cx="114" cy="95" r="2.5" fill="#1E293B"/>
+        </svg>`,
+
+      // Aufgabe 3: Was trinkt der Gast? (Tee, Kaffee, Wasser)
+      q3_a: `
+        <svg viewBox="0 0 160 120" fill="none" stroke="#1E293B" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <!-- Steam -->
+          <path d="M68 34 Q64 26 69 19" stroke="#64748B" stroke-width="1.5"/>
+          <path d="M84 34 Q88 26 83 19" stroke="#64748B" stroke-width="1.5"/>
+          <!-- Teacup -->
+          <path d="M48 48 H104 V64 C104 79 92 88 76 88 C60 88 48 79 48 64 Z" fill="#F1F5F9"/>
+          <!-- Handle -->
+          <path d="M104 53 H111 A7 7 0 0 1 111 69 H104"/>
+          <!-- Tea bag tag -->
+          <path d="M64 48 V60" stroke-width="1.4"/>
+          <rect x="58" y="60" width="12" height="14" rx="1.5" fill="#FFFFFF"/>
+          <!-- Saucer -->
+          <path d="M36 90 H116 L110 96 H42 Z" fill="#E2E8F0"/>
+        </svg>`,
+      q3_b: `
+        <svg viewBox="0 0 160 120" fill="none" stroke="#1E293B" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <!-- Coffee aroma -->
+          <path d="M74 36 Q70 28 75 21" stroke="#64748B" stroke-width="1.5"/>
+          <path d="M86 36 Q90 28 85 21" stroke="#64748B" stroke-width="1.5"/>
+          <!-- Coffee cup -->
+          <path d="M52 48 H106 L101 82 C100 86 96 88 91 88 H67 C62 88 58 86 57 82 Z" fill="#F8FAFC"/>
+          <ellipse cx="79" cy="48" rx="27" ry="4" fill="#CBD5E1"/>
+          <path d="M105 55 H112 A6 6 0 0 1 112 69 H103"/>
+          <!-- Saucer -->
+          <path d="M40 90 H118 L112 96 H46 Z" fill="#E2E8F0"/>
+          <!-- Coffee beans -->
+          <ellipse cx="34" cy="88" rx="5" ry="3.5" transform="rotate(-25 34 88)" fill="#CBD5E1"/>
+          <ellipse cx="126" cy="88" rx="5" ry="3.5" transform="rotate(20 126 88)" fill="#CBD5E1"/>
+        </svg>`,
+      q3_c: `
+        <svg viewBox="0 0 160 120" fill="none" stroke="#1E293B" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <!-- Tall glass of water -->
+          <polygon points="56,26 104,26 98,96 62,96" fill="#F8FAFC"/>
+          <!-- Water fill -->
+          <polygon points="58,46 102,46 98,96 62,96" fill="#E2E8F0" stroke="none"/>
+          <path d="M58 46 Q69 43 80 46 Q91 49 102 46" stroke="#1E293B" stroke-width="1.6"/>
+          <polygon points="56,26 104,26 98,96 62,96"/>
+          <!-- Water bubbles -->
+          <circle cx="72" cy="64" r="2.2" fill="#FFFFFF"/>
+          <circle cx="86" cy="76" r="2.8" fill="#FFFFFF"/>
+          <circle cx="75" cy="83" r="1.8" fill="#FFFFFF"/>
+        </svg>`,
+
+      // Aufgabe 4: Wie viele Kinder hat Frau Weber? (2, 1, 3)
+      q4_a: `
+        <svg viewBox="0 0 160 120" fill="none" stroke="#1E293B" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <!-- Mother (Center) -->
+          <circle cx="80" cy="30" r="8" fill="#F1F5F9"/>
+          <path d="M68 74 L72 44 H88 L92 74 Z" fill="#E2E8F0"/>
+          <line x1="76" y1="74" x2="76" y2="98"/>
+          <line x1="84" y1="74" x2="84" y2="98"/>
+          <!-- Child 1 (Left) -->
+          <circle cx="48" cy="50" r="6.5" fill="#F1F5F9"/>
+          <rect x="41" y="60" width="14" height="22" rx="4" fill="#F8FAFC"/>
+          <line x1="45" y1="82" x2="45" y2="98"/>
+          <line x1="51" y1="82" x2="51" y2="98"/>
+          <!-- Child 2 (Right) -->
+          <circle cx="112" cy="52" r="6" fill="#F1F5F9"/>
+          <path d="M104 82 L107 62 H117 L120 82 Z" fill="#F8FAFC"/>
+          <line x1="109" y1="82" x2="109" y2="98"/>
+          <line x1="115" y1="82" x2="115" y2="98"/>
+        </svg>`,
+      q4_b: `
+        <svg viewBox="0 0 160 120" fill="none" stroke="#1E293B" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <!-- Mother -->
+          <circle cx="66" cy="30" r="8" fill="#F1F5F9"/>
+          <path d="M54 74 L58 44 H74 L78 74 Z" fill="#E2E8F0"/>
+          <line x1="62" y1="74" x2="62" y2="98"/>
+          <line x1="70" y1="74" x2="70" y2="98"/>
+          <!-- Only 1 Child -->
+          <circle cx="100" cy="51" r="6.5" fill="#F1F5F9"/>
+          <rect x="93" y="61" width="14" height="21" rx="4" fill="#F8FAFC"/>
+          <line x1="97" y1="82" x2="97" y2="98"/>
+          <line x1="103" y1="82" x2="103" y2="98"/>
+        </svg>`,
+      q4_c: `
+        <svg viewBox="0 0 160 120" fill="none" stroke="#1E293B" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <!-- Mother -->
+          <circle cx="80" cy="28" r="8" fill="#F1F5F9"/>
+          <path d="M69 72 L73 42 H87 L91 72 Z" fill="#E2E8F0"/>
+          <line x1="76" y1="72" x2="76" y2="98"/>
+          <line x1="84" y1="72" x2="84" y2="98"/>
+          <!-- Child 1 (Far Left) -->
+          <circle cx="34" cy="52" r="6" fill="#F1F5F9"/>
+          <rect x="28" y="61" width="12" height="21" rx="3" fill="#F8FAFC"/>
+          <line x1="31" y1="82" x2="31" y2="98"/>
+          <line x1="37" y1="82" x2="37" y2="98"/>
+          <!-- Child 2 (Middle-Left) -->
+          <circle cx="56" cy="56" r="5.5" fill="#F1F5F9"/>
+          <rect x="50" y="64" width="12" height="19" rx="3" fill="#F8FAFC"/>
+          <line x1="53" y1="83" x2="53" y2="98"/>
+          <line x1="59" y1="83" x2="59" y2="98"/>
+          <!-- Child 3 (Right) -->
+          <circle cx="114" cy="52" r="6" fill="#F1F5F9"/>
+          <path d="M107 82 L110 62 H118 L121 82 Z" fill="#F8FAFC"/>
+          <line x1="111" y1="82" x2="111" y2="98"/>
+          <line x1="117" y1="82" x2="117" y2="98"/>
+        </svg>`,
+
+      // Aufgabe 5: Wo treffen sich die Freunde? (Park, Café, Bahnhof)
+      q5_a: `
+        <svg viewBox="0 0 160 120" fill="none" stroke="#1E293B" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <!-- Park trees & bench -->
+          <line x1="34" y1="94" x2="34" y2="52" stroke-width="2.2"/>
+          <circle cx="34" cy="38" r="16" fill="#F1F5F9"/>
+          <line x1="126" y1="94" x2="126" y2="56" stroke-width="2.2"/>
+          <circle cx="126" cy="44" r="14" fill="#F1F5F9"/>
+          <!-- Park bench -->
+          <rect x="54" y="68" width="52" height="8" rx="1.5" fill="#E2E8F0"/>
+          <rect x="54" y="80" width="52" height="5" rx="1" fill="#CBD5E1"/>
+          <line x1="60" y1="85" x2="60" y2="96"/>
+          <line x1="100" y1="85" x2="100" y2="96"/>
+          <line x1="16" y1="96" x2="144" y2="96" stroke="#64748B"/>
+        </svg>`,
+      q5_b: `
+        <svg viewBox="0 0 160 120" fill="none" stroke="#1E293B" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <!-- Café facade -->
+          <rect x="28" y="24" width="104" height="72" rx="3" fill="#F8FAFC"/>
+          <!-- Sign -->
+          <rect x="54" y="16" width="52" height="14" rx="3" fill="#0F172A"/>
+          <text x="80" y="26" text-anchor="middle" fill="#FFFFFF" stroke="none" font-family="Inter, sans-serif" font-weight="700" font-size="9">CAFÉ</text>
+          <!-- Awning -->
+          <path d="M24 44 H136 L130 56 H30 Z" fill="#E2E8F0"/>
+          <!-- Door & Window -->
+          <rect x="42" y="62" width="24" height="34" fill="#FFFFFF"/>
+          <rect x="76" y="62" width="42" height="22" rx="2" fill="#FFFFFF"/>
+        </svg>`,
+      q5_c: `
+        <svg viewBox="0 0 160 120" fill="none" stroke="#1E293B" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <!-- Train Station Building -->
+          <polygon points="22,42 80,20 138,42" fill="#E2E8F0"/>
+          <rect x="28" y="42" width="104" height="54" fill="#F8FAFC"/>
+          <!-- Station Clock -->
+          <circle cx="80" cy="34" r="7" fill="#FFFFFF"/>
+          <line x1="80" y1="34" x2="80" y2="30" stroke-width="1.5"/>
+          <line x1="80" y1="34" x2="83" y2="34" stroke-width="1.5"/>
+          <!-- Sign -->
+          <rect x="48" y="48" width="64" height="13" rx="2" fill="#0F172A"/>
+          <text x="80" y="57.5" text-anchor="middle" fill="#FFFFFF" stroke="none" font-family="Inter, sans-serif" font-weight="700" font-size="8">BAHNHOF</text>
+          <!-- Arched Entrance -->
+          <path d="M66 96 V74 A14 14 0 0 1 94 74 V96 Z" fill="#FFFFFF"/>
+        </svg>`,
+
+      // Aufgabe 6: Welches Zimmer hat der Gast? (402, 204, 420)
+      q6_a: `
+        <svg viewBox="0 0 160 120" fill="none" stroke="#1E293B" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <!-- Corridor wall & door -->
+          <line x1="20" y1="102" x2="140" y2="102" stroke="#64748B"/>
+          <rect x="52" y="18" width="56" height="84" rx="2" fill="#F8FAFC"/>
+          <!-- Door plaque 402 -->
+          <rect x="64" y="30" width="32" height="16" rx="3" fill="#0F172A"/>
+          <text x="80" y="42" text-anchor="middle" fill="#FFFFFF" stroke="none" font-family="Inter, sans-serif" font-weight="700" font-size="11">402</text>
+          <!-- Door panel & handle -->
+          <rect x="62" y="54" width="36" height="38" rx="1.5" stroke="#94A3B8"/>
+          <circle cx="98" cy="64" r="2.5" fill="#1E293B"/>
+          <line x1="93" y1="64" x2="98" y2="64" stroke-width="2"/>
+        </svg>`,
+      q6_b: `
+        <svg viewBox="0 0 160 120" fill="none" stroke="#1E293B" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="20" y1="102" x2="140" y2="102" stroke="#64748B"/>
+          <rect x="52" y="18" width="56" height="84" rx="2" fill="#F8FAFC"/>
+          <rect x="64" y="30" width="32" height="16" rx="3" fill="#0F172A"/>
+          <text x="80" y="42" text-anchor="middle" fill="#FFFFFF" stroke="none" font-family="Inter, sans-serif" font-weight="700" font-size="11">204</text>
+          <rect x="62" y="54" width="36" height="38" rx="1.5" stroke="#94A3B8"/>
+          <circle cx="98" cy="64" r="2.5" fill="#1E293B"/>
+          <line x1="93" y1="64" x2="98" y2="64" stroke-width="2"/>
+        </svg>`,
+      q6_c: `
+        <svg viewBox="0 0 160 120" fill="none" stroke="#1E293B" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="20" y1="102" x2="140" y2="102" stroke="#64748B"/>
+          <rect x="52" y="18" width="56" height="84" rx="2" fill="#F8FAFC"/>
+          <rect x="64" y="30" width="32" height="16" rx="3" fill="#0F172A"/>
+          <text x="80" y="42" text-anchor="middle" fill="#FFFFFF" stroke="none" font-family="Inter, sans-serif" font-weight="700" font-size="11">420</text>
+          <rect x="62" y="54" width="36" height="38" rx="1.5" stroke="#94A3B8"/>
+          <circle cx="98" cy="64" r="2.5" fill="#1E293B"/>
+          <line x1="93" y1="64" x2="98" y2="64" stroke-width="2"/>
+        </svg>`
+    };
+
+    /* ==========================================================================
+       2. EXAM QUESTIONS DATA (GOETHE A1 HÖREN TEIL 1)
+       ========================================================================== */
+    const QUESTIONS = [
+      {
+        id: 1,
+        question: "Was möchten die Freunde essen?",
+        duration: 32,
+        transcript: [
+          { speaker: "Mann", text: "Sollen wir heute Abend ins Restaurant gehen?" },
+          { speaker: "Frau", text: "Ach nein, das Wetter ist so schön! Wollen wir nicht lieber im Park grillen?" },
+          { speaker: "Mann", text: "Super Idee! Ich kaufe Würstchen und Salat ein." }
+        ],
+        options: [
+          { key: "a", label: "Im Park", svg: SVG_ART.q1_a },
+          { key: "b", label: "Zu Hause", svg: SVG_ART.q1_b },
+          { key: "c", label: "Im Restaurant", svg: SVG_ART.q1_c }
+        ],
+        correct: "a",
+        explanation: "Richtig ist a) Im Park. Die Freunde möchten bei dem schönen Wetter lieber im Park grillen."
+      },
+      {
+        id: 2,
+        question: "Wann fährt der Zug?",
+        duration: 28,
+        transcript: [
+          { speaker: "Frau", text: "Entschuldigung, wann fährt der nächste Zug nach München?" },
+          { speaker: "Mann", text: "Moment mal... Der Zug um 14:15 Uhr ist schon weg. Der nächste fährt um 15:15 Uhr von Gleis 4." },
+          { speaker: "Frau", text: "Vielen Dank!" }
+        ],
+        options: [
+          { key: "a", label: "Um 14:15 Uhr", svg: SVG_ART.q2_a },
+          { key: "b", label: "Um 15:15 Uhr", svg: SVG_ART.q2_b },
+          { key: "c", label: "Um 16:15 Uhr", svg: SVG_ART.q2_c }
+        ],
+        correct: "b",
+        explanation: "Richtig ist b) Um 15:15 Uhr. Der Zug um 14:15 Uhr ist bereits abgefahren."
+      },
+      {
+        id: 3,
+        question: "Was trinkt der Gast?",
+        duration: 26,
+        transcript: [
+          { speaker: "Kellner", text: "Guten Tag! Was möchten Sie gerne trinken? Einen Kaffee oder einen Tee?" },
+          { speaker: "Gast", text: "Nein danke, ich möchte heute keinen Kaffee. Bringen Sie mir bitte ein Glas Wasser." },
+          { speaker: "Kellner", text: "Sehr gerne, kommt sofort." }
+        ],
+        options: [
+          { key: "a", label: "Tee", svg: SVG_ART.q3_a },
+          { key: "b", label: "Kaffee", svg: SVG_ART.q3_b },
+          { key: "c", label: "Wasser", svg: SVG_ART.q3_c }
+        ],
+        correct: "c",
+        explanation: "Richtig ist c) Wasser. Der Gast lehnt Kaffee und Tee ab und bestellt ein Glas Wasser."
+      },
+      {
+        id: 4,
+        question: "Wie viele Kinder hat Frau Weber?",
+        duration: 34,
+        transcript: [
+          { speaker: "Mann", text: "Hallo Frau Weber! Sind das Ihre Kinder auf dem Foto?" },
+          { speaker: "Frau Weber", text: "Ja, genau! Das sind meine zwei Söhne Lukas und Tim, und meine kleine Tochter Mia." },
+          { speaker: "Mann", text: "Wie schön! Drei Kinder – da ist zu Hause immer viel los." }
+        ],
+        options: [
+          { key: "a", label: "Zwei", svg: SVG_ART.q4_a },
+          { key: "b", label: "Eins", svg: SVG_ART.q4_b },
+          { key: "c", label: "Drei", svg: SVG_ART.q4_c }
+        ],
+        correct: "c",
+        explanation: "Richtig ist c) Drei. Frau Weber hat zwei Söhne (Lukas und Tim) und eine Tochter (Mia)."
+      },
+      {
+        id: 5,
+        question: "Wo treffen sich die Freunde?",
+        duration: 30,
+        transcript: [
+          { speaker: "Frau", text: "Hallo Jan, ich bin jetzt in der Stadt. Treffen wir uns vor dem Café?" },
+          { speaker: "Mann", text: "Es regnet leider ziemlich stark. Lass uns lieber direkt am Bahnhof treffen, da ist es trocken." },
+          { speaker: "Frau", text: "Okay, bis gleich am Bahnhof!" }
+        ],
+        options: [
+          { key: "a", label: "Im Stadtpark", svg: SVG_ART.q5_a },
+          { key: "b", label: "Vor dem Café", svg: SVG_ART.q5_b },
+          { key: "c", label: "Am Bahnhof", svg: SVG_ART.q5_c }
+        ],
+        correct: "c",
+        explanation: "Richtig ist c) Am Bahnhof. Wegen des Regens treffen sie sich direkt am Bahnhof."
+      },
+      {
+        id: 6,
+        question: "Welches Zimmer hat der Gast?",
+        duration: 35,
+        transcript: [
+          { speaker: "Rezeptionist", text: "Willkommen im Hotel Stern! Hier ist Ihr Zimmerschlüssel. Sie haben Zimmer 204 im zweiten Stock." },
+          { speaker: "Gast", text: "Entschuldigung, wie war die Nummer? 402?" },
+          { speaker: "Rezeptionist", text: "Nein, 204 – zwei-null-vier. Der Aufzug ist gleich links." }
+        ],
+        options: [
+          { key: "a", label: "Zimmer 402", svg: SVG_ART.q6_a },
+          { key: "b", label: "Zimmer 204", svg: SVG_ART.q6_b },
+          { key: "c", label: "Zimmer 420", svg: SVG_ART.q6_c }
+        ],
+        correct: "b",
+        explanation: "Richtig ist b) Zimmer 204. Der Rezeptionist bestätigt die Zimmernummer 204 im zweiten Stock."
+      }
+    ];
+
+    /* ==========================================================================
+       3. APPLICATION STATE
+       ========================================================================== */
+    const state = {
+      answers: {},          // { [questionId]: 'a' | 'b' | 'c' }
+      isGraded: false,
+      examMode: false,
+      activeModule: "Hören",
+      activePart: "Teil 1",
+      focusedQuestion: 1,
+      playingId: null,      // currently playing audio id
+      audioElapsed: {},     // { [questionId]: secondsFloat }
+      audioSpeed: {},       // { [questionId]: 1 | 0.8 }
+      timerSeconds: 20 * 60,
+      timerRunning: true
+    };
+
+    QUESTIONS.forEach(q => {
+      state.audioElapsed[q.id] = 0;
+      state.audioSpeed[q.id] = 1;
+    });
+
+    /* ==========================================================================
+       4. HELPER UTILITIES
+       ========================================================================== */
+    function formatTime(secFloat) {
+      const total = Math.max(0, Math.floor(secFloat));
+      const mins = Math.floor(total / 60);
+      const secs = total % 60;
+      return `${mins}:${secs < 10 ? "0" : ""}${secs}`;
+    }
+
+    function formatCountdown(secTotal) {
+      const mins = Math.floor(secTotal / 60);
+      const secs = secTotal % 60;
+      return `${mins < 10 ? "0" : ""}${mins}:${secs < 10 ? "0" : ""}${secs}`;
+    }
+
+    let toastTimeout = null;
+    function showToast(message) {
+      const toast = document.getElementById("toastBanner");
+      toast.textContent = message;
+      toast.classList.add("show");
+      clearTimeout(toastTimeout);
+      toastTimeout = setTimeout(() => {
+        toast.classList.remove("show");
+      }, 3200);
+    }
+
+    /* ==========================================================================
+       5. RENDER QUESTION CARDS & SIDEBAR NAVIGATOR
+       ========================================================================== */
+    function renderQuestions() {
+      const container = document.getElementById("questionsContainer");
+      container.innerHTML = "";
+
+      QUESTIONS.forEach(q => {
+        const selected = state.answers[q.id] || null;
+        const isCorrect = state.isGraded && selected === q.correct;
+        const isIncorrect = state.isGraded && selected !== q.correct;
+
+        const card = document.createElement("article");
+        card.className = "card question-card";
+        card.id = `question-${q.id}`;
+        if (selected) card.classList.add("answered");
+        if (isCorrect) card.classList.add("graded-correct");
+        if (isIncorrect) card.classList.add("graded-incorrect");
+
+        const elapsed = state.audioElapsed[q.id] || 0;
+        const pct = Math.min(100, (elapsed / q.duration) * 100);
+        const speed = state.audioSpeed[q.id] || 1;
+        const isPlaying = state.playingId === q.id;
+
+        card.innerHTML = `
+          <!-- Header -->
+          <div class="question-header">
+            <div class="question-title-wrap">
+              <div class="q-number-badge">${q.id}</div>
+              <div>
+                <span class="q-label-eyebrow">Aufgabe ${q.id}</span>
+                <h2 class="q-title">${q.question}</h2>
+              </div>
+            </div>
+            <span class="status-tag correct">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+              Richtig
+            </span>
+            <span class="status-tag incorrect">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              Falsch
+            </span>
+          </div>
+
+          <!-- Custom Audio Player Bar -->
+          <div class="audio-bar" data-audio-id="${q.id}">
+            <button type="button" class="play-btn ${isPlaying ? "playing" : ""}" data-action="toggle-audio" data-id="${q.id}" aria-label="${isPlaying ? "Pause" : "Abspielen"}">
+              ${isPlaying
+                ? `<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>`
+                : `<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="margin-left:2px;"><polygon points="5 3 19 12 5 21 5 3"/></svg>`
+              }
+            </button>
+
+            <div class="audio-track-wrap">
+              <div class="audio-progress-container" data-action="seek-audio" data-id="${q.id}" title="Klicken zum Spulen">
+                <div class="audio-track">
+                  <div class="audio-fill" id="audio-fill-${q.id}" style="width: ${pct}%;"></div>
+                </div>
+              </div>
+              <span class="audio-time" id="audio-time-${q.id}">${formatTime(elapsed)} / ${formatTime(q.duration)}</span>
+            </div>
+
+            <button type="button" class="speed-btn ${speed === 0.8 ? "slow" : ""}" data-action="toggle-speed" data-id="${q.id}" title="Abspielgeschwindigkeit ändern">
+              ${speed}x
+            </button>
+          </div>
+
+          <!-- Collapsible Transkript Accordion -->
+          <div class="transcript-row">
+            <button type="button" class="transcript-toggle" data-action="toggle-transcript" data-id="${q.id}" aria-expanded="false">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                <polyline points="14 2 14 8 20 8"/>
+                <line x1="16" y1="13" x2="8" y2="13"/>
+                <line x1="16" y1="17" x2="8" y2="17"/>
+              </svg>
+              <span>Transkript</span>
+              <svg class="chevron" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="6 9 12 15 18 9"/>
+              </svg>
+            </button>
+            <div class="transcript-box" id="transcript-${q.id}">
+              ${q.transcript.map(line => `
+                <div class="transcript-line"><strong>${line.speaker}:</strong> „${line.text}“</div>
+              `).join("")}
+            </div>
+          </div>
+
+          <!-- 3 Visual Option Cards (A, B, C) -->
+          <div class="visual-options-box">
+            <div class="visual-grid">
+              ${q.options.map(opt => {
+                const isOptSelected = selected === opt.key;
+                let extraClass = "";
+                if (state.isGraded) {
+                  if (opt.key === q.correct) extraClass = "correct-choice";
+                  else if (isOptSelected) extraClass = "wrong-choice";
+                } else if (isOptSelected) {
+                  extraClass = "selected";
+                }
+
+                return `
+                  <div class="visual-card ${extraClass}" data-action="select-option" data-id="${q.id}" data-key="${opt.key}" role="button" tabindex="0" aria-label="Bild ${opt.key.toUpperCase()}: ${opt.label}">
+                    <span class="visual-letter">${opt.key.toUpperCase()}</span>
+                    <div class="visual-svg-wrap">
+                      ${opt.svg}
+                    </div>
+                  </div>
+                `;
+              }).join("")}
+            </div>
+          </div>
+
+          <!-- 3 Full-Width Clickable Radio Option Rows -->
+          <div class="radio-options" role="radiogroup" aria-label="Antwortmöglichkeiten für Aufgabe ${q.id}">
+            ${q.options.map(opt => {
+              const isOptSelected = selected === opt.key;
+              let extraClass = "";
+              if (state.isGraded) {
+                if (opt.key === q.correct) extraClass = "correct-choice";
+                else if (isOptSelected) extraClass = "wrong-choice";
+              } else if (isOptSelected) {
+                extraClass = "selected";
+              }
+
+              return `
+                <div class="radio-row ${extraClass}" data-action="select-option" data-id="${q.id}" data-key="${opt.key}" role="radio" aria-checked="${isOptSelected}" tabindex="0">
+                  <div class="radio-left">
+                    <span class="radio-circle"></span>
+                    <span class="radio-key">${opt.key})</span>
+                    <span class="radio-label">${opt.label}</span>
+                  </div>
+                  <span class="row-feedback-badge correct">Richtige Lösung</span>
+                  <span class="row-feedback-badge wrong">Ihre Auswahl</span>
+                </div>
+              `;
+            }).join("")}
+          </div>
+
+          <!-- Explanation Box (Shown after evaluation) -->
+          <div class="explanation-box ${state.isGraded ? "visible" : ""}">
+            <strong>Erklärung:</strong> ${q.explanation}
+          </div>
+        `;
+
+        container.appendChild(card);
+      });
+    }
+
+    function renderSidebar() {
+      // Update Navigator buttons 1–6
+      const navGrid = document.getElementById("navGridTeil1");
+      navGrid.innerHTML = "";
+
+      let answeredCount = 0;
+      let correctCount = 0;
+      let wrongCount = 0;
+
+      QUESTIONS.forEach(q => {
+        const ans = state.answers[q.id];
+        if (ans) answeredCount++;
+
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "nav-btn";
+        btn.textContent = q.id;
+        btn.setAttribute("aria-label", `Zu Aufgabe ${q.id} springen`);
+
+        if (state.isGraded) {
+          if (ans === q.correct) {
+            btn.classList.add("graded-correct");
+            correctCount++;
+          } else {
+            btn.classList.add("graded-incorrect");
+            wrongCount++;
+          }
+        } else {
+          if (ans) btn.classList.add("answered");
+          if (state.focusedQuestion === q.id) btn.classList.add("active-focus");
+        }
+
+        btn.addEventListener("click", () => {
+          // Ensure we are viewing Hören -> Teil 1
+          if (state.activeModule !== "Hören" || state.activePart !== "Teil 1") {
+            switchContext("Hören", "Teil 1");
+          }
+          state.focusedQuestion = q.id;
+          renderSidebar();
+
+          const targetCard = document.getElementById(`question-${q.id}`);
+          if (targetCard) {
+            targetCard.scrollIntoView({ behavior: "smooth", block: "center" });
+            targetCard.classList.add("highlight-pulse");
+            setTimeout(() => targetCard.classList.remove("highlight-pulse"), 1100);
+          }
+        });
+
+        navGrid.appendChild(btn);
+      });
+
+      document.getElementById("teil1ProgressLabel").textContent = `${answeredCount} / 6`;
+      document.getElementById("correctCount").textContent = correctCount;
+      document.getElementById("wrongCount").textContent = wrongCount;
+      document.getElementById("overallScoreText").textContent = `${correctCount} / 6 Punkte`;
+      document.getElementById("scoreMeterFill").style.width = `${(correctCount / 6) * 100}%`;
+    }
+
+    /* ==========================================================================
+       6. SIMULATED AUDIO PLAYBACK ENGINE
+       ========================================================================== */
+    let lastFrameTime = performance.now();
+
+    function audioLoop(now) {
+      const dt = (now - lastFrameTime) / 1000;
+      lastFrameTime = now;
+
+      if (state.playingId !== null) {
+        const q = QUESTIONS.find(item => item.id === state.playingId);
+        if (q) {
+          const speed = state.audioSpeed[q.id] || 1;
+          state.audioElapsed[q.id] += dt * speed;
+
+          if (state.audioElapsed[q.id] >= q.duration) {
+            state.audioElapsed[q.id] = 0;
+            state.playingId = null;
+            renderQuestions();
+          } else {
+            const fillEl = document.getElementById(`audio-fill-${q.id}`);
+            const timeEl = document.getElementById(`audio-time-${q.id}`);
+            if (fillEl) {
+              fillEl.style.width = `${(state.audioElapsed[q.id] / q.duration) * 100}%`;
+            }
+            if (timeEl) {
+              timeEl.textContent = `${formatTime(state.audioElapsed[q.id])} / ${formatTime(q.duration)}`;
+            }
+          }
+        }
+      }
+
+      requestAnimationFrame(audioLoop);
+    }
+
+    requestAnimationFrame(audioLoop);
+
+    /* ==========================================================================
+       7. COUNTDOWN TIMER (20:00)
+       ========================================================================== */
+    setInterval(() => {
+      if (!state.timerRunning) return;
+      if (state.timerSeconds > 0) {
+        state.timerSeconds--;
+        const display = document.getElementById("timerDisplay");
+        const pill = document.getElementById("timerPill");
+        display.textContent = formatCountdown(state.timerSeconds);
+        if (state.timerSeconds <= 180) {
+          pill.classList.add("warning");
+        }
+      }
+    }, 1000);
+
+    document.getElementById("timerPill").addEventListener("click", () => {
+      state.timerRunning = !state.timerRunning;
+      showToast(state.timerRunning ? "Timer läuft weiter." : "Timer pausiert.");
+    });
+
+    /* ==========================================================================
+       8. INTERACTION HANDLERS (DELEGATED & DIRECT)
+       ========================================================================== */
+    document.getElementById("questionsContainer").addEventListener("click", (e) => {
+      const target = e.target.closest("[data-action]");
+      if (!target) return;
+
+      const action = target.dataset.action;
+      const qId = Number(target.dataset.id);
+
+      if (action === "toggle-audio") {
+        state.focusedQuestion = qId;
+        if (state.playingId === qId) {
+          state.playingId = null;
+        } else {
+          state.playingId = qId;
+        }
+        renderQuestions();
+        renderSidebar();
+      }
+
+      if (action === "seek-audio") {
+        const q = QUESTIONS.find(item => item.id === qId);
+        if (!q) return;
+        const rect = target.getBoundingClientRect();
+        const clickX = Math.max(0, Math.min(rect.width, e.clientX - rect.left));
+        const ratio = clickX / rect.width;
+        state.audioElapsed[qId] = ratio * q.duration;
+        state.focusedQuestion = qId;
+        renderQuestions();
+        renderSidebar();
+      }
+
+      if (action === "toggle-speed") {
+        state.audioSpeed[qId] = state.audioSpeed[qId] === 1 ? 0.8 : 1;
+        renderQuestions();
+      }
+
+      if (action === "toggle-transcript") {
+        if (state.examMode) {
+          showToast("Im Prüfungsmodus sind Transkripte deaktiviert.");
+          return;
+        }
+        const box = document.getElementById(`transcript-${qId}`);
+        const isOpen = box.classList.toggle("open");
+        target.setAttribute("aria-expanded", String(isOpen));
+      }
+
+      if (action === "select-option") {
+        const key = target.dataset.key;
+        state.answers[qId] = key;
+        state.focusedQuestion = qId;
+        // If user changes an answer after grading, re-evaluate smoothly or allow re-check
+        renderQuestions();
+        renderSidebar();
+      }
+    });
+
+    // Keyboard support (Enter/Space) for visual cards & radio rows
+    document.getElementById("questionsContainer").addEventListener("keydown", (e) => {
+      if (e.key === "Enter" || e.key === " ") {
+        const target = e.target.closest("[data-action='select-option']");
+        if (target) {
+          e.preventDefault();
+          target.click();
+        }
+      }
+    });
+
+    // Collapsible "Anleitung" toggle
+    document.getElementById("anleitungToggle").addEventListener("click", function () {
+      const drawer = document.getElementById("anleitungDrawer");
+      const isOpen = drawer.classList.toggle("open");
+      this.setAttribute("aria-expanded", String(isOpen));
+    });
+
+    // "Lösungen prüfen" CTA Button
+    document.getElementById("checkAnswersBtn").addEventListener("click", () => {
+      state.isGraded = true;
+      state.playingId = null;
+      renderQuestions();
+      renderSidebar();
+
+      let correct = 0;
+      QUESTIONS.forEach(q => {
+        if (state.answers[q.id] === q.correct) correct++;
+      });
+
+      showToast(`Auswertung abgeschlossen: ${correct} von 6 Punkten erreicht!`);
+    });
+
+    // "Prüfungsmodus" Toggle Switch
+    document.getElementById("examModeToggle").addEventListener("change", (e) => {
+      state.examMode = e.target.checked;
+      document.body.classList.toggle("exam-mode", state.examMode);
+
+      if (state.examMode) {
+        // Close all open transcripts immediately
+        document.querySelectorAll(".transcript-box.open").forEach(box => box.classList.remove("open"));
+        document.querySelectorAll(".transcript-toggle").forEach(btn => btn.setAttribute("aria-expanded", "false"));
+        showToast("Prüfungsmodus aktiviert: Transkripte sind verborgen.");
+      } else {
+        showToast("Übungsmodus aktiviert: Transkripte verfügbar.");
+      }
+    });
+
+    // "Zurücksetzen" Reset Button
+    document.getElementById("resetBtn").addEventListener("click", () => {
+      state.answers = {};
+      state.isGraded = false;
+      state.playingId = null;
+      state.focusedQuestion = 1;
+      state.timerSeconds = 20 * 60;
+      state.timerRunning = true;
+
+      QUESTIONS.forEach(q => {
+        state.audioElapsed[q.id] = 0;
+        state.audioSpeed[q.id] = 1;
+      });
+
+      const timerPill = document.getElementById("timerPill");
+      timerPill.classList.remove("warning");
+      document.getElementById("timerDisplay").textContent = "20:00";
+
+      switchContext("Hören", "Teil 1");
+      renderQuestions();
+      renderSidebar();
+      showToast("Alle Antworten und der Timer wurden zurückgesetzt.");
+    });
+
+    /* ==========================================================================
+       9. MODULE & PART NAVIGATION SWITCHING
+       ========================================================================== */
+    function switchContext(moduleName, partName) {
+      state.activeModule = moduleName;
+      state.activePart = partName;
+
+      // Update module tabs UI
+      document.querySelectorAll(".module-tab").forEach(tab => {
+        const active = tab.dataset.module === moduleName;
+        tab.classList.toggle("active", active);
+        tab.setAttribute("aria-selected", String(active));
+      });
+
+      // Update part pills UI
+      const partBar = document.getElementById("partPillsBar");
+      partBar.style.display = moduleName === "Hören" ? "flex" : "none";
+
+      document.querySelectorAll(".part-pill").forEach(pill => {
+        const active = pill.dataset.part === partName;
+        pill.classList.toggle("active", active);
+        pill.setAttribute("aria-selected", String(active));
+      });
+
+      const instructionCard = document.getElementById("instructionCard");
+      const questionsContainer = document.getElementById("questionsContainer");
+      const floatingCtaWrap = document.getElementById("floatingCtaWrap");
+      const placeholder = document.getElementById("contextPlaceholder");
+
+      if (moduleName === "Hören" && partName === "Teil 1") {
+        instructionCard.style.display = "block";
+        questionsContainer.style.display = "flex";
+        floatingCtaWrap.style.display = "block";
+        placeholder.style.display = "none";
+      } else {
+        instructionCard.style.display = "none";
+        questionsContainer.style.display = "none";
+        floatingCtaWrap.style.display = "none";
+        placeholder.style.display = "flex";
+
+        const title = moduleName === "Hören" ? `Hören – ${partName}` : `Prüfungsteil: ${moduleName}`;
+        const desc = moduleName === "Hören"
+          ? `Dieser Bereich zeigt die Vorschau für ${partName} (Aufgaben ${partName === "Teil 2" ? "7–10" : "11–15"}). Kehren Sie jederzeit zu Teil 1 zurück, um die interaktiven Hörübungen fortzusetzen.`
+          : `Sie befinden sich in der Vorschau für das Modul „${moduleName}“ des Goethe-Zertifikats A1. Wechseln Sie zurück zu „Hören – Teil 1“, um alle 6 Aufgaben interaktiv zu bearbeiten.`;
+
+        placeholder.innerHTML = `
+          <div class="placeholder-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"/>
+              <line x1="12" y1="16" x2="12" y2="12"/>
+              <line x1="12" y1="8" x2="12.01" y2="8"/>
+            </svg>
+          </div>
+          <h2 style="font-size: 1.1rem; font-weight: 700; color: var(--text-primary);">${title}</h2>
+          <p style="max-width: 480px; font-size: 0.9rem; color: var(--text-secondary);">${desc}</p>
+          <button type="button" class="placeholder-btn" id="returnToTeil1Btn">Zurück zu Hören – Teil 1</button>
+        `;
+
+        document.getElementById("returnToTeil1Btn").addEventListener("click", () => {
+          switchContext("Hören", "Teil 1");
+        });
+      }
+    }
+
+    document.querySelectorAll(".module-tab").forEach(tab => {
+      tab.addEventListener("click", () => {
+        switchContext(tab.dataset.module, "Teil 1");
+      });
+    });
+
+    document.querySelectorAll(".part-pill").forEach(pill => {
+      pill.addEventListener("click", () => {
+        switchContext("Hören", pill.dataset.part);
+      });
+    });
+
+    document.querySelectorAll("[data-jump-part]").forEach(btn => {
+      btn.addEventListener("click", () => {
+        switchContext("Hören", btn.dataset.jumpPart);
+      });
+    });
+
+    /* ==========================================================================
+       10. HELP MODAL HANDLERS
+       ========================================================================== */
+    const helpModal = document.getElementById("helpModal");
+    document.getElementById("helpBtn").addEventListener("click", () => {
+      helpModal.classList.add("open");
+    });
+    document.getElementById("closeHelpModal").addEventListener("click", () => {
+      helpModal.classList.remove("open");
+    });
+    helpModal.addEventListener("click", (e) => {
+      if (e.target === helpModal) helpModal.classList.remove("open");
+    });
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && helpModal.classList.contains("open")) {
+        helpModal.classList.remove("open");
+      }
+    });
+
+    /* ==========================================================================
+       11. INITIAL RENDER
+       ========================================================================== */
+    renderQuestions();
+    renderSidebar();
+  </script>
+</body>
+</html>

@@ -2,7 +2,7 @@
 
 {% block title %}Pembayaran{% endblock %}
 {% block page_title %}Pembayaran{% endblock %}
-{% block page_subtitle %}Terima atau tolak transfer manual dari peserta{% endblock %}
+{% block page_subtitle %}Terima atau tolak order langganan &amp; ujian dari siswa{% endblock %}
 
 {% block header_actions %}
 <div class="flex gap-2">
@@ -18,8 +18,9 @@
         <table class="adm-table">
             <thead>
                 <tr>
-                    <th>Paket</th>
-                    <th>Tier</th>
+                    <th>Item</th>
+                    <th>Jenis</th>
+                    <th>Durasi / Tier</th>
                     <th>Nominal</th>
                     <th>Tanggal</th>
                     <th>Status</th>
@@ -29,10 +30,22 @@
             <tbody>
                 {% for order in orders %}
                 <tr id="order-row-{{ order.pkey }}">
-                    <td class="font-medium max-w-[180px] truncate" style="color:var(--ink)">{{ order.package_title }}</td>
+                    <td class="font-medium max-w-[220px] truncate" style="color:var(--ink)">{{ order.package_title }}</td>
                     <td>
-                        {% if order.tier == 'PREMIUM' %}<span class="pill brand">{{ order.tier }}</span>
-                        {% else %}<span class="pill neutral">{{ order.tier }}</span>{% endif %}
+                        {% if order.order_type == 'SUBSCRIPTION' %}
+                        <span class="pill brand">Abo</span>
+                        {% else %}
+                        <span class="pill neutral">Ujian</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if order.order_type == 'SUBSCRIPTION' %}
+                        <span style="color:var(--muted)">{{ order.months or 1 }} bulan</span>
+                        {% elif order.tier == 'PREMIUM' %}
+                        <span class="pill brand">{{ order.tier }}</span>
+                        {% else %}
+                        <span class="pill neutral">{{ order.tier }}</span>
+                        {% endif %}
                     </td>
                     <td class="font-semibold">Rp {{ "{:,}".format(order.amount) }}</td>
                     <td style="color:var(--muted)">{{ order.rec_timestamp_str }}</td>
@@ -61,7 +74,7 @@
                     </td>
                 </tr>
                 {% else %}
-                <tr><td colspan="6" class="text-center py-14" style="color:var(--faint)">
+                <tr><td colspan="7" class="text-center py-14" style="color:var(--faint)">
                     Belum ada order — antrean masih kosong
                 </td></tr>
                 {% endfor %}
@@ -74,7 +87,7 @@
 {% block scripts %}
 <script>
 function confirmOrder(orderPkey) {
-    if (!confirm('Terima pembayaran order ini?')) return;
+    if (!confirm('Terima pembayaran order ini? Untuk order Abo, akses seluruh ujian akan langsung aktif sesuai durasi.')) return;
     fetch('/api/admin/order/' + orderPkey + '/confirm', {method: 'POST'})
         .then(r => r.json()).then(data => {
             if (data.status === 'OK') location.reload();
@@ -82,7 +95,7 @@ function confirmOrder(orderPkey) {
         });
 }
 function cancelOrder(orderPkey) {
-    if (!confirm('Tolak order ini? Peserta bisa memesan ulang kapan saja.')) return;
+    if (!confirm('Tolak order ini? Siswa bisa memesan ulang kapan saja.')) return;
     fetch('/api/admin/order/' + orderPkey + '/cancel', {method: 'POST'})
         .then(r => r.json()).then(data => {
             if (data.status === 'OK') location.reload();

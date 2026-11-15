@@ -6,9 +6,68 @@ sys.path.append("slapz102_stdlib")
 sys.path.append("slapz102_storage")
 
 import traceback
+import time
 
 import database
 import config
+
+
+def get_students_with_context():
+    """Daftar siswa (role=peserta) + status Abo + jumlah ujian — untuk halaman admin siswa."""
+    try:
+        mgdDB = database.get_db_conn(config.mainDB)
+        now   = int(time.time() * 1000)
+
+        users = list(
+            mgdDB.db_toefl_user.find({"is_deleted": False, "role": "peserta"}, {"password": 0})
+            .sort("rec_timestamp", -1)
+        )
+
+        # langganan platform aktif → map per user
+        plans  = {p.get("code"): p for p in mgdDB.db_subscription_plan.find({"is_deleted": False})}
+        abo_by_user = {}
+        for acc in mgdDB.db_toefl_access.find({"scope": "PLATFORM", "status": "ACTIVE"}):
+            expire_at = acc.get("expire_at", 0) or 0
+            if expire_at and expire_at <= now:
+                continue
+            # end if
+            plan = plans.get(acc.get("tier", ""), {})
+            abo_by_user[acc.get("fk_user_id", "")] = {
+                "label"     : plan.get("label", acc.get("tier", "")),
+                "expire_at" : expire_at,
+                "expire_str": time.strftime("%d %b %Y", time.gmtime(expire_at / 1000.0)) if expire_at else "",
+            }
+        # end for
+
+        # jumlah ujian per user
+        exam_counts = {}
+        for row in mgdDB.db_toefl_result.aggregate([
+            {"$group": {"_id": "$fk_user_id", "n": {"$sum": 1}}}
+        ]):
+            exam_counts[row["_id"]] = row["n"]
+        # end for
+
+        free_label = (plans.get("FREE") or {}).get("label", "Free")
+        for u in users:
+            abo = abo_by_user.get(u.get("pkey", ""))
+            if abo:
+                u["abo_label"]     = abo["label"]
+                u["abo_active"]    = True
+                u["abo_expire_str"] = abo["expire_str"]
+            else:
+                u["abo_label"]     = free_label
+                u["abo_active"]    = False
+                u["abo_expire_str"] = ""
+            # end if
+            u["exam_count"] = exam_counts.get(u.get("pkey", ""), 0)
+        # end for
+
+        return {"status": "OK", "data": users}
+    except Exception:
+        print(traceback.format_exc())
+        return {"status": "ERROR", "data": []}
+    # end try
+# end def
 
 
 def get_admin_stats():

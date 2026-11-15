@@ -71,7 +71,7 @@ def get_site_data():
         "faqs": [
             {
                 "q": "Apa perbedaan paket Basic dan Premium?",
-                "a": "Basic memberikan akses ujian penuh dan estimasi skor. Premium menambahkan feedback analisis AI, rekomendasi belajar personal, dan pembahasan lengkap setiap nomor soal.",
+                "a": "Semua paket berbayar membuka seluruh simulasi ujian. Yang berbeda adalah jumlah Kredit AI untuk feedback analisis: Basic 150 kredit/bulan, Pro 400, Premium 900 — plus rekomendasi belajar personal dan pembahasan lengkap.",
             },
             {
                 "q": "Bagaimana AI memberikan feedback setelah tes?",
@@ -79,7 +79,7 @@ def get_site_data():
             },
             {
                 "q": "Bagaimana cara pembayaran?",
-                "a": "Saat ini tersedia pembayaran manual via transfer bank. Setelah konfirmasi admin, akses langsung aktif.",
+                "a": "Pilih paket dan durasi (bulanan, 3 bulan, atau tahunan), lalu bayar via transfer bank/e-wallet. Setelah konfirmasi admin (maks. 1×24 jam), seluruh ujian langsung terbuka.",
             },
             {
                 "q": "Apakah soal bisa diacak?",
@@ -87,7 +87,7 @@ def get_site_data():
             },
             {
                 "q": "Berapa lama akses berlaku?",
-                "a": "Akses ke paket ujian yang telah dikonfirmasi berlaku tanpa batas waktu.",
+                "a": "Akses mengikuti durasi langgananmu — 1, 3, atau 12 bulan. Berlangganan lagi masa aktif akan ditumpuk (tidak hangus).",
             },
         ],
     }

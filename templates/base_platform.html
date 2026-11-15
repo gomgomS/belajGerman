@@ -82,9 +82,10 @@
 
                 <!-- Nav Links -->
                 <div class="hidden md:flex items-center gap-7">
-                    <a href="/catalog" class="font-medium text-sm transition" style="color:var(--muted)">Katalog Ujian</a>
+                    <a href="/student" class="font-medium text-sm transition" style="color:var(--muted)">Übersicht</a>
                     {% if session.get('session_id') %}
-                    <a href="/peserta/riwayat" class="font-medium text-sm transition" style="color:var(--muted)">Riwayat Ujian</a>
+                    <a href="/student/verlauf" class="font-medium text-sm transition" style="color:var(--muted)">Verlauf</a>
+                    <a href="/student/preise" class="font-medium text-sm transition" style="color:var(--muted)">Preise</a>
                     <div class="flex items-center gap-3">
                         <span class="text-sm" style="color:var(--muted)">{{ session.get('full_name', '') }}</span>
                         <a href="/logout"
@@ -113,9 +114,10 @@
 
             <!-- Mobile menu -->
             <div id="mobile-menu" class="hidden md:hidden pb-4 pt-3" style="border-top:1px solid var(--line-soft)">
-                <a href="/catalog" class="block py-2 font-medium text-sm" style="color:var(--muted)">Katalog Ujian</a>
+                <a href="/student" class="block py-2 font-medium text-sm" style="color:var(--muted)">Übersicht (Dasbor)</a>
                 {% if session.get('session_id') %}
-                <a href="/peserta/riwayat" class="block py-2 font-medium text-sm" style="color:var(--muted)">Riwayat Ujian</a>
+                <a href="/student/verlauf" class="block py-2 font-medium text-sm" style="color:var(--muted)">Verlauf (Riwayat)</a>
+                <a href="/student/preise" class="block py-2 font-medium text-sm" style="color:var(--muted)">Preise (Harga)</a>
                 <a href="/logout" class="block py-2 font-medium text-sm" style="color:var(--danger)">Keluar</a>
                 {% else %}
                 <a href="/login" class="block py-2 font-medium text-sm" style="color:var(--muted)">Masuk</a>

@@ -62,3 +62,25 @@ def html_passage_preview(passage, questions, user, gaps=None):
                            passage=passage, questions=questions, user=user,
                            gaps=gaps or [])
 # end def
+
+
+def html_passage_sprechen_preview(passage, user):
+    """Pratinjau passage Sprechen memakai halaman siswa dengan perekam suara."""
+    item = {
+        "title"        : passage.get("title", ""),
+        "instruction"  : passage.get("instruction", ""),
+        "question_text": passage.get("content_text", ""),
+        "image"        : passage.get("image_url", ""),
+        "sample_answer": passage.get("sample_answer", ""),
+        "prep_seconds" : passage.get("prep_seconds", 0) or 0,
+        "speak_seconds": passage.get("speak_seconds", 0) or 0,
+    }
+    return render_template(
+        "admin/dump_preview_sprechen.html",
+        item       = item,
+        heading    = passage.get("title", "Sprechen"),
+        back_url   = "/expert/question-bank/" + passage.get("pkey", ""),
+        back_label = "Kembali ke editor",
+        user       = user,
+    )
+# end def

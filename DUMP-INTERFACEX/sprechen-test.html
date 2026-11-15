@@ -1,0 +1,3533 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Deutsch Prüfung — Goethe A1 · Sprechen · Teil 3</title>
+  <style>
+    /* ==========================================================================
+       1. DESIGN TOKENS & THEME VARIABLES (LIGHT & DARK MODE)
+       ========================================================================== */
+    :root {
+      --bg-page: #f5f7fb;
+      --bg-surface: #ffffff;
+      --bg-subtle: #f8fafc;
+      --bg-muted: #f1f5f9;
+      --bg-cream: #f9f5eb;
+
+      --border-default: #e2e8f0;
+      --border-strong: #cbd5e1;
+
+      --text-primary: #0f172a;
+      --text-secondary: #475569;
+      --text-muted: #64748b;
+
+      --brand-blue: #1d63dc;
+      --brand-blue-hover: #1752b8;
+      --brand-blue-tint: #eff6ff;
+      --brand-blue-border: #bfdbfe;
+
+      --navy-dark: #0f1e36;
+      --navy-hover: #1e293b;
+
+      --purple-primary: #6d28d9;
+      --purple-gradient: linear-gradient(135deg, #6d28d9 0%, #7c3aed 55%, #4f46e5 100%);
+      --purple-gradient-hover: linear-gradient(135deg, #5b21b6 0%, #6d28d9 55%, #4338ca 100%);
+      --purple-tint: #f5f3ff;
+      --purple-border: #ddd6fe;
+
+      --green-primary: #16a34a;
+      --green-bg: #f0fdf4;
+      --green-pill: #dcfce7;
+      --green-border: #bbf7d0;
+
+      --red-primary: #dc2626;
+      --red-bg: #fef2f2;
+      --red-pill: #fee2e2;
+      --red-border: #fecaca;
+
+      --orange-accent: #d97706;
+
+      --radius-lg: 14px;
+      --radius-md: 10px;
+      --radius-sm: 8px;
+      --radius-pill: 9999px;
+
+      --shadow-xs: 0 1px 2px rgba(15, 23, 42, 0.04);
+      --shadow-sm: 0 2px 6px rgba(15, 23, 42, 0.05), 0 1px 2px rgba(15, 23, 42, 0.03);
+      --shadow-md: 0 8px 24px -4px rgba(15, 23, 42, 0.08);
+      --shadow-modal: 0 24px 48px -12px rgba(15, 23, 42, 0.25);
+
+      --transition: 170ms cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    body.dark-theme {
+      --bg-page: #0b1120;
+      --bg-surface: #111827;
+      --bg-subtle: #1e293b;
+      --bg-muted: #1f2937;
+      --bg-cream: #27241d;
+
+      --border-default: #263244;
+      --border-strong: #374151;
+
+      --text-primary: #f1f5f9;
+      --text-secondary: #cbd5e1;
+      --text-muted: #94a3b8;
+
+      --brand-blue: #3b82f6;
+      --brand-blue-hover: #2563eb;
+      --brand-blue-tint: rgba(59, 130, 246, 0.14);
+      --brand-blue-border: rgba(59, 130, 246, 0.35);
+
+      --navy-dark: #1e293b;
+      --navy-hover: #334155;
+
+      --purple-tint: rgba(124, 58, 237, 0.16);
+      --purple-border: rgba(139, 92, 246, 0.35);
+
+      --green-bg: rgba(22, 163, 74, 0.14);
+      --green-pill: rgba(22, 163, 74, 0.22);
+      --green-border: rgba(34, 197, 94, 0.35);
+
+      --red-bg: rgba(220, 38, 38, 0.14);
+      --red-pill: rgba(220, 38, 38, 0.22);
+      --red-border: rgba(248, 113, 113, 0.35);
+
+      --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.25);
+      --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.3);
+      --shadow-md: 0 10px 26px rgba(0, 0, 0, 0.4);
+    }
+
+    /* ==========================================================================
+       2. GLOBAL RESET & BASE TYPOGRAPHY
+       ========================================================================== */
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html {
+      scroll-behavior: smooth;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+      font-size: 16px;
+      color: var(--text-primary);
+      background-color: var(--bg-page);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    body {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      background-color: var(--bg-page);
+      color: var(--text-primary);
+      line-height: 1.5;
+      overflow-x: hidden;
+      transition: background-color var(--transition), color var(--transition);
+    }
+
+    button, input, textarea, select {
+      font-family: inherit;
+      color: inherit;
+    }
+
+    button {
+      cursor: pointer;
+      border: none;
+      background: none;
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    .container {
+      max-width: 1240px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 0 20px;
+    }
+
+    /* ==========================================================================
+       3. TOP HEADER & MODULE NAVIGATION
+       ========================================================================== */
+    .top-bar {
+      position: sticky;
+      top: 0;
+      z-index: 45;
+      background-color: var(--bg-surface);
+      border-bottom: 1px solid var(--border-default);
+      box-shadow: var(--shadow-xs);
+    }
+
+    .top-bar-inner {
+      height: 58px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    /* Brand Logo with Black-Red-Gold German Book Emblem */
+    .brand-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 700;
+      font-size: 1rem;
+      letter-spacing: -0.02em;
+      color: var(--text-primary);
+      flex-shrink: 0;
+    }
+
+    .brand-emblem {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      background: var(--bg-subtle);
+      border: 1px solid var(--border-default);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: var(--shadow-xs);
+    }
+
+    /* Center Active Context Pill */
+    .context-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 15px;
+      border-radius: var(--radius-pill);
+      background-color: var(--brand-blue-tint);
+      border: 1px solid var(--brand-blue-border);
+      color: var(--brand-blue);
+      font-size: 0.82rem;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+
+    /* Right Utility Controls */
+    .top-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .util-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border-default);
+      background-color: var(--bg-surface);
+      font-size: 0.8rem;
+      font-weight: 500;
+      color: var(--text-secondary);
+      transition: var(--transition);
+      white-space: nowrap;
+    }
+
+    .util-btn:hover {
+      background-color: var(--bg-subtle);
+      border-color: var(--border-strong);
+      color: var(--text-primary);
+    }
+
+    .util-btn.exit-btn:hover {
+      border-color: var(--red-border);
+      background-color: var(--red-bg);
+      color: var(--red-primary);
+    }
+
+    .theme-toggle-btn {
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      border: 1px solid var(--border-default);
+      background-color: var(--bg-subtle);
+      color: var(--text-secondary);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transition: var(--transition);
+      flex-shrink: 0;
+    }
+
+    .theme-toggle-btn:hover {
+      border-color: var(--brand-blue);
+      color: var(--brand-blue);
+    }
+
+    .lang-dropdown-wrap {
+      position: relative;
+    }
+
+    .lang-menu {
+      position: absolute;
+      right: 0;
+      top: calc(100% + 6px);
+      background: var(--bg-surface);
+      border: 1px solid var(--border-default);
+      border-radius: var(--radius-sm);
+      box-shadow: var(--shadow-md);
+      padding: 4px;
+      min-width: 120px;
+      display: none;
+      z-index: 55;
+    }
+
+    .lang-menu.open {
+      display: block;
+    }
+
+    .lang-option {
+      width: 100%;
+      text-align: left;
+      padding: 6px 10px;
+      border-radius: 6px;
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .lang-option:hover, .lang-option.active {
+      background-color: var(--brand-blue-tint);
+      color: var(--brand-blue);
+      font-weight: 600;
+    }
+
+    /* Module Switcher Row */
+    .module-nav-section {
+      background-color: var(--bg-surface);
+      border-bottom: 1px solid var(--border-default);
+      padding: 12px 0;
+    }
+
+    .module-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .module-cards {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(145px, 1fr));
+      gap: 10px;
+      flex: 1;
+    }
+
+    .module-card {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 12px;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border-default);
+      background-color: var(--bg-surface);
+      text-align: left;
+      transition: var(--transition);
+    }
+
+    .module-card:hover {
+      border-color: var(--border-strong);
+      background-color: var(--bg-subtle);
+    }
+
+    .module-card.active {
+      border: 1.5px solid var(--brand-blue);
+      background-color: var(--brand-blue-tint);
+      box-shadow: 0 0 0 2px rgba(29, 99, 220, 0.08);
+    }
+
+    .module-avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background-color: var(--bg-muted);
+      border: 1px solid var(--border-default);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .module-card.active .module-avatar {
+      background-color: #dbeafe;
+      border-color: var(--brand-blue-border);
+    }
+
+    .module-info {
+      display: flex;
+      flex-direction: column;
+      line-height: 1.2;
+    }
+
+    .module-title {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .module-card.active .module-title {
+      color: var(--brand-blue);
+    }
+
+    .module-sub {
+      font-size: 0.68rem;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    .exam-level-wrap {
+      position: relative;
+    }
+
+    .exam-level-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 14px;
+      border-radius: var(--radius-pill);
+      border: 1px solid var(--border-default);
+      background-color: var(--bg-surface);
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      box-shadow: var(--shadow-xs);
+      transition: var(--transition);
+    }
+
+    .exam-level-pill:hover {
+      border-color: var(--brand-blue);
+    }
+
+    .exam-menu {
+      position: absolute;
+      right: 0;
+      top: calc(100% + 6px);
+      background: var(--bg-surface);
+      border: 1px solid var(--border-default);
+      border-radius: var(--radius-sm);
+      box-shadow: var(--shadow-md);
+      padding: 4px;
+      min-width: 150px;
+      display: none;
+      z-index: 55;
+    }
+
+    .exam-menu.open {
+      display: block;
+    }
+
+    /* Sub-tab Bar */
+    .subtab-bar {
+      background-color: var(--bg-subtle);
+      border-bottom: 1px solid var(--border-default);
+      padding: 8px 0;
+    }
+
+    .subtab-inner {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .teil-label {
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      color: var(--text-muted);
+      text-transform: uppercase;
+    }
+
+    .teil-pills {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .teil-pill {
+      padding: 5px 14px;
+      border-radius: var(--radius-pill);
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      background-color: var(--bg-surface);
+      border: 1px solid var(--border-default);
+      transition: var(--transition);
+    }
+
+    .teil-pill:hover {
+      border-color: var(--border-strong);
+      color: var(--text-primary);
+    }
+
+    .teil-pill.active {
+      background-color: var(--brand-blue);
+      border-color: var(--brand-blue);
+      color: #ffffff;
+      box-shadow: 0 2px 5px rgba(29, 99, 220, 0.25);
+    }
+
+    /* ==========================================================================
+       4. TWO-COLUMN MAIN WORKSPACE
+       ========================================================================== */
+    .workspace {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 310px;
+      gap: 24px;
+      padding-top: 22px;
+      padding-bottom: 56px;
+      align-items: start;
+      flex: 1;
+    }
+
+    .main-column {
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+      min-width: 0;
+    }
+
+    /* Question Header Row */
+    .question-header-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .nav-pill-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 16px;
+      border-radius: var(--radius-pill);
+      font-size: 0.83rem;
+      font-weight: 600;
+      transition: var(--transition);
+    }
+
+    .nav-pill-btn.prev {
+      background-color: var(--bg-surface);
+      border: 1px solid var(--border-default);
+      color: var(--text-secondary);
+    }
+
+    .nav-pill-btn.prev:hover:not(:disabled) {
+      border-color: var(--border-strong);
+      color: var(--text-primary);
+      background-color: var(--bg-subtle);
+    }
+
+    .nav-pill-btn.prev:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+
+    .nav-pill-btn.next {
+      background-color: var(--navy-dark);
+      color: #ffffff;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .nav-pill-btn.next:hover:not(:disabled) {
+      background-color: var(--navy-hover);
+      transform: translateY(-1px);
+    }
+
+    .nav-pill-btn.next:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+
+    .question-counter-heading {
+      font-size: 1.32rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: var(--text-primary);
+      text-align: center;
+    }
+
+    /* Card Surface */
+    .card {
+      background-color: var(--bg-surface);
+      border: 1px solid var(--border-default);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-sm);
+    }
+
+    /* Main Stimulus Prompt Card */
+    .prompt-card {
+      padding: 28px 24px 26px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .prompt-subtitle {
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      text-align: center;
+      position: relative;
+      padding-bottom: 10px;
+      margin-bottom: 22px;
+    }
+
+    .prompt-subtitle::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 44px;
+      height: 2.5px;
+      border-radius: var(--radius-pill);
+      background-color: var(--brand-blue);
+    }
+
+    /* Centered Square Stimulus Picture Card (~270x270px, #f9f5eb) */
+    .stimulus-outer-frame {
+      padding: 12px;
+      border-radius: 18px;
+      background-color: var(--bg-surface);
+      border: 1px solid var(--border-default);
+      box-shadow: var(--shadow-md);
+      margin-bottom: 20px;
+      transition: transform var(--transition);
+    }
+
+    .stimulus-outer-frame:hover {
+      transform: translateY(-2px);
+    }
+
+    .stimulus-picture-box {
+      width: 270px;
+      height: 270px;
+      border-radius: 14px;
+      background-color: var(--bg-cream);
+      border: 1px solid rgba(180, 165, 135, 0.25);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .stimulus-watermark {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      pointer-events: none;
+      opacity: 0.055;
+      font-size: 0.85rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      transform: rotate(-28deg);
+      color: #0f172a;
+      user-select: none;
+      white-space: nowrap;
+    }
+
+    .stimulus-svg-holder {
+      width: 215px;
+      height: 215px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      z-index: 1;
+    }
+
+    .stimulus-svg-holder svg {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    .card-status-ribbon {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      padding: 3px 9px;
+      border-radius: var(--radius-pill);
+      font-size: 0.68rem;
+      font-weight: 700;
+      z-index: 2;
+      display: none;
+    }
+
+    .card-status-ribbon.practiced {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      background-color: var(--green-pill);
+      color: var(--green-primary);
+    }
+
+    .card-status-ribbon.review {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      background-color: var(--red-pill);
+      color: var(--red-primary);
+    }
+
+    /* Show Sample Answers Pill Button */
+    .sample-toggle-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 9px 18px;
+      border-radius: var(--radius-pill);
+      border: 1px solid var(--border-default);
+      background-color: var(--bg-surface);
+      font-size: 0.83rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      box-shadow: var(--shadow-xs);
+      transition: var(--transition);
+    }
+
+    .sample-toggle-btn:hover {
+      border-color: var(--brand-blue);
+      color: var(--brand-blue);
+      background-color: var(--brand-blue-tint);
+    }
+
+    .sample-toggle-btn.open {
+      border-color: var(--brand-blue);
+      background-color: var(--brand-blue-tint);
+      color: var(--brand-blue);
+    }
+
+    /* Expandable Sample Answers Drawer */
+    .sample-answers-drawer {
+      display: none;
+      width: 100%;
+      max-width: 660px;
+      margin-top: 18px;
+      padding: 18px;
+      border-radius: var(--radius-md);
+      background-color: var(--bg-subtle);
+      border: 1px solid var(--border-default);
+      animation: slideFadeIn 190ms ease-out;
+    }
+
+    .sample-answers-drawer.open {
+      display: block;
+    }
+
+    .dialogue-pair {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+
+    .dialogue-box {
+      background-color: var(--bg-surface);
+      border: 1px solid var(--border-default);
+      border-radius: var(--radius-sm);
+      padding: 12px 14px;
+    }
+
+    .dialogue-role {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--brand-blue);
+      margin-bottom: 6px;
+    }
+
+    .dialogue-role.react {
+      color: var(--purple-primary);
+    }
+
+    .speak-mini-btn {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background-color: var(--bg-muted);
+      color: var(--text-secondary);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transition: var(--transition);
+    }
+
+    .speak-mini-btn:hover {
+      background-color: var(--brand-blue);
+      color: #ffffff;
+    }
+
+    .german-phrase {
+      font-size: 0.92rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 4px;
+    }
+
+    .english-gloss {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+    }
+
+    .vocab-strip {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 6px;
+      padding-top: 10px;
+      border-top: 1px dashed var(--border-default);
+      margin-bottom: 14px;
+    }
+
+    .vocab-strip-label {
+      font-size: 0.74rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      margin-right: 4px;
+    }
+
+    .vocab-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 4px 10px;
+      border-radius: var(--radius-pill);
+      background-color: var(--bg-surface);
+      border: 1px solid var(--border-default);
+      font-size: 0.76rem;
+      font-weight: 500;
+      color: var(--text-secondary);
+      transition: var(--transition);
+    }
+
+    .vocab-chip:hover {
+      border-color: var(--brand-blue);
+      color: var(--brand-blue);
+    }
+
+    .self-assess-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .assess-hint {
+      font-size: 0.76rem;
+      color: var(--text-muted);
+    }
+
+    .assess-btns {
+      display: flex;
+      gap: 8px;
+    }
+
+    .assess-btn {
+      padding: 7px 14px;
+      border-radius: var(--radius-pill);
+      font-size: 0.79rem;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      transition: var(--transition);
+    }
+
+    .assess-btn.practiced {
+      background-color: var(--green-pill);
+      color: var(--green-primary);
+      border: 1px solid var(--green-border);
+    }
+
+    .assess-btn.practiced:hover {
+      background-color: var(--green-primary);
+      color: #ffffff;
+    }
+
+    .assess-btn.review {
+      background-color: var(--red-pill);
+      color: var(--red-primary);
+      border: 1px solid var(--red-border);
+    }
+
+    .assess-btn.review:hover {
+      background-color: var(--red-primary);
+      color: #ffffff;
+    }
+
+    /* ==========================================================================
+       5. AI SPEAKING PRACTICE (VOICE) — PART 3 CARD
+       ========================================================================== */
+    .ai-practice-card {
+      padding: 20px;
+    }
+
+    .ai-card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding-bottom: 16px;
+      margin-bottom: 16px;
+      border-bottom: 1px solid var(--border-default);
+      flex-wrap: wrap;
+    }
+
+    .ai-header-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .tutor-avatar-circle {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #dbeafe 0%, #ede9fe 100%);
+      border: 1.5px solid var(--brand-blue-border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      overflow: hidden;
+    }
+
+    .ai-card-title {
+      font-size: 0.96rem;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+
+    .ai-card-sub {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+    }
+
+    .ai-part-badge {
+      padding: 4px 11px;
+      border-radius: var(--radius-pill);
+      background-color: var(--bg-subtle);
+      border: 1px solid var(--border-default);
+      font-size: 0.74rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+    }
+
+    /* 3-Column Feature Grid */
+    .ai-grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .ai-col-box {
+      border: 1px solid var(--border-default);
+      border-radius: var(--radius-md);
+      background-color: var(--bg-surface);
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .col-eyebrow {
+      font-size: 0.67rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 6px;
+    }
+
+    /* Column 1: Mock Exam Video Preview */
+    .video-thumb {
+      position: relative;
+      border-radius: var(--radius-sm);
+      overflow: hidden;
+      aspect-ratio: 16 / 10;
+      background: linear-gradient(135deg, #1e3a8a 0%, #1d4ed8 45%, #0f172a 100%);
+      border: 1px solid var(--border-default);
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 10px;
+      color: #ffffff;
+    }
+
+    .video-thumb-badges {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      z-index: 2;
+    }
+
+    .v-tag {
+      font-size: 0.62rem;
+      font-weight: 700;
+      padding: 2px 6px;
+      border-radius: 4px;
+      background: rgba(255, 255, 255, 0.92);
+      color: #0f172a;
+    }
+
+    .v-tag.red {
+      background: #dc2626;
+      color: #ffffff;
+    }
+
+    .video-thumb-title {
+      font-size: 0.75rem;
+      font-weight: 800;
+      line-height: 1.25;
+      max-width: 72%;
+      text-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
+      z-index: 2;
+    }
+
+    .video-play-circle {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      background-color: var(--brand-blue);
+      color: #ffffff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+      transition: transform var(--transition);
+      z-index: 3;
+    }
+
+    .video-thumb:hover .video-play-circle {
+      transform: translate(-50%, -50%) scale(1.08);
+    }
+
+    .video-duration {
+      position: absolute;
+      bottom: 7px;
+      right: 7px;
+      background: rgba(15, 23, 42, 0.85);
+      color: #ffffff;
+      font-size: 0.65rem;
+      font-weight: 600;
+      padding: 2px 6px;
+      border-radius: 4px;
+      z-index: 2;
+    }
+
+    .video-caption-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 0.69rem;
+      color: var(--text-muted);
+    }
+
+    .yt-outline-btn {
+      width: 100%;
+      padding: 8px 12px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--brand-blue-border);
+      background-color: var(--brand-blue-tint);
+      color: var(--brand-blue);
+      font-size: 0.78rem;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: var(--transition);
+    }
+
+    .yt-outline-btn:hover {
+      background-color: var(--brand-blue);
+      color: #ffffff;
+    }
+
+    /* Column 2: Who Starts? Roleplay */
+    .starter-toggle-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 7px;
+    }
+
+    .starter-btn {
+      padding: 8px 8px;
+      border-radius: var(--radius-sm);
+      border: 1.5px solid var(--border-default);
+      background-color: var(--bg-surface);
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: var(--transition);
+    }
+
+    .starter-btn:hover {
+      border-color: var(--border-strong);
+    }
+
+    .starter-btn.active {
+      border-color: var(--brand-blue);
+      background-color: var(--brand-blue-tint);
+      color: var(--brand-blue);
+    }
+
+    .flow-tip-box {
+      padding: 9px 11px;
+      border-radius: var(--radius-sm);
+      background-color: var(--brand-blue-tint);
+      border: 1px solid var(--brand-blue-border);
+      font-size: 0.74rem;
+      color: var(--brand-blue);
+      line-height: 1.4;
+      display: flex;
+      align-items: flex-start;
+      gap: 7px;
+    }
+
+    .credits-note {
+      font-size: 0.69rem;
+      color: var(--text-muted);
+    }
+
+    .roleplay-cta-btn {
+      width: 100%;
+      padding: 9px 14px;
+      border-radius: var(--radius-sm);
+      background-color: var(--brand-blue);
+      color: #ffffff;
+      font-size: 0.8rem;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      box-shadow: 0 2px 6px rgba(29, 99, 220, 0.25);
+      transition: var(--transition);
+    }
+
+    .roleplay-cta-btn:hover {
+      background-color: var(--brand-blue-hover);
+      transform: translateY(-1px);
+    }
+
+    /* Column 3: Live AI Teacher */
+    .live-voice-badge {
+      padding: 2px 7px;
+      border-radius: var(--radius-pill);
+      background: var(--purple-gradient);
+      color: #ffffff;
+      font-size: 0.62rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+    }
+
+    .teacher-mini-card {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 9px 10px;
+      border-radius: var(--radius-sm);
+      background-color: var(--bg-subtle);
+      border: 1px solid var(--border-default);
+    }
+
+    .teacher-portrait {
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #fde68a 0%, #fca5a5 100%);
+      border: 2px solid #ffffff;
+      box-shadow: var(--shadow-xs);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      flex-shrink: 0;
+    }
+
+    .online-dot {
+      position: absolute;
+      bottom: 0;
+      right: 0;
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background-color: var(--green-primary);
+      border: 1.5px solid #ffffff;
+    }
+
+    .teacher-name {
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      line-height: 1.2;
+    }
+
+    .teacher-role {
+      font-size: 0.69rem;
+      color: var(--text-muted);
+      line-height: 1.25;
+      margin-top: 2px;
+    }
+
+    .teacher-perks {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      font-size: 0.73rem;
+      color: var(--text-secondary);
+    }
+
+    .teacher-perks li {
+      display: flex;
+      align-items: flex-start;
+      gap: 6px;
+      line-height: 1.35;
+    }
+
+    .perk-check {
+      color: var(--green-primary);
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+
+    .live-voice-cta-btn {
+      width: 100%;
+      padding: 9px 14px;
+      border-radius: var(--radius-sm);
+      background: var(--purple-gradient);
+      color: #ffffff;
+      font-size: 0.8rem;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      box-shadow: 0 3px 8px rgba(109, 40, 217, 0.28);
+      transition: var(--transition);
+    }
+
+    .live-voice-cta-btn:hover {
+      background: var(--purple-gradient-hover);
+      transform: translateY(-1px);
+    }
+
+    .ai-card-footer-tip {
+      margin-top: 14px;
+      padding-top: 12px;
+      border-top: 1px solid var(--border-default);
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    /* ==========================================================================
+       6. UTILITY LINKS, DISCOVER MORE ACCORDION & BOTTOM NAV
+       ========================================================================== */
+    .utility-links-row {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 14px;
+      font-size: 0.77rem;
+      color: var(--text-muted);
+      padding: 2px 0;
+    }
+
+    .utility-text-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      color: var(--text-muted);
+      transition: var(--transition);
+    }
+
+    .utility-text-btn:hover {
+      color: var(--brand-blue);
+    }
+
+    /* Discover More Card */
+    .discover-card {
+      overflow: hidden;
+      max-width: 680px;
+    }
+
+    .discover-header {
+      padding: 13px 18px;
+      background-color: var(--brand-blue-tint);
+      border-bottom: 1px solid var(--border-default);
+      font-size: 0.88rem;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+
+    .discover-item {
+      border-bottom: 1px solid var(--border-default);
+    }
+
+    .discover-item:last-child {
+      border-bottom: none;
+    }
+
+    .discover-trigger {
+      width: 100%;
+      padding: 13px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 0.86rem;
+      font-weight: 500;
+      color: var(--text-primary);
+      transition: var(--transition);
+    }
+
+    .discover-trigger:hover {
+      background-color: var(--bg-subtle);
+      color: var(--brand-blue);
+    }
+
+    .discover-trigger svg {
+      transition: transform var(--transition);
+      color: var(--text-muted);
+    }
+
+    .discover-item.open .discover-trigger svg {
+      transform: rotate(90deg);
+      color: var(--brand-blue);
+    }
+
+    .discover-panel {
+      display: none;
+      padding: 0 18px 14px;
+      font-size: 0.82rem;
+      color: var(--text-secondary);
+      line-height: 1.5;
+    }
+
+    .discover-item.open .discover-panel {
+      display: block;
+    }
+
+    /* Bottom Navigation Bar */
+    .bottom-nav-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding-top: 8px;
+    }
+
+    .unanswered-status {
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: var(--orange-accent);
+      text-align: center;
+    }
+
+    /* ==========================================================================
+       7. RIGHT STICKY SIDEBAR
+       ========================================================================== */
+    .sidebar {
+      position: sticky;
+      top: 74px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .sidebar-card {
+      padding: 15px 16px;
+    }
+
+    .sidebar-title {
+      font-size: 0.71rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 12px;
+    }
+
+    /* Overall Performance 2x2 Grid */
+    .perf-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    .perf-box {
+      padding: 9px 8px;
+      border-radius: var(--radius-sm);
+      text-align: center;
+      border: 1px solid var(--border-default);
+      background-color: var(--bg-subtle);
+    }
+
+    .perf-box.green {
+      background-color: var(--green-bg);
+      border-color: var(--green-border);
+      color: var(--green-primary);
+    }
+
+    .perf-box.red {
+      background-color: var(--red-bg);
+      border-color: var(--red-border);
+      color: var(--red-primary);
+    }
+
+    .perf-box.blue {
+      background-color: var(--brand-blue-tint);
+      border-color: var(--brand-blue-border);
+      color: var(--brand-blue);
+    }
+
+    .perf-num {
+      font-size: 1.05rem;
+      font-weight: 700;
+      line-height: 1.2;
+    }
+
+    .perf-lbl {
+      font-size: 0.62rem;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      margin-top: 2px;
+      opacity: 0.88;
+    }
+
+    .progress-meta {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.68rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      margin-bottom: 5px;
+    }
+
+    .progress-track {
+      width: 100%;
+      height: 5px;
+      border-radius: var(--radius-pill);
+      background-color: var(--bg-muted);
+      overflow: hidden;
+      margin-bottom: 10px;
+    }
+
+    .progress-fill {
+      height: 100%;
+      width: 0%;
+      background-color: var(--brand-blue);
+      transition: width 280ms ease;
+    }
+
+    .accuracy-pill {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 6px 10px;
+      border-radius: var(--radius-sm);
+      background-color: var(--bg-subtle);
+      border: 1px solid var(--border-default);
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+    }
+
+    .accuracy-val {
+      color: var(--red-primary);
+      font-weight: 700;
+    }
+
+    .accuracy-val.good {
+      color: var(--green-primary);
+    }
+
+    /* My Notebook Card */
+    .notebook-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 10px;
+    }
+
+    .notebook-title-wrap {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+
+    .notebook-count-badge {
+      font-size: 0.68rem;
+      font-weight: 700;
+      padding: 1px 7px;
+      border-radius: var(--radius-pill);
+      background-color: var(--brand-blue-tint);
+      color: var(--brand-blue);
+    }
+
+    .notebook-btn-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 7px;
+      margin-bottom: 10px;
+    }
+
+    .nb-action-btn {
+      padding: 7px 8px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border-default);
+      background-color: var(--bg-surface);
+      font-size: 0.73rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      transition: var(--transition);
+    }
+
+    .nb-action-btn:hover {
+      border-color: var(--brand-blue);
+      color: var(--brand-blue);
+      background-color: var(--brand-blue-tint);
+    }
+
+    .open-notebook-link {
+      width: 100%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+      font-size: 0.76rem;
+      font-weight: 600;
+      color: var(--brand-blue);
+      padding-top: 4px;
+    }
+
+    .open-notebook-link:hover {
+      text-decoration: underline;
+    }
+
+    /* Quick Navigation 7-Column Grid (1 to 84) */
+    .quick-nav-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 6px;
+      margin-bottom: 10px;
+    }
+
+    .quick-nav-title {
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+    }
+
+    .quick-nav-rem {
+      font-size: 0.68rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-align: right;
+    }
+
+    .quick-nav-grid {
+      display: grid;
+      grid-template-columns: repeat(7, minmax(0, 1fr));
+      gap: 5px;
+      max-height: 360px;
+      overflow-y: auto;
+      padding-right: 2px;
+    }
+
+    .q-nav-btn {
+      height: 28px;
+      border-radius: 6px;
+      border: 1px solid var(--border-default);
+      background-color: var(--bg-subtle);
+      font-size: 0.72rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: var(--transition);
+    }
+
+    .q-nav-btn:hover {
+      border-color: var(--brand-blue);
+      color: var(--brand-blue);
+    }
+
+    .q-nav-btn.practiced {
+      background-color: var(--green-pill);
+      border-color: var(--green-border);
+      color: var(--green-primary);
+    }
+
+    .q-nav-btn.review {
+      background-color: var(--red-pill);
+      border-color: var(--red-border);
+      color: var(--red-primary);
+    }
+
+    .q-nav-btn.current {
+      background-color: var(--brand-blue);
+      border-color: var(--brand-blue);
+      color: #ffffff;
+      box-shadow: 0 2px 4px rgba(29, 99, 220, 0.3);
+    }
+
+    /* ==========================================================================
+       8. MULTI-COLUMN FOOTER
+       ========================================================================== */
+    .site-footer {
+      background-color: var(--bg-surface);
+      border-top: 1px solid var(--border-default);
+      padding: 44px 0 26px;
+      margin-top: auto;
+    }
+
+    .footer-grid {
+      display: grid;
+      grid-template-columns: 1.4fr repeat(5, minmax(0, 1fr));
+      gap: 24px;
+      padding-bottom: 32px;
+      border-bottom: 1px solid var(--border-default);
+    }
+
+    .footer-brand-desc {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      margin: 12px 0 14px;
+      line-height: 1.55;
+      max-width: 230px;
+    }
+
+    .follow-label {
+      font-size: 0.72rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      margin-bottom: 8px;
+    }
+
+    .social-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 7px;
+    }
+
+    .social-icon {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      color: #ffffff;
+      transition: transform var(--transition);
+    }
+
+    .social-icon:hover {
+      transform: translateY(-2px);
+    }
+
+    .footer-col h4 {
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 10px;
+    }
+
+    .footer-col h4.mt {
+      margin-top: 18px;
+    }
+
+    .footer-links {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .footer-links a {
+      font-size: 0.74rem;
+      color: var(--text-muted);
+      transition: color var(--transition);
+    }
+
+    .footer-links a:hover {
+      color: var(--brand-blue);
+    }
+
+    .footer-bottom {
+      padding-top: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      flex-wrap: wrap;
+      font-size: 0.72rem;
+      color: var(--text-muted);
+    }
+
+    .footer-legal-links {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      flex-wrap: wrap;
+    }
+
+    .footer-legal-links a:hover {
+      color: var(--brand-blue);
+    }
+
+    /* ==========================================================================
+       9. INTERACTIVE MODALS & TOAST
+       ========================================================================== */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background-color: rgba(15, 23, 42, 0.55);
+      backdrop-filter: blur(3px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 18px;
+      z-index: 80;
+    }
+
+    .modal-overlay.open {
+      display: flex;
+    }
+
+    .modal-box {
+      background-color: var(--bg-surface);
+      border: 1px solid var(--border-default);
+      border-radius: 16px;
+      width: 100%;
+      max-width: 540px;
+      box-shadow: var(--shadow-modal);
+      overflow: hidden;
+      animation: slideFadeIn 190ms ease-out;
+    }
+
+    .modal-head {
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border-default);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .modal-head h3 {
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+
+    .modal-close-btn {
+      width: 30px;
+      height: 30px;
+      border-radius: 8px;
+      background-color: var(--bg-muted);
+      color: var(--text-secondary);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .modal-close-btn:hover {
+      background-color: var(--border-default);
+      color: var(--text-primary);
+    }
+
+    .modal-body {
+      padding: 18px 20px;
+      max-height: 75vh;
+      overflow-y: auto;
+    }
+
+    /* Roleplay Simulator Chat */
+    .chat-feed {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      max-height: 250px;
+      overflow-y: auto;
+      padding: 12px;
+      border-radius: var(--radius-md);
+      background-color: var(--bg-subtle);
+      border: 1px solid var(--border-default);
+      margin-bottom: 12px;
+    }
+
+    .chat-bubble {
+      max-width: 84%;
+      padding: 9px 13px;
+      border-radius: 12px;
+      font-size: 0.84rem;
+      line-height: 1.45;
+    }
+
+    .chat-bubble.ai {
+      align-self: flex-start;
+      background-color: var(--bg-surface);
+      border: 1px solid var(--border-default);
+      color: var(--text-primary);
+    }
+
+    .chat-bubble.user {
+      align-self: flex-end;
+      background-color: var(--brand-blue);
+      color: #ffffff;
+    }
+
+    .chat-bubble.feedback {
+      align-self: stretch;
+      max-width: 100%;
+      background-color: var(--green-bg);
+      border: 1px solid var(--green-border);
+      color: var(--green-primary);
+      font-size: 0.78rem;
+    }
+
+    .suggestion-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-bottom: 10px;
+    }
+
+    .suggest-chip {
+      padding: 5px 10px;
+      border-radius: var(--radius-pill);
+      background-color: var(--brand-blue-tint);
+      border: 1px solid var(--brand-blue-border);
+      color: var(--brand-blue);
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+
+    .suggest-chip:hover {
+      background-color: var(--brand-blue);
+      color: #ffffff;
+    }
+
+    .chat-input-row {
+      display: flex;
+      gap: 8px;
+    }
+
+    .text-input {
+      flex: 1;
+      padding: 9px 12px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border-default);
+      background-color: var(--bg-surface);
+      font-size: 0.85rem;
+    }
+
+    .text-input:focus {
+      outline: none;
+      border-color: var(--brand-blue);
+    }
+
+    /* Live Voice Waveform Animation */
+    .voice-stage {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      gap: 14px;
+      padding: 10px 0;
+    }
+
+    .waveform-bars {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+      height: 46px;
+    }
+
+    .wave-bar {
+      width: 5px;
+      height: 14px;
+      border-radius: var(--radius-pill);
+      background: var(--purple-gradient);
+      animation: wavePulse 900ms ease-in-out infinite;
+    }
+
+    .wave-bar:nth-child(2) { animation-delay: 120ms; }
+    .wave-bar:nth-child(3) { animation-delay: 240ms; }
+    .wave-bar:nth-child(4) { animation-delay: 360ms; }
+    .wave-bar:nth-child(5) { animation-delay: 480ms; }
+    .wave-bar:nth-child(6) { animation-delay: 300ms; }
+    .wave-bar:nth-child(7) { animation-delay: 150ms; }
+
+    .waveform-bars.paused .wave-bar {
+      animation: none;
+      height: 8px;
+      opacity: 0.4;
+    }
+
+    @keyframes wavePulse {
+      0%, 100% { height: 10px; }
+      50% { height: 42px; }
+    }
+
+    @keyframes slideFadeIn {
+      from { opacity: 0; transform: translateY(-6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Toast Notification */
+    .toast-banner {
+      position: fixed;
+      bottom: 22px;
+      left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      background-color: var(--navy-dark);
+      color: #ffffff;
+      padding: 10px 18px;
+      border-radius: var(--radius-pill);
+      font-size: 0.82rem;
+      font-weight: 600;
+      box-shadow: var(--shadow-md);
+      opacity: 0;
+      pointer-events: none;
+      z-index: 95;
+      transition: opacity 200ms ease, transform 200ms ease;
+    }
+
+    .toast-banner.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    /* ==========================================================================
+       10. RESPONSIVE BREAKPOINTS
+       ========================================================================== */
+    @media (max-width: 1024px) {
+      .workspace {
+        grid-template-columns: 1fr;
+      }
+
+      .sidebar {
+        position: static;
+      }
+
+      .footer-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 768px) {
+      .context-pill {
+        display: none;
+      }
+
+      .module-cards {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .ai-grid-3 {
+        grid-template-columns: 1fr;
+      }
+
+      .dialogue-pair {
+        grid-template-columns: 1fr;
+      }
+
+      .footer-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 480px) {
+      .container {
+        padding: 0 14px;
+      }
+
+      .stimulus-picture-box {
+        width: 235px;
+        height: 235px;
+      }
+
+      .question-counter-heading {
+        font-size: 1.1rem;
+      }
+
+      .util-btn span.hide-xs {
+        display: none;
+      }
+
+      .footer-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ========================================================================
+       1. STICKY TOP BAR
+       ======================================================================== -->
+  <header class="top-bar">
+    <div class="container top-bar-inner">
+      <!-- Left: Brand Logo with German Black-Red-Gold Book Emblem -->
+      <a href="#top" class="brand-link" aria-label="Deutsch Prüfung Home">
+        <div class="brand-emblem">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+            <path d="M2 5.5C2 4.67 2.67 4 3.5 4H11v15H3.5C2.67 19 2 18.33 2 17.5v-12z" fill="#111827"/>
+            <path d="M13 4h7.5c.83 0 1.5.67 1.5 1.5v12c0 .83-.67 1.5-1.5 1.5H13V4z" fill="#dc2626"/>
+            <path d="M13 13.5h9v4c0 .83-.67 1.5-1.5 1.5H13v-5.5z" fill="#facc15"/>
+            <path d="M2 13.5h9V19H3.5C2.67 19 2 18.33 2 17.5v-4z" fill="#facc15"/>
+            <line x1="12" y1="4" x2="12" y2="19.5" stroke="#ffffff" stroke-width="1.5"/>
+          </svg>
+        </div>
+        <span>Deutsch Prüfung</span>
+      </a>
+
+      <!-- Center: Active Exam Context Pill -->
+      <div class="context-pill" id="topContextPill">
+        Goethe A1 · Sprechen · Teil 3
+      </div>
+
+      <!-- Right: Language, Practice Vocabulary, Exit Practice, Theme Toggle -->
+      <div class="top-actions">
+        <div class="lang-dropdown-wrap">
+          <button type="button" class="util-btn" id="langBtn" aria-expanded="false">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/>
+              <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+            </svg>
+            <span id="currentLangLabel">EN</span>
+            <span>▾</span>
+          </button>
+          <div class="lang-menu" id="langMenu" role="menu">
+            <button type="button" class="lang-option active" data-lang="EN">English <span>EN</span></button>
+            <button type="button" class="lang-option" data-lang="DE">Deutsch <span>DE</span></button>
+            <button type="button" class="lang-option" data-lang="ID">Indonesia <span>ID</span></button>
+          </div>
+        </div>
+
+        <button type="button" class="util-btn" id="practiceVocabBtn">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+          </svg>
+          <span class="hide-xs">Practice Vocabulary</span>
+        </button>
+
+        <button type="button" class="util-btn exit-btn" id="exitPracticeBtn">
+          <span>×</span>
+          <span class="hide-xs">Exit practice</span>
+        </button>
+
+        <button type="button" class="theme-toggle-btn" id="themeToggleBtn" aria-label="Toggle dark or light theme" title="Toggle theme">
+          <svg id="themeIcon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ========================================================================
+       2. MODULE SWITCHER ROW & SUB-TAB BAR
+       ======================================================================== -->
+  <section class="module-nav-section" aria-label="Exam Modules">
+    <div class="container module-row">
+      <div class="module-cards">
+        <!-- Hören -->
+        <button type="button" class="module-card" data-module="Hören">
+          <div class="module-avatar">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2">
+              <path d="M3 18v-6a9 9 0 0 1 18 0v6"/><path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"/>
+            </svg>
+          </div>
+          <div class="module-info">
+            <span class="module-title">Hören</span>
+            <span class="module-sub">3 TEILE</span>
+          </div>
+        </button>
+
+        <!-- Lesen -->
+        <button type="button" class="module-card" data-module="Lesen">
+          <div class="module-avatar">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2">
+              <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
+            </svg>
+          </div>
+          <div class="module-info">
+            <span class="module-title">Lesen</span>
+            <span class="module-sub">3 TEILE</span>
+          </div>
+        </button>
+
+        <!-- Schreiben -->
+        <button type="button" class="module-card" data-module="Schreiben">
+          <div class="module-avatar">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2">
+              <path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/>
+            </svg>
+          </div>
+          <div class="module-info">
+            <span class="module-title">Schreiben</span>
+            <span class="module-sub">2 TEILE</span>
+          </div>
+        </button>
+
+        <!-- Sprechen (Active) -->
+        <button type="button" class="module-card active" data-module="Sprechen">
+          <div class="module-avatar">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+              <circle cx="12" cy="8" r="4" fill="#1d63dc"/>
+              <path d="M5 20c0-3.5 3.1-6 7-6s7 2.5 7 6" fill="#60a5fa"/>
+              <path d="M18.5 7.5a3.5 3.5 0 0 1 0 5" stroke="#1d63dc" stroke-width="1.8" stroke-linecap="round"/>
+            </svg>
+          </div>
+          <div class="module-info">
+            <span class="module-title">Sprechen</span>
+            <span class="module-sub">3 TEILE</span>
+          </div>
+        </button>
+      </div>
+
+      <!-- Right Exam Selector Pill -->
+      <div class="exam-level-wrap">
+        <button type="button" class="exam-level-pill" id="examLevelBtn">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1d63dc" stroke-width="2.2">
+            <circle cx="12" cy="8" r="6"/><path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11"/>
+          </svg>
+          <span id="examLevelText">Goethe A1</span>
+          <span style="color: var(--text-muted); font-size: 0.75rem;">▾</span>
+        </button>
+        <div class="exam-menu" id="examMenu">
+          <button type="button" class="lang-option active" data-exam="Goethe A1">Goethe A1 <span>✓</span></button>
+          <button type="button" class="lang-option" data-exam="Goethe A2">Goethe A2</button>
+          <button type="button" class="lang-option" data-exam="Goethe B1">Goethe B1</button>
+          <button type="button" class="lang-option" data-exam="telc A1">telc A1</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Sub-tab Bar -->
+  <nav class="subtab-bar" aria-label="Sprechen Teile">
+    <div class="container subtab-inner">
+      <span class="teil-label">TEIL:</span>
+      <div class="teil-pills">
+        <button type="button" class="teil-pill" data-teil="Teil 1">Teil 1</button>
+        <button type="button" class="teil-pill" data-teil="Teil 2">Teil 2</button>
+        <button type="button" class="teil-pill active" data-teil="Teil 3">Teil 3</button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ========================================================================
+       3. MAIN TWO-COLUMN WORKSPACE
+       ======================================================================== -->
+  <main class="container workspace" id="top">
+    <!-- LEFT MAIN COLUMN (~72%) -->
+    <div class="main-column">
+      <!-- Question Header Row -->
+      <div class="question-header-row">
+        <button type="button" class="nav-pill-btn prev" id="topPrevBtn" disabled>
+          <span>‹</span>
+          <span>Previous</span>
+        </button>
+
+        <h1 class="question-counter-heading" id="questionCounterHeading">Question 1 of 84</h1>
+
+        <button type="button" class="nav-pill-btn next" id="topNextBtn">
+          <span>Next</span>
+          <span>›</span>
+        </button>
+      </div>
+
+      <!-- Main Stimulus Prompt Card -->
+      <section class="card prompt-card" aria-label="Speaking Prompt Card">
+        <div class="prompt-subtitle">TEIL 3 · BITTEN FORMULIEREN UND DARAUF REAGIEREN</div>
+
+        <!-- Centered Square Stimulus Picture Card (~270x270px, #f9f5eb) -->
+        <div class="stimulus-outer-frame">
+          <div class="stimulus-picture-box" id="stimulusPictureBox">
+            <span class="card-status-ribbon" id="cardStatusRibbon"></span>
+            <div class="stimulus-watermark">DEUTSCH-PRUEFUNG.DE</div>
+            <div class="stimulus-svg-holder" id="stimulusSvgHolder"></div>
+          </div>
+        </div>
+
+        <!-- Show Sample Answers Pill Button -->
+        <button type="button" class="sample-toggle-btn" id="sampleToggleBtn" aria-expanded="false">
+          <span>💡</span>
+          <span id="sampleToggleLabel">Show sample answers</span>
+        </button>
+
+        <!-- Expandable Sample Answers Card -->
+        <div class="sample-answers-drawer" id="sampleAnswersDrawer">
+          <div class="dialogue-pair">
+            <div class="dialogue-box">
+              <div class="dialogue-role">
+                <span>1. Bitte formulieren (Request)</span>
+                <button type="button" class="speak-mini-btn" id="speakReqBtn" title="Listen pronunciation" aria-label="Listen request">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                    <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/>
+                  </svg>
+                </button>
+              </div>
+              <div class="german-phrase" id="sampleRequestDe"></div>
+              <div class="english-gloss" id="sampleRequestEn"></div>
+            </div>
+
+            <div class="dialogue-box">
+              <div class="dialogue-role react">
+                <span>2. Darauf reagieren (Response)</span>
+                <button type="button" class="speak-mini-btn" id="speakResBtn" title="Listen pronunciation" aria-label="Listen response">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                    <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/>
+                  </svg>
+                </button>
+              </div>
+              <div class="german-phrase" id="sampleResponseDe"></div>
+              <div class="english-gloss" id="sampleResponseEn"></div>
+            </div>
+          </div>
+
+          <div class="vocab-strip" id="sampleVocabStrip"></div>
+
+          <div class="self-assess-row">
+            <span class="assess-hint">Self-check: Track your speaking progress for this prompt</span>
+            <div class="assess-btns">
+              <button type="button" class="assess-btn practiced" id="markPracticedBtn">✓ Mark Practiced</button>
+              <button type="button" class="assess-btn review" id="markReviewBtn">↻ Needs Review</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- AI Speaking Practice (Voice) — Part 3 Card -->
+      <section class="card ai-practice-card" aria-label="AI Speaking Practice">
+        <div class="ai-card-header">
+          <div class="ai-header-left">
+            <div class="tutor-avatar-circle">
+              <svg width="26" height="26" viewBox="0 0 32 32" fill="none">
+                <circle cx="16" cy="11" r="5.5" fill="#1e293b"/>
+                <circle cx="16" cy="12" r="4.5" fill="#fed7aa"/>
+                <path d="M8 27c0-4.4 3.6-7.5 8-7.5s8 3.1 8 7.5" fill="#1d63dc"/>
+              </svg>
+            </div>
+            <div>
+              <h2 class="ai-card-title">AI speaking practice (voice) — Part 3</h2>
+              <p class="ai-card-sub">Practice exam-style dialogue with AI feedback and live voice coaching.</p>
+            </div>
+          </div>
+          <span class="ai-part-badge">Goethe A1 · Teil 3</span>
+        </div>
+
+        <!-- 3-Column Feature Grid -->
+        <div class="ai-grid-3">
+          <!-- Col 1: Mock Exam, Tips & Redemittel -->
+          <div class="ai-col-box">
+            <div class="col-eyebrow">MOCK EXAM, TIPS &amp; REDEMITTEL</div>
+
+            <div class="video-thumb" id="videoPreviewCard" role="button" tabindex="0" aria-label="Open A1 Speaking Tips and Redemittel">
+              <div class="video-thumb-badges">
+                <span class="v-tag">GOETHE</span>
+                <span class="v-tag red">telc</span>
+              </div>
+              <div class="video-thumb-title">A1 SPRECHPRÜFUNG TEIL 1+2+3 MIT TIPPS &amp; REDEMITTEL</div>
+              <div class="video-play-circle">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="margin-left: 2px;">
+                  <polygon points="5 3 19 12 5 21 5 3"/>
+                </svg>
+              </div>
+              <span class="video-duration">15:42</span>
+            </div>
+
+            <div class="video-caption-row">
+              <span>Full exam walk-through</span>
+              <span>Teil 1 + 2 + 3</span>
+            </div>
+
+            <button type="button" class="yt-outline-btn" id="watchYoutubeBtn">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                <polygon points="5 3 19 12 5 21 5 3"/>
+              </svg>
+              <span>Watch on YouTube ↗</span>
+            </button>
+          </div>
+
+          <!-- Col 2: Who Starts? Roleplay -->
+          <div class="ai-col-box">
+            <div class="col-eyebrow">WHO STARTS?</div>
+
+            <div class="starter-toggle-grid">
+              <button type="button" class="starter-btn active" id="iStartBtn">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+                </svg>
+                <span>I start</span>
+              </button>
+              <button type="button" class="starter-btn" id="aiStartsBtn">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                  <rect x="3" y="11" width="18" height="10" rx="2"/><circle cx="12" cy="5" r="2"/><path d="M12 7v4"/>
+                </svg>
+                <span>AI starts</span>
+              </button>
+            </div>
+
+            <div class="flow-tip-box" id="flowTipBox">
+              <span style="flex-shrink: 0;">ⓘ</span>
+              <span id="flowTipText">Flow: Formulate a polite request, then answer AI politely.</span>
+            </div>
+
+            <div class="credits-note">Unlimited credits for roleplay mode</div>
+
+            <button type="button" class="roleplay-cta-btn" id="startRoleplayBtn">
+              <span>▶</span>
+              <span>Start roleplay</span>
+            </button>
+          </div>
+
+          <!-- Col 3: Live AI Teacher -->
+          <div class="ai-col-box">
+            <div class="col-eyebrow">
+              <span>LIVE AI TEACHER</span>
+              <span class="live-voice-badge">LIVE VOICE</span>
+            </div>
+
+            <div class="teacher-mini-card">
+              <div class="teacher-portrait">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                  <circle cx="12" cy="9" r="4" fill="#7c2d12"/>
+                  <path d="M5 21c0-3.5 3.1-6 7-6s7 2.5 7 6" fill="#4f46e5"/>
+                </svg>
+                <span class="online-dot"></span>
+              </div>
+              <div>
+                <div class="teacher-name">Frau Schmidt</div>
+                <div class="teacher-role">Live German tutor &amp; examiner</div>
+              </div>
+            </div>
+
+            <ul class="teacher-perks">
+              <li>
+                <span class="perk-check">✓</span>
+                <span>Real-time spoken dialogue without turn delays</span>
+              </li>
+              <li>
+                <span class="perk-check">✓</span>
+                <span>Instant German pronunciation and grammar feedback</span>
+              </li>
+            </ul>
+
+            <button type="button" class="live-voice-cta-btn" id="startLiveVoiceBtn">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+                <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+              </svg>
+              <span>Start live voice ›</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="ai-card-footer-tip">
+          <span>💡 Speak clearly and slowly</span>
+          <span>·</span>
+          <span>Use simple, complete sentences</span>
+        </div>
+      </section>
+
+      <!-- Utility Links -->
+      <div class="utility-links-row">
+        <button type="button" class="utility-text-btn" id="reportIssueBtn">⚑ Report an issue</button>
+        <span>|</span>
+        <button type="button" class="utility-text-btn" id="shareFeedbackBtn">💬 Share feedback</button>
+      </div>
+
+      <!-- Discover More Accordion Card -->
+      <section class="card discover-card" aria-label="Discover more resources">
+        <div class="discover-header">Discover more</div>
+
+        <div class="discover-item">
+          <button type="button" class="discover-trigger">
+            <span>Find Study Aids</span>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+              <polyline points="9 18 15 12 9 6"/>
+            </svg>
+          </button>
+          <div class="discover-panel">
+            Download official Goethe-Zertifikat A1 Wortliste flashcards, Redemittel cheat sheets for Sprechen Teil 1–3, and printable picture cards for partner practice.
+          </div>
+        </div>
+
+        <div class="discover-item">
+          <button type="button" class="discover-trigger">
+            <span>Find Schools</span>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+              <polyline points="9 18 15 12 9 6"/>
+            </svg>
+          </button>
+          <div class="discover-panel">
+            Explore accredited Goethe-Institut exam centers and certified German language schools near you for official A1 exam registration.
+          </div>
+        </div>
+
+        <div class="discover-item">
+          <button type="button" class="discover-trigger">
+            <span>Get Class Supplies</span>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+              <polyline points="9 18 15 12 9 6"/>
+            </svg>
+          </button>
+          <div class="discover-panel">
+            Recommended A1 grammar workbooks, vocabulary notebooks, and audio training sets tailored for beginner German learners.
+          </div>
+        </div>
+      </section>
+
+      <!-- Bottom Navigation Bar -->
+      <div class="bottom-nav-row">
+        <button type="button" class="nav-pill-btn prev" id="bottomPrevBtn" disabled>
+          <span>‹</span>
+          <span>Previous</span>
+        </button>
+
+        <div class="unanswered-status" id="bottomUnansweredText">84 unanswered questions</div>
+
+        <button type="button" class="nav-pill-btn next" id="bottomNextBtn">
+          <span>Next</span>
+          <span>›</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- ======================================================================
+         RIGHT STICKY SIDEBAR (~28%)
+         ====================================================================== -->
+    <aside class="sidebar" aria-label="Performance and Quick Navigation">
+      <!-- 1. Overall Performance Card -->
+      <section class="card sidebar-card">
+        <h2 class="sidebar-title">OVERALL PERFORMANCE</h2>
+
+        <div class="perf-grid">
+          <div class="perf-box green">
+            <div class="perf-num" id="statCorrect">0</div>
+            <div class="perf-lbl">CORRECT</div>
+          </div>
+          <div class="perf-box red">
+            <div class="perf-num" id="statIncorrect">0</div>
+            <div class="perf-lbl">INCORRECT</div>
+          </div>
+          <div class="perf-box">
+            <div class="perf-num" id="statRemaining">84</div>
+            <div class="perf-lbl">REMAINING</div>
+          </div>
+          <div class="perf-box blue">
+            <div class="perf-num">84</div>
+            <div class="perf-lbl">TOTAL</div>
+          </div>
+        </div>
+
+        <div class="progress-meta">
+          <span>OVERALL PROGRESS</span>
+          <span id="overallProgressPct">0%</span>
+        </div>
+        <div class="progress-track">
+          <div class="progress-fill" id="overallProgressFill"></div>
+        </div>
+
+        <div class="accuracy-pill">
+          <span>🎯 Accuracy</span>
+          <span class="accuracy-val" id="accuracyPct">0%</span>
+        </div>
+      </section>
+
+      <!-- 2. My Notebook Card -->
+      <section class="card sidebar-card">
+        <div class="notebook-header">
+          <div class="notebook-title-wrap">
+            <span>📘</span>
+            <span>My Notebook</span>
+          </div>
+          <span class="notebook-count-badge" id="notebookCountBadge">2</span>
+        </div>
+
+        <div class="notebook-btn-row">
+          <button type="button" class="nb-action-btn" id="addNoteBtn">+ Add note</button>
+          <button type="button" class="nb-action-btn" id="addVocabBtn">✎ Add vocabulary</button>
+        </div>
+
+        <button type="button" class="open-notebook-link" id="openNotebookBtn">
+          <span>Open notebook</span>
+          <span>→</span>
+        </button>
+      </section>
+
+      <!-- 3. Quick Navigation Card (1 to 84 in 7-column grid) -->
+      <section class="card sidebar-card">
+        <div class="quick-nav-header">
+          <span class="quick-nav-title">QUICK NAVIGATION</span>
+          <span class="quick-nav-rem" id="sidebarRemText">84 questions remaining</span>
+        </div>
+        <div class="quick-nav-grid" id="quickNavGrid"></div>
+      </section>
+    </aside>
+  </main>
+
+  <!-- ========================================================================
+       4. MULTI-COLUMN FOOTER
+       ======================================================================== -->
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-grid">
+        <!-- Brand Column -->
+        <div>
+          <a href="#top" class="brand-link">
+            <div class="brand-emblem">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                <path d="M2 5.5C2 4.67 2.67 4 3.5 4H11v15H3.5C2.67 19 2 18.33 2 17.5v-12z" fill="#111827"/>
+                <path d="M13 4h7.5c.83 0 1.5.67 1.5 1.5v12c0 .83-.67 1.5-1.5 1.5H13V4z" fill="#dc2626"/>
+                <path d="M13 13.5h9v4c0 .83-.67 1.5-1.5 1.5H13v-5.5z" fill="#facc15"/>
+                <path d="M2 13.5h9V19H3.5C2.67 19 2 18.33 2 17.5v-4z" fill="#facc15"/>
+                <line x1="12" y1="4" x2="12" y2="19.5" stroke="#ffffff" stroke-width="1.5"/>
+              </svg>
+            </div>
+            <span>Deutsch Prüfung</span>
+          </a>
+          <p class="footer-brand-desc">
+            Practice German language exams with authentic materials and get ready for your certification.
+          </p>
+          <div class="follow-label">Follow us on</div>
+          <div class="social-row">
+            <a href="#social-fb" class="social-icon" style="background:#1877f2;" aria-label="Facebook">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M15 3h-3a4 4 0 0 0-4 4v3H5v4h3v7h4v-7h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg>
+            </a>
+            <a href="#social-ig" class="social-icon" style="background:#e1306c;" aria-label="Instagram">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="4"/></svg>
+            </a>
+            <a href="#social-wa" class="social-icon" style="background:#25d366;" aria-label="WhatsApp">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+            </a>
+            <a href="#social-tt" class="social-icon" style="background:#0f172a;" aria-label="TikTok">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M9 12a4 4 0 1 0 4 4V4a5 5 0 0 0 5 5"/></svg>
+            </a>
+            <a href="#social-yt" class="social-icon" style="background:#ff0000;" aria-label="YouTube">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="9 7 18 12 9 17 9 7"/></svg>
+            </a>
+            <a href="#social-rd" class="social-icon" style="background:#ff4500;" aria-label="Reddit">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="13" r="6"/></svg>
+            </a>
+          </div>
+        </div>
+
+        <!-- Column 2: Quick Links & German Learning Tools -->
+        <div class="footer-col">
+          <h4>Quick Links</h4>
+          <ul class="footer-links">
+            <li><a href="#top">Home</a></li>
+            <li><a href="#pricing">Pricing</a></li>
+            <li><a href="#contact">Contact Us</a></li>
+            <li><a href="#blog">Blog</a></li>
+            <li><a href="#dashboard">Dashboard</a></li>
+            <li><a href="#einbuergerung">Leben in Deutschland / Einbürgerungstest</a></li>
+          </ul>
+          <h4 class="mt">German Learning Tools</h4>
+          <ul class="footer-links">
+            <li><a href="#vocab">Vocabulary</a></li>
+            <li><a href="#grammar">German Grammar</a></li>
+            <li><a href="#level-test">Free German Level Test</a></li>
+            <li><a href="#apps">Mobile Apps</a></li>
+            <li><a href="#videos">German Learning Videos</a></li>
+            <li><a href="#ai-teacher">Live AI Teacher</a></li>
+            <li><a href="#class">Online Class</a></li>
+          </ul>
+        </div>
+
+        <!-- Column 3: Goethe Exams & Vocabulary -->
+        <div class="footer-col">
+          <h4>Goethe Exams</h4>
+          <ul class="footer-links">
+            <li><a href="#goethe-a1">Goethe-Zertifikat A1</a></li>
+            <li><a href="#goethe-a2">Goethe-Zertifikat A2</a></li>
+            <li><a href="#goethe-b1">Goethe-Zertifikat B1</a></li>
+            <li><a href="#goethe-b2">Goethe-Zertifikat B2</a></li>
+            <li><a href="#goethe-c1">Goethe-Zertifikat C1</a></li>
+          </ul>
+          <h4 class="mt">Goethe vocabulary</h4>
+          <ul class="footer-links">
+            <li><a href="#gv-a1">A1 vocabulary</a></li>
+            <li><a href="#gv-a2">A2 vocabulary</a></li>
+            <li><a href="#gv-b1">B1 vocabulary</a></li>
+            <li><a href="#gv-b2">B2 vocabulary</a></li>
+            <li><a href="#gv-c1">C1 vocabulary</a></li>
+          </ul>
+        </div>
+
+        <!-- Column 4: TELC Exams & Vocabulary -->
+        <div class="footer-col">
+          <h4>TELC Exams</h4>
+          <ul class="footer-links">
+            <li><a href="#telc-a1">telc Deutsch A1</a></li>
+            <li><a href="#telc-a2">telc Deutsch A2</a></li>
+            <li><a href="#telc-b1">telc Deutsch B1</a></li>
+            <li><a href="#telc-b2">telc Deutsch B2</a></li>
+            <li><a href="#telc-c1">telc Deutsch C1</a></li>
+          </ul>
+          <h4 class="mt">telc vocabulary</h4>
+          <ul class="footer-links">
+            <li><a href="#tv-a1">A1 vocabulary</a></li>
+            <li><a href="#tv-a2">A2 vocabulary</a></li>
+            <li><a href="#tv-b1">B1 vocabulary</a></li>
+            <li><a href="#tv-b2">B2 vocabulary</a></li>
+            <li><a href="#tv-c1">C1 vocabulary</a></li>
+          </ul>
+        </div>
+
+        <!-- Column 5: TestDaF & ÖSD -->
+        <div class="footer-col">
+          <h4>TestDaF B2–C1</h4>
+          <ul class="footer-links">
+            <li><a href="#td-overview">TestDaF Overview</a></li>
+            <li><a href="#td-reading">TestDaF Reading</a></li>
+            <li><a href="#td-listening">TestDaF Listening</a></li>
+            <li><a href="#td-writing">TestDaF Writing</a></li>
+          </ul>
+          <h4 class="mt">ÖSD</h4>
+          <ul class="footer-links">
+            <li><a href="#osd-a1">ÖSD Zertifikat A1 (ZA1)</a></li>
+            <li><a href="#osd-a2">ÖSD Zertifikat A2 (ZA2)</a></li>
+            <li><a href="#osd-b1">ÖSD Zertifikat B1 (ZB1)</a></li>
+            <li><a href="#osd-b2">B2 and C1 - Coming Soon</a></li>
+          </ul>
+        </div>
+
+        <!-- Column 6: DTZ & Leben in Deutschland -->
+        <div class="footer-col">
+          <h4>DTZ (Deutsch-Test für Zuwanderer) A2–B1</h4>
+          <ul class="footer-links">
+            <li><a href="#dtz-read">DTZ Reading</a></li>
+            <li><a href="#dtz-listen">DTZ Listening</a></li>
+            <li><a href="#dtz-write">DTZ Writing</a></li>
+            <li><a href="#dtz-speak">DTZ Speaking Exam</a></li>
+          </ul>
+          <h4 class="mt">Leben in Deutschland</h4>
+          <ul class="footer-links">
+            <li><a href="#lid-300">All 300 BAMF questions</a></li>
+            <li><a href="#lid-state">State Questions</a></li>
+            <li><a href="#lid-mock">Mock tests</a></li>
+            <li><a href="#lid-cat">Question Categories</a></li>
+            <li><a href="#lid-app">Mobile app</a></li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="footer-bottom">
+        <div>© 2026 Deutsch Prüfung. All rights reserved. Independent exam prep – not affiliated with or endorsed by any examination body.</div>
+        <div class="footer-legal-links">
+          <a href="#report" id="footerReportLink">⚑ Report an Issue</a>
+          <a href="#feedback" id="footerFeedbackLink">💬 Share Feedback</a>
+          <a href="#legal">Legal Notice</a>
+          <a href="#privacy">Privacy Policy</a>
+          <a href="#terms">Terms of Service</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <!-- ========================================================================
+       5. INTERACTIVE MODALS (ROLEPLAY, LIVE VOICE, NOTEBOOK, TIPS) & TOAST
+       ======================================================================== -->
+  <div class="modal-overlay" id="appModal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <div class="modal-box">
+      <div class="modal-head">
+        <h3 id="modalTitle">Modal Title</h3>
+        <button type="button" class="modal-close-btn" id="closeModalBtn" aria-label="Close modal">✕</button>
+      </div>
+      <div class="modal-body" id="modalBody"></div>
+    </div>
+  </div>
+
+  <div class="toast-banner" id="toastBanner" role="status" aria-live="polite"></div>
+
+  <script>
+    /* ==========================================================================
+       1. CUSTOM VECTOR STIMULUS ARTWORKS & A1 SPEAKING PROMPTS (84 QUESTIONS)
+       ========================================================================== */
+    const CUSTOM_SVGS = {
+      // Q1: Red prohibition circle with diagonal slash over swimmer and blue waves
+      swim_forbidden: `
+        <svg viewBox="0 0 220 220" fill="none">
+          <path d="M46 132 Q62 122 78 132 T110 132 T142 132 T174 132" stroke="#1d63dc" stroke-width="6.5" stroke-linecap="round"/>
+          <path d="M52 149 Q66 140 80 149 T108 149 T136 149 T164 149" stroke="#2563eb" stroke-width="6" stroke-linecap="round"/>
+          <circle cx="136" cy="96" r="11" fill="#111827"/>
+          <path d="M72 118 L104 94 L125 109 L106 122 Z" fill="#111827"/>
+          <path d="M98 97 L116 82 L124 89 L108 104 Z" fill="#111827"/>
+          <circle cx="110" cy="110" r="82" stroke="#dc2626" stroke-width="15"/>
+          <line x1="53" y1="53" x2="167" y2="167" stroke="#dc2626" stroke-width="15" stroke-linecap="round"/>
+        </svg>`,
+
+      // Q2: No Smoking
+      no_smoking: `
+        <svg viewBox="0 0 220 220" fill="none">
+          <rect x="52" y="106" width="96" height="16" rx="2" fill="#f8fafc" stroke="#1e293b" stroke-width="3"/>
+          <rect x="52" y="106" width="24" height="16" fill="#d97706" stroke="#1e293b" stroke-width="2.5"/>
+          <rect x="148" y="106" width="12" height="16" fill="#ef4444" stroke="#1e293b" stroke-width="2.5"/>
+          <path d="M154 96 Q148 84 156 72" stroke="#64748b" stroke-width="3.5" stroke-linecap="round"/>
+          <path d="M164 96 Q170 84 162 72" stroke="#64748b" stroke-width="3.5" stroke-linecap="round"/>
+          <circle cx="110" cy="110" r="82" stroke="#dc2626" stroke-width="15"/>
+          <line x1="53" y1="53" x2="167" y2="167" stroke="#dc2626" stroke-width="15" stroke-linecap="round"/>
+        </svg>`,
+
+      // Q3: No Mobile Phone
+      no_phone: `
+        <svg viewBox="0 0 220 220" fill="none">
+          <rect x="82" y="56" width="56" height="108" rx="9" fill="#1e293b"/>
+          <rect x="88" y="68" width="44" height="80" rx="3" fill="#e0f2fe"/>
+          <circle cx="110" cy="156" r="3.5" fill="#94a3b8"/>
+          <circle cx="110" cy="110" r="82" stroke="#dc2626" stroke-width="15"/>
+          <line x1="53" y1="53" x2="167" y2="167" stroke="#dc2626" stroke-width="15" stroke-linecap="round"/>
+        </svg>`,
+
+      // Q4: No Photography
+      no_camera: `
+        <svg viewBox="0 0 220 220" fill="none">
+          <rect x="58" y="84" width="104" height="64" rx="10" fill="#1e293b"/>
+          <path d="M84 84 L92 68 H128 L136 84 Z" fill="#334155"/>
+          <circle cx="110" cy="116" r="20" fill="#e2e8f0" stroke="#0f172a" stroke-width="4"/>
+          <circle cx="110" cy="116" r="9" fill="#3b82f6"/>
+          <circle cx="146" cy="96" r="4" fill="#facc15"/>
+          <circle cx="110" cy="110" r="82" stroke="#dc2626" stroke-width="15"/>
+          <line x1="53" y1="53" x2="167" y2="167" stroke="#dc2626" stroke-width="15" stroke-linecap="round"/>
+        </svg>`,
+
+      // Q5: Apple / Fruit
+      apple: `
+        <svg viewBox="0 0 220 220" fill="none">
+          <path d="M110 66 C110 48 124 40 132 42" stroke="#78350f" stroke-width="6" stroke-linecap="round"/>
+          <path d="M112 56 C126 42 148 48 144 64 C132 68 118 64 112 56 Z" fill="#16a34a" stroke="#14532d" stroke-width="3"/>
+          <path d="M110 74 C86 64 56 82 60 124 C64 162 90 178 110 170 C130 178 156 162 160 124 C164 82 134 64 110 74 Z" fill="#ef4444" stroke="#991b1b" stroke-width="4"/>
+          <path d="M78 96 C74 108 75 122 80 132" stroke="#fecaca" stroke-width="5" stroke-linecap="round"/>
+        </svg>`,
+
+      // Q6: Open Window
+      window: `
+        <svg viewBox="0 0 220 220" fill="none">
+          <rect x="52" y="44" width="116" height="132" rx="6" fill="#bae6fd" stroke="#78350f" stroke-width="6"/>
+          <line x1="110" y1="44" x2="110" y2="176" stroke="#78350f" stroke-width="6"/>
+          <line x1="52" y1="110" x2="168" y2="110" stroke="#78350f" stroke-width="6"/>
+          <path d="M84 96 Q110 86 136 96" stroke="#ffffff" stroke-width="4" stroke-linecap="round"/>
+          <path d="M78 128 Q110 118 142 128" stroke="#ffffff" stroke-width="4" stroke-linecap="round"/>
+        </svg>`,
+
+      // Q7: Cup of Coffee
+      coffee: `
+        <svg viewBox="0 0 220 220" fill="none">
+          <path d="M84 56 Q78 42 86 30" stroke="#64748b" stroke-width="4.5" stroke-linecap="round"/>
+          <path d="M110 52 Q104 38 112 26" stroke="#64748b" stroke-width="4.5" stroke-linecap="round"/>
+          <path d="M134 56 Q128 42 136 30" stroke="#64748b" stroke-width="4.5" stroke-linecap="round"/>
+          <path d="M62 74 H152 V112 C152 140 132 158 107 158 C82 158 62 140 62 112 Z" fill="#ffffff" stroke="#1e293b" stroke-width="4.5"/>
+          <path d="M152 84 H166 A14 14 0 0 1 166 116 H152" stroke="#1e293b" stroke-width="4.5"/>
+          <ellipse cx="107" cy="74" rx="45" ry="7" fill="#78350f"/>
+          <path d="M44 162 H170 L160 174 H54 Z" fill="#cbd5e1" stroke="#1e293b" stroke-width="4"/>
+        </svg>`,
+
+      // Q8: Bicycle Parking
+      bicycle: `
+        <svg viewBox="0 0 220 220" fill="none">
+          <rect x="74" y="34" width="72" height="54" rx="8" fill="#1d63dc" stroke="#1e3a8a" stroke-width="3.5"/>
+          <text x="110" y="71" text-anchor="middle" fill="#ffffff" font-family="Inter, sans-serif" font-weight="800" font-size="34">P</text>
+          <circle cx="68" cy="154" r="26" stroke="#1e293b" stroke-width="5" fill="#ffffff"/>
+          <circle cx="152" cy="154" r="26" stroke="#1e293b" stroke-width="5" fill="#ffffff"/>
+          <path d="M68 154 L98 118 H134 L152 154 M98 118 L112 154 H68 M134 118 L128 104 H142 M92 104 H106" stroke="#1d63dc" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>`,
+
+      // Q9: Quiet / Book
+      quiet_book: `
+        <svg viewBox="0 0 220 220" fill="none">
+          <path d="M44 64 C66 56 92 60 110 72 C128 60 154 56 176 64 V158 C154 150 128 154 110 166 C92 154 66 150 44 158 Z" fill="#ffffff" stroke="#1e293b" stroke-width="4.5" stroke-linejoin="round"/>
+          <line x1="110" y1="72" x2="110" y2="166" stroke="#1e293b" stroke-width="4"/>
+          <line x1="62" y1="90" x2="96" y2="94" stroke="#64748b" stroke-width="3.5" stroke-linecap="round"/>
+          <line x1="62" y1="110" x2="96" y2="114" stroke="#64748b" stroke-width="3.5" stroke-linecap="round"/>
+          <line x1="124" y1="94" x2="158" y2="90" stroke="#64748b" stroke-width="3.5" stroke-linecap="round"/>
+          <line x1="124" y1="114" x2="158" y2="110" stroke="#64748b" stroke-width="3.5" stroke-linecap="round"/>
+        </svg>`,
+
+      // Q10: Taxi
+      taxi: `
+        <svg viewBox="0 0 220 220" fill="none">
+          <rect x="86" y="64" width="48" height="18" rx="4" fill="#111827"/>
+          <text x="110" y="77" text-anchor="middle" fill="#facc15" font-family="Inter, sans-serif" font-weight="800" font-size="11">TAXI</text>
+          <path d="M56 112 L72 82 H148 L164 112 H180 V146 H40 V112 Z" fill="#facc15" stroke="#1e293b" stroke-width="4.5" stroke-linejoin="round"/>
+          <rect x="76" y="88" width="30" height="20" rx="2" fill="#e0f2fe" stroke="#1e293b" stroke-width="3"/>
+          <rect x="114" y="88" width="30" height="20" rx="2" fill="#e0f2fe" stroke="#1e293b" stroke-width="3"/>
+          <circle cx="72" cy="148" r="16" fill="#1e293b"/>
+          <circle cx="72" cy="148" r="7" fill="#cbd5e1"/>
+          <circle cx="148" cy="148" r="16" fill="#1e293b"/>
+          <circle cx="148" cy="148" r="7" fill="#cbd5e1"/>
+        </svg>`,
+
+      // Q11: Clock / Time
+      clock: `
+        <svg viewBox="0 0 220 220" fill="none">
+          <circle cx="110" cy="110" r="68" fill="#ffffff" stroke="#1e293b" stroke-width="6"/>
+          <circle cx="110" cy="110" r="56" stroke="#cbd5e1" stroke-width="2" stroke-dasharray="4 6"/>
+          <line x1="110" y1="110" x2="110" y2="68" stroke="#1d63dc" stroke-width="5.5" stroke-linecap="round"/>
+          <line x1="110" y1="110" x2="142" y2="110" stroke="#1e293b" stroke-width="6" stroke-linecap="round"/>
+          <circle cx="110" cy="110" r="6" fill="#dc2626"/>
+        </svg>`,
+
+      // Q12: Train Ticket
+      ticket: `
+        <svg viewBox="0 0 220 220" fill="none">
+          <path d="M44 76 H176 V98 A12 12 0 0 0 176 122 V144 H44 V122 A12 12 0 0 0 44 98 Z" fill="#ffffff" stroke="#1e293b" stroke-width="4.5"/>
+          <line x1="134" y1="78" x2="134" y2="142" stroke="#94a3b8" stroke-width="3" stroke-dasharray="5 5"/>
+          <text x="88" y="106" text-anchor="middle" fill="#1d63dc" font-family="Inter, sans-serif" font-weight="800" font-size="14">TICKET</text>
+          <text x="88" y="124" text-anchor="middle" fill="#475569" font-family="Inter, sans-serif" font-weight="600" font-size="10">BERLIN HBF</text>
+          <rect x="146" y="94" width="16" height="32" fill="#1e293b"/>
+        </svg>`
+    };
+
+    const CORE_PROMPTS = [
+      {
+        topic: "Schwimmen verboten",
+        svgKey: "swim_forbidden",
+        reqDe: "Entschuldigung, darf man hier schwimmen?",
+        reqEn: "Excuse me, is swimming allowed here?",
+        resDe: "Nein, tut mir leid. Hier ist das Schwimmen verboten.",
+        resEn: "No, I'm sorry. Swimming is prohibited here.",
+        vocab: ["schwimmen (to swim)", "verboten (forbidden)", "dürfen (to be allowed)"]
+      },
+      {
+        topic: "Rauchen verboten",
+        svgKey: "no_smoking",
+        reqDe: "Entschuldigung, darf ich hier rauchen?",
+        reqEn: "Excuse me, may I smoke here?",
+        resDe: "Nein, bitte nicht. Hier ist Rauchen verboten.",
+        resEn: "No, please don't. Smoking is not allowed here.",
+        vocab: ["rauchen (to smoke)", "die Zigarette (cigarette)", "bitte nicht (please don't)"]
+      },
+      {
+        topic: "Handy ausschalten",
+        svgKey: "no_phone",
+        reqDe: "Können Sie bitte Ihr Handy ausschalten?",
+        reqEn: "Could you please turn off your mobile phone?",
+        resDe: "Ja, natürlich. Ich mache es sofort aus.",
+        resEn: "Yes, of course. I will turn it off right away.",
+        vocab: ["das Handy (mobile phone)", "ausschalten (to switch off)", "sofort (immediately)"]
+      },
+      {
+        topic: "Fotografieren verboten",
+        svgKey: "no_camera",
+        reqDe: "Darf man hier Fotos machen?",
+        reqEn: "Is it allowed to take photos here?",
+        resDe: "Nein, leider nicht. Fotografieren ist hier verboten.",
+        resEn: "No, unfortunately not. Taking photos is forbidden here.",
+        vocab: ["fotografieren (to photograph)", "das Foto (photo)", "leider nicht (unfortunately not)"]
+      },
+      {
+        topic: "Einen Apfel geben",
+        svgKey: "apple",
+        reqDe: "Gibst du mir bitte einen Apfel?",
+        reqEn: "Could you please give me an apple?",
+        resDe: "Ja, gerne! Hier, bitte schön.",
+        resEn: "Yes, gladly! Here you go.",
+        vocab: ["der Apfel (apple)", "das Obst (fruit)", "geben (to give)"]
+      },
+      {
+        topic: "Das Fenster öffnen",
+        svgKey: "window",
+        reqDe: "Könnten Sie bitte das Fenster öffnen? Es ist warm.",
+        reqEn: "Could you please open the window? It is warm.",
+        resDe: "Ja, klar. Ich mache das Fenster auf.",
+        resEn: "Yes, sure. I'll open the window.",
+        vocab: ["das Fenster (window)", "öffnen / aufmachen (to open)", "warm (warm)"]
+      },
+      {
+        topic: "Einen Kaffee bestellen",
+        svgKey: "coffee",
+        reqDe: "Ich möchte bitte eine Tasse Kaffee.",
+        reqEn: "I would like a cup of coffee, please.",
+        resDe: "Sehr gerne. Möchten Sie Milch und Zucker?",
+        resEn: "With pleasure. Would you like milk and sugar?",
+        vocab: ["die Tasse Kaffee (cup of coffee)", "die Milch (milk)", "der Zucker (sugar)"]
+      },
+      {
+        topic: "Fahrrad abstellen",
+        svgKey: "bicycle",
+        reqDe: "Entschuldigung, wo kann ich mein Fahrrad abstellen?",
+        reqEn: "Excuse me, where can I park my bicycle?",
+        resDe: "Dort links gibt es einen Fahrradparkplatz.",
+        resEn: "Over there on the left there is a bicycle parking area.",
+        vocab: ["das Fahrrad (bicycle)", "abstellen (to park/leave)", "links (on the left)"]
+      },
+      {
+        topic: "Bitte leise sein",
+        svgKey: "quiet_book",
+        reqDe: "Könnt ihr bitte etwas leiser sein? Ich lerne.",
+        reqEn: "Could you please be a bit quieter? I am studying.",
+        resDe: "Oh, Entschuldigung! Wir sprechen leiser.",
+        resEn: "Oh, sorry! We will speak more quietly.",
+        vocab: ["leise (quiet)", "lernen (to study/learn)", "Entschuldigung (excuse me/sorry)"]
+      },
+      {
+        topic: "Ein Taxi rufen",
+        svgKey: "taxi",
+        reqDe: "Können Sie bitte ein Taxi für mich rufen?",
+        reqEn: "Could you please call a taxi for me?",
+        resDe: "Ja, natürlich. Das Taxi kommt in fünf Minuten.",
+        resEn: "Yes, of course. The taxi will arrive in five minutes.",
+        vocab: ["das Taxi (taxi)", "rufen (to call)", "in fünf Minuten (in five minutes)"]
+      },
+      {
+        topic: "Nach der Uhrzeit fragen",
+        svgKey: "clock",
+        reqDe: "Entschuldigung, wie spät ist es bitte?",
+        reqEn: "Excuse me, what time is it please?",
+        resDe: "Es ist Viertel nach zehn.",
+        resEn: "It is quarter past ten.",
+        vocab: ["wie spät ist es (what time is it)", "die Uhr (clock/watch)", "Viertel nach (quarter past)"]
+      },
+      {
+        topic: "Eine Fahrkarte kaufen",
+        svgKey: "ticket",
+        reqDe: "Ich brauche bitte eine Fahrkarte nach Berlin.",
+        reqEn: "I need a ticket to Berlin, please.",
+        resDe: "Gerne. Einfach oder hin und zurück?",
+        resEn: "Gladly. One-way or round-trip?",
+        vocab: ["die Fahrkarte (ticket)", "einfach (one-way)", "hin und zurück (round-trip)"]
+      }
+    ];
+
+    const PROCEDURAL_TOPICS = [
+      { topic: "Einen Kugelschreiber leihen", icon: "✏️", color: "#1d63dc", reqDe: "Hast du bitte einen Kugelschreiber für mich?", reqEn: "Do you have a pen for me, please?", resDe: "Ja, hier ist ein Stift. Bitte schön!", resEn: "Yes, here is a pen. Here you go!", vocab: ["der Kugelschreiber (pen)", "leihen (to borrow/lend)"] },
+      { topic: "Ein Glas Wasser bringen", icon: "🥤", color: "#0284c7", reqDe: "Kann ich bitte ein Glas Wasser haben?", reqEn: "Can I have a glass of water, please?", resDe: "Natürlich, ich bringe es Ihnen sofort.", resEn: "Of course, I will bring it to you right away.", vocab: ["das Glas Wasser (glass of water)", "bringen (to bring)"] },
+      { topic: "Den Regenschirm mitnehmen", icon: "☂️", color: "#4f46e5", reqDe: "Es regnet! Kannst du mir deinen Regenschirm geben?", reqEn: "It's raining! Can you give me your umbrella?", resDe: "Ja, nimm ihn gerne mit!", resEn: "Yes, feel free to take it with you!", vocab: ["der Regenschirm (umbrella)", "regnen (to rain)"] },
+      { topic: "Den Zimmerschlüssel geben", icon: "🔑", color: "#d97706", reqDe: "Ich möchte bitte meinen Zimmerschlüssel.", reqEn: "I would like my room key, please.", resDe: "Hier ist Ihr Schlüssel für Zimmer 12.", resEn: "Here is your key for room 12.", vocab: ["der Schlüssel (key)", "das Zimmer (room)"] },
+      { topic: "Nach dem Weg fragen", icon: "🗺️", color: "#16a34a", reqDe: "Entschuldigung, wie komme ich zum Bahnhof?", reqEn: "Excuse me, how do I get to the train station?", resDe: "Gehen Sie immer geradeaus, dann rechts.", resEn: "Go straight ahead, then turn right.", vocab: ["der Bahnhof (train station)", "geradeaus (straight ahead)"] },
+      { topic: "Beim Koffer helfen", icon: "🧳", color: "#9333ea", reqDe: "Können Sie mir bitte mit dem Koffer helfen?", reqEn: "Could you please help me with the suitcase?", resDe: "Ja, sehr gerne. Der Koffer ist wirklich schwer!", resEn: "Yes, gladly. The suitcase is really heavy!", vocab: ["der Koffer (suitcase)", "helfen (to help)"] },
+      { topic: "Die Speisekarte bringen", icon: "🍽️", color: "#dc2626", reqDe: "Herr Ober, bringen Sie uns bitte die Speisekarte?", reqEn: "Waiter, could you please bring us the menu?", resDe: "Sofort! Hier ist die Speisekarte.", resEn: "Right away! Here is the menu.", vocab: ["die Speisekarte (menu)", "bestellen (to order)"] },
+      { topic: "Die Zeitung lesen", icon: "📰", color: "#334155", reqDe: "Liest du die Zeitung noch, oder darf ich sie nehmen?", reqEn: "Are you still reading the newspaper, or may I take it?", resDe: "Ich bin fertig. Du kannst sie gerne lesen.", resEn: "I'm finished. You are welcome to read it.", vocab: ["die Zeitung (newspaper)", "lesen (to read)"] }
+    ];
+
+    function buildProceduralSvg(item, index) {
+      return `
+        <svg viewBox="0 0 220 220" fill="none">
+          <circle cx="110" cy="102" r="66" fill="#ffffff" stroke="${item.color}" stroke-width="5"/>
+          <circle cx="110" cy="102" r="56" fill="${item.color}" fill-opacity="0.08"/>
+          <text x="110" y="118" text-anchor="middle" font-size="54">${item.icon}</text>
+          <rect x="34" y="176" width="152" height="26" rx="13" fill="#ffffff" stroke="#cbd5e1" stroke-width="2"/>
+          <text x="110" y="193" text-anchor="middle" fill="#1e293b" font-family="Inter, sans-serif" font-weight="700" font-size="11">Karte #${index + 1}</text>
+        </svg>`;
+    }
+
+    // Build all 84 Speaking Part 3 questions
+    const ALL_QUESTIONS = Array.from({ length: 84 }, (_, idx) => {
+      if (idx < CORE_PROMPTS.length) {
+        const p = CORE_PROMPTS[idx];
+        return {
+          number: idx + 1,
+          topic: p.topic,
+          svg: CUSTOM_SVGS[p.svgKey],
+          reqDe: p.reqDe,
+          reqEn: p.reqEn,
+          resDe: p.resDe,
+          resEn: p.resEn,
+          vocab: p.vocab
+        };
+      }
+      const proc = PROCEDURAL_TOPICS[(idx - CORE_PROMPTS.length) % PROCEDURAL_TOPICS.length];
+      return {
+        number: idx + 1,
+        topic: proc.topic,
+        svg: buildProceduralSvg(proc, idx),
+        reqDe: proc.reqDe,
+        reqEn: proc.reqEn,
+        resDe: proc.resDe,
+        resEn: proc.resEn,
+        vocab: proc.vocab
+      };
+    });
+
+    /* ==========================================================================
+       2. APPLICATION STATE
+       ========================================================================== */
+    const state = {
+      currentIndex: 0, // 0 to 83
+      statuses: {},    // { [1..84]: 'practiced' | 'review' }
+      sampleOpen: false,
+      whoStarts: 'user', // 'user' | 'ai'
+      darkTheme: false,
+      examLevel: 'Goethe A1',
+      activeTeil: 'Teil 3',
+      notebook: [
+        { type: "Vocab", title: "verboten", detail: "forbidden / prohibited — Hier ist Schwimmen verboten." },
+        { type: "Note", title: "Goethe A1 Teil 3 Tip", detail: "Always start polite requests with 'Entschuldigung, können Sie bitte...' or 'Darf ich hier...?'" }
+      ]
+    };
+
+    /* ==========================================================================
+       3. HELPER FUNCTIONS (TOAST, SPEECH SYNTHESIS, MODAL)
+       ========================================================================== */
+    let toastTimer = null;
+    function showToast(msg) {
+      const el = document.getElementById("toastBanner");
+      el.textContent = msg;
+      el.classList.add("show");
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => el.classList.remove("show"), 2800);
+    }
+
+    function speakGerman(text) {
+      if ("speechSynthesis" in window) {
+        window.speechSynthesis.cancel();
+        const utter = new SpeechSynthesisUtterance(text);
+        utter.lang = "de-DE";
+        utter.rate = 0.92;
+        window.speechSynthesis.speak(utter);
+        showToast("🔊 Playing German audio...");
+      } else {
+        showToast("🔊 " + text);
+      }
+    }
+
+    function openModal(title, htmlContent) {
+      document.getElementById("modalTitle").textContent = title;
+      document.getElementById("modalBody").innerHTML = htmlContent;
+      document.getElementById("appModal").classList.add("open");
+    }
+
+    function closeModal() {
+      document.getElementById("appModal").classList.remove("open");
+    }
+
+    /* ==========================================================================
+       4. RENDER ACTIVE QUESTION & SIDEBAR STATS / QUICK NAVIGATION
+       ========================================================================== */
+    function renderCurrentQuestion() {
+      const q = ALL_QUESTIONS[state.currentIndex];
+      const qNum = q.number;
+
+      document.getElementById("questionCounterHeading").textContent = `Question ${qNum} of 84`;
+      document.getElementById("topPrevBtn").disabled = state.currentIndex === 0;
+      document.getElementById("bottomPrevBtn").disabled = state.currentIndex === 0;
+      document.getElementById("topNextBtn").disabled = state.currentIndex === 83;
+      document.getElementById("bottomNextBtn").disabled = state.currentIndex === 83;
+
+      document.getElementById("stimulusSvgHolder").innerHTML = q.svg;
+
+      const ribbon = document.getElementById("cardStatusRibbon");
+      const st = state.statuses[qNum];
+      ribbon.className = "card-status-ribbon";
+      if (st === "practiced") {
+        ribbon.classList.add("practiced");
+        ribbon.textContent = "✓ Practiced";
+      } else if (st === "review") {
+        ribbon.classList.add("review");
+        ribbon.textContent = "↻ Review";
+      }
+
+      document.getElementById("sampleRequestDe").textContent = `„${q.reqDe}“`;
+      document.getElementById("sampleRequestEn").textContent = q.reqEn;
+      document.getElementById("sampleResponseDe").textContent = `„${q.resDe}“`;
+      document.getElementById("sampleResponseEn").textContent = q.resEn;
+
+      const vocabStrip = document.getElementById("sampleVocabStrip");
+      vocabStrip.innerHTML = `<span class="vocab-strip-label">Wortschatz:</span>` +
+        q.vocab.map(v => `<button type="button" class="vocab-chip" data-save-vocab="${v}">+ ${v}</button>`).join("");
+
+      const drawer = document.getElementById("sampleAnswersDrawer");
+      const toggleBtn = document.getElementById("sampleToggleBtn");
+      const toggleLbl = document.getElementById("sampleToggleLabel");
+      drawer.classList.toggle("open", state.sampleOpen);
+      toggleBtn.classList.toggle("open", state.sampleOpen);
+      toggleBtn.setAttribute("aria-expanded", String(state.sampleOpen));
+      toggleLbl.textContent = state.sampleOpen ? "Hide sample answers" : "Show sample answers";
+    }
+
+    function renderSidebar() {
+      let correct = 0;
+      let incorrect = 0;
+      Object.values(state.statuses).forEach(val => {
+        if (val === "practiced") correct++;
+        else if (val === "review") incorrect++;
+      });
+
+      const answered = correct + incorrect;
+      const remaining = 84 - answered;
+      const progressPct = Math.round((answered / 84) * 100);
+      const accuracyPct = answered > 0 ? Math.round((correct / answered) * 100) : 0;
+
+      document.getElementById("statCorrect").textContent = correct;
+      document.getElementById("statIncorrect").textContent = incorrect;
+      document.getElementById("statRemaining").textContent = remaining;
+      document.getElementById("overallProgressPct").textContent = `${progressPct}%`;
+      document.getElementById("overallProgressFill").style.width = `${progressPct}%`;
+
+      const accEl = document.getElementById("accuracyPct");
+      accEl.textContent = `${accuracyPct}%`;
+      accEl.classList.toggle("good", accuracyPct >= 60);
+
+      document.getElementById("sidebarRemText").textContent = `${remaining} questions remaining`;
+      document.getElementById("bottomUnansweredText").textContent = `${remaining} unanswered questions`;
+      document.getElementById("notebookCountBadge").textContent = state.notebook.length;
+
+      const grid = document.getElementById("quickNavGrid");
+      grid.innerHTML = "";
+      for (let i = 1; i <= 84; i++) {
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "q-nav-btn";
+        btn.textContent = i;
+        btn.setAttribute("aria-label", `Jump to question ${i}`);
+
+        const st = state.statuses[i];
+        if (st === "practiced") btn.classList.add("practiced");
+        if (st === "review") btn.classList.add("review");
+        if (i - 1 === state.currentIndex) btn.classList.add("current");
+
+        btn.addEventListener("click", () => {
+          state.currentIndex = i - 1;
+          renderCurrentQuestion();
+          renderSidebar();
+          window.scrollTo({ top: 0, behavior: "smooth" });
+        });
+
+        grid.appendChild(btn);
+      }
+    }
+
+    function goToQuestion(newIdx) {
+      if (newIdx < 0 || newIdx >= 84) return;
+      state.currentIndex = newIdx;
+      renderCurrentQuestion();
+      renderSidebar();
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    /* ==========================================================================
+       5. EVENT LISTENERS & INTERACTIVE FEATURES
+       ========================================================================== */
+    document.getElementById("topPrevBtn").addEventListener("click", () => goToQuestion(state.currentIndex - 1));
+    document.getElementById("bottomPrevBtn").addEventListener("click", () => goToQuestion(state.currentIndex - 1));
+    document.getElementById("topNextBtn").addEventListener("click", () => goToQuestion(state.currentIndex + 1));
+    document.getElementById("bottomNextBtn").addEventListener("click", () => goToQuestion(state.currentIndex + 1));
+
+    document.getElementById("sampleToggleBtn").addEventListener("click", () => {
+      state.sampleOpen = !state.sampleOpen;
+      renderCurrentQuestion();
+    });
+
+    document.getElementById("speakReqBtn").addEventListener("click", () => {
+      speakGerman(ALL_QUESTIONS[state.currentIndex].reqDe);
+    });
+    document.getElementById("speakResBtn").addEventListener("click", () => {
+      speakGerman(ALL_QUESTIONS[state.currentIndex].resDe);
+    });
+
+    document.getElementById("sampleVocabStrip").addEventListener("click", (e) => {
+      const chip = e.target.closest("[data-save-vocab]");
+      if (!chip) return;
+      const raw = chip.dataset.saveVocab;
+      state.notebook.unshift({
+        type: "Vocab",
+        title: raw,
+        detail: `Saved from Question ${state.currentIndex + 1} (${ALL_QUESTIONS[state.currentIndex].topic})`
+      });
+      renderSidebar();
+      showToast(`Saved „${raw}“ to My Notebook!`);
+    });
+
+    document.getElementById("markPracticedBtn").addEventListener("click", () => {
+      const qNum = state.currentIndex + 1;
+      state.statuses[qNum] = "practiced";
+      renderCurrentQuestion();
+      renderSidebar();
+      showToast(`Question ${qNum} marked as Practiced ✓`);
+    });
+
+    document.getElementById("markReviewBtn").addEventListener("click", () => {
+      const qNum = state.currentIndex + 1;
+      state.statuses[qNum] = "review";
+      renderCurrentQuestion();
+      renderSidebar();
+      showToast(`Question ${qNum} marked for Review ↻`);
+    });
+
+    // Who Starts? Toggle
+    const iStartBtn = document.getElementById("iStartBtn");
+    const aiStartsBtn = document.getElementById("aiStartsBtn");
+    const flowTipText = document.getElementById("flowTipText");
+
+    iStartBtn.addEventListener("click", () => {
+      state.whoStarts = "user";
+      iStartBtn.classList.add("active");
+      aiStartsBtn.classList.remove("active");
+      flowTipText.textContent = "Flow: Formulate a polite request, then answer AI politely.";
+    });
+
+    aiStartsBtn.addEventListener("click", () => {
+      state.whoStarts = "ai";
+      aiStartsBtn.classList.add("active");
+      iStartBtn.classList.remove("active");
+      flowTipText.textContent = "Flow: Listen to AI's request, then react politely.";
+    });
+
+    // Roleplay Modal Simulator
+    document.getElementById("startRoleplayBtn").addEventListener("click", () => {
+      const q = ALL_QUESTIONS[state.currentIndex];
+      const userStarts = state.whoStarts === "user";
+
+      const initialMessages = userStarts
+        ? `<div class="chat-bubble ai"><strong>Examiner Partner:</strong> Bitte beginnen Sie! Formulieren Sie eine höfliche Bitte zu diesem Bild (<em>${q.topic}</em>).</div>`
+        : `<div class="chat-bubble ai"><strong>Examiner Partner:</strong> „${q.reqDe}“<br><span style="font-size:0.75rem;color:var(--text-muted);">${q.reqEn}</span></div>`;
+
+      const suggestedChip = userStarts ? q.reqDe : q.resDe;
+
+      openModal(`AI Roleplay — Question ${q.number} (${q.topic})`, `
+        <div class="chat-feed" id="rpChatFeed">${initialMessages}</div>
+        <div class="suggestion-chips">
+          <button type="button" class="suggest-chip" id="rpSuggestChip">Use A1 example: „${suggestedChip}“</button>
+        </div>
+        <div class="chat-input-row">
+          <input type="text" class="text-input" id="rpTextInput" placeholder="Type your German A1 sentence..." />
+          <button type="button" class="roleplay-cta-btn" style="width:auto;padding:9px 16px;" id="rpSendBtn">Send</button>
+        </div>
+      `);
+
+      const input = document.getElementById("rpTextInput");
+      const feed = document.getElementById("rpChatFeed");
+
+      document.getElementById("rpSuggestChip").addEventListener("click", () => {
+        input.value = suggestedChip;
+        input.focus();
+      });
+
+      function submitRoleplayTurn() {
+        const val = input.value.trim();
+        if (!val) return;
+        feed.innerHTML += `<div class="chat-bubble user">${val}</div>`;
+        input.value = "";
+
+        setTimeout(() => {
+          const reply = userStarts ? q.resDe : "Vielen Dank! Das war sehr höflich und klar.";
+          feed.innerHTML += `
+            <div class="chat-bubble ai"><strong>Examiner Partner:</strong> „${reply}“</div>
+            <div class="chat-bubble feedback">✓ <strong>A1 Examiner Feedback:</strong> Clear polite structure! Good use of A1 vocabulary for <em>${q.topic}</em>.</div>
+          `;
+          feed.scrollTop = feed.scrollHeight;
+          speakGerman(reply);
+        }, 350);
+        feed.scrollTop = feed.scrollHeight;
+      }
+
+      document.getElementById("rpSendBtn").addEventListener("click", submitRoleplayTurn);
+      input.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") submitRoleplayTurn();
+      });
+    });
+
+    // Live Voice Session Modal (Frau Schmidt)
+    document.getElementById("startLiveVoiceBtn").addEventListener("click", () => {
+      const q = ALL_QUESTIONS[state.currentIndex];
+      openModal("Live Voice Session — Frau Schmidt", `
+        <div class="voice-stage">
+          <div class="teacher-portrait" style="width:56px;height:56px;">
+            <svg width="34" height="34" viewBox="0 0 24 24" fill="none">
+              <circle cx="12" cy="9" r="4" fill="#7c2d12"/>
+              <path d="M5 21c0-3.5 3.1-6 7-6s7 2.5 7 6" fill="#4f46e5"/>
+            </svg>
+            <span class="online-dot"></span>
+          </div>
+          <div>
+            <div style="font-weight:700;font-size:0.95rem;">Frau Schmidt · Live German Examiner</div>
+            <div style="font-size:0.78rem;color:var(--text-muted);">Topic: ${q.topic} (Question ${q.number})</div>
+          </div>
+          <div class="waveform-bars" id="liveWaveBars">
+            <span class="wave-bar"></span><span class="wave-bar"></span><span class="wave-bar"></span>
+            <span class="wave-bar"></span><span class="wave-bar"></span><span class="wave-bar"></span>
+            <span class="wave-bar"></span>
+          </div>
+          <div style="padding:12px;border-radius:10px;background:var(--purple-tint);border:1px solid var(--purple-border);font-size:0.84rem;width:100%;">
+            <strong>Frau Schmidt:</strong> „Hallo! Schauen Sie bitte auf das Bild. Formulieren Sie jetzt eine Bitte!“
+          </div>
+          <div style="display:flex;gap:10px;width:100%;">
+            <button type="button" class="yt-outline-btn" id="toggleMicBtn">🎙️ Mute / Pause</button>
+            <button type="button" class="live-voice-cta-btn" id="simulateSpeakBtn">🗣️ Speak Sample &amp; Get Feedback</button>
+          </div>
+        </div>
+      `);
+
+      speakGerman("Hallo! Schauen Sie bitte auf das Bild. Formulieren Sie jetzt eine Bitte!");
+
+      document.getElementById("toggleMicBtn").addEventListener("click", () => {
+        document.getElementById("liveWaveBars").classList.toggle("paused");
+      });
+
+      document.getElementById("simulateSpeakBtn").addEventListener("click", () => {
+        showToast(`Pronunciation score: 96% — „${q.reqDe}“`);
+        speakGerman(q.resDe);
+      });
+    });
+
+    // Redemittel & Exam Tips Modal
+    function openRedemittelModal() {
+      openModal("Goethe A1 Sprechen Teil 3 — Tipps & Redemittel", `
+        <div style="display:flex;flex-direction:column;gap:12px;font-size:0.84rem;">
+          <div style="padding:12px;border-radius:10px;background:var(--brand-blue-tint);border:1px solid var(--brand-blue-border);">
+            <strong style="color:var(--brand-blue);">1. Bitten formulieren (Making a polite request):</strong>
+            <ul style="padding-left:18px;margin-top:6px;display:flex;flex-direction:column;gap:4px;">
+              <li><em>Entschuldigung, darf ich hier ...?</em> (Excuse me, may I ... here?)</li>
+              <li><em>Können Sie mir bitte ... geben?</em> (Can you please give me ...?)</li>
+              <li><em>Ich möchte bitte ...</em> (I would like ..., please.)</li>
+            </ul>
+          </div>
+          <div style="padding:12px;border-radius:10px;background:var(--purple-tint);border:1px solid var(--purple-border);">
+            <strong style="color:var(--purple-primary);">2. Darauf reagieren (Reacting politely):</strong>
+            <ul style="padding-left:18px;margin-top:6px;display:flex;flex-direction:column;gap:4px;">
+              <li><em>Ja, natürlich / sehr gerne!</em> (Yes, of course / with pleasure!)</li>
+              <li><em>Hier, bitte schön.</em> (Here you go.)</li>
+              <li><em>Nein, tut mir leid. Das ist hier verboten.</em> (No, I'm sorry. That is prohibited here.)</li>
+            </ul>
+          </div>
+        </div>
+      `);
+    }
+    document.getElementById("videoPreviewCard").addEventListener("click", openRedemittelModal);
+    document.getElementById("watchYoutubeBtn").addEventListener("click", openRedemittelModal);
+
+    // Notebook Modals
+    function openNotebookDrawer(initialTab = "list") {
+      const renderList = () => state.notebook.map((item, idx) => `
+        <div style="padding:10px 12px;border:1px solid var(--border-default);border-radius:8px;background:var(--bg-subtle);display:flex;justify-content:space-between;gap:10px;">
+          <div>
+            <span style="font-size:0.68rem;font-weight:700;padding:2px 6px;border-radius:4px;background:var(--brand-blue-tint);color:var(--brand-blue);">${item.type}</span>
+            <strong style="font-size:0.85rem;margin-left:6px;">${item.title}</strong>
+            <div style="font-size:0.78rem;color:var(--text-secondary);margin-top:3px;">${item.detail}</div>
+          </div>
+          <button type="button" data-del-nb="${idx}" style="color:var(--text-muted);font-size:0.8rem;">✕</button>
+        </div>
+      `).join("");
+
+      openModal("My Notebook & Vocabulary", `
+        <div style="display:flex;flex-direction:column;gap:10px;">
+          <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <input type="text" id="nbTitleInput" class="text-input" placeholder="${initialTab === 'vocab' ? 'German word (e.g. der Bahnhof)' : 'Note title...'}" />
+            <input type="text" id="nbDetailInput" class="text-input" placeholder="${initialTab === 'vocab' ? 'Translation / example...' : 'Write your note...'}" />
+            <button type="button" id="nbSaveBtn" class="roleplay-cta-btn" style="width:auto;padding:8px 14px;">Save</button>
+          </div>
+          <div id="nbItemsList" style="display:flex;flex-direction:column;gap:8px;max-height:260px;overflow-y:auto;">
+            ${renderList()}
+          </div>
+        </div>
+      `);
+
+      document.getElementById("nbSaveBtn").addEventListener("click", () => {
+        const t = document.getElementById("nbTitleInput").value.trim();
+        const d = document.getElementById("nbDetailInput").value.trim();
+        if (!t) return;
+        state.notebook.unshift({
+          type: initialTab === "vocab" ? "Vocab" : "Note",
+          title: t,
+          detail: d || `Question ${state.currentIndex + 1}`
+        });
+        document.getElementById("nbTitleInput").value = "";
+        document.getElementById("nbDetailInput").value = "";
+        document.getElementById("nbItemsList").innerHTML = renderList();
+        renderSidebar();
+        showToast("Saved to My Notebook!");
+      });
+
+      document.getElementById("nbItemsList").addEventListener("click", (e) => {
+        const del = e.target.closest("[data-del-nb]");
+        if (!del) return;
+        state.notebook.splice(Number(del.dataset.delNb), 1);
+        document.getElementById("nbItemsList").innerHTML = renderList();
+        renderSidebar();
+      });
+    }
+
+    document.getElementById("addNoteBtn").addEventListener("click", () => openNotebookDrawer("note"));
+    document.getElementById("addVocabBtn").addEventListener("click", () => openNotebookDrawer("vocab"));
+    document.getElementById("openNotebookBtn").addEventListener("click", () => openNotebookDrawer("list"));
+    document.getElementById("practiceVocabBtn").addEventListener("click", () => openNotebookDrawer("vocab"));
+
+    // Discover More Accordion
+    document.querySelectorAll(".discover-trigger").forEach(btn => {
+      btn.addEventListener("click", () => {
+        btn.parentElement.classList.toggle("open");
+      });
+    });
+
+    // Dropdowns & Theme Toggle
+    const langBtn = document.getElementById("langBtn");
+    const langMenu = document.getElementById("langMenu");
+    langBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      langMenu.classList.toggle("open");
+      examMenu.classList.remove("open");
+    });
+
+    document.querySelectorAll("#langMenu .lang-option").forEach(opt => {
+      opt.addEventListener("click", () => {
+        document.querySelectorAll("#langMenu .lang-option").forEach(o => o.classList.remove("active"));
+        opt.classList.add("active");
+        document.getElementById("currentLangLabel").textContent = opt.dataset.lang;
+        langMenu.classList.remove("open");
+        showToast(`Interface language: ${opt.dataset.lang}`);
+      });
+    });
+
+    const examLevelBtn = document.getElementById("examLevelBtn");
+    const examMenu = document.getElementById("examMenu");
+    examLevelBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      examMenu.classList.toggle("open");
+      langMenu.classList.remove("open");
+    });
+
+    document.querySelectorAll("#examMenu .lang-option").forEach(opt => {
+      opt.addEventListener("click", () => {
+        state.examLevel = opt.dataset.exam;
+        document.getElementById("examLevelText").textContent = state.examLevel;
+        document.getElementById("topContextPill").textContent = `${state.examLevel} · Sprechen · ${state.activeTeil}`;
+        examMenu.classList.remove("open");
+        showToast(`Selected exam: ${state.examLevel}`);
+      });
+    });
+
+    document.addEventListener("click", () => {
+      langMenu.classList.remove("open");
+      examMenu.classList.remove("open");
+    });
+
+    document.getElementById("themeToggleBtn").addEventListener("click", () => {
+      state.darkTheme = !state.darkTheme;
+      document.body.classList.toggle("dark-theme", state.darkTheme);
+      showToast(state.darkTheme ? "Dark mode enabled" : "Light mode enabled");
+    });
+
+    document.querySelectorAll(".module-card").forEach(card => {
+      card.addEventListener("click", () => {
+        const mod = card.dataset.module;
+        if (mod !== "Sprechen") {
+          showToast(`Previewing ${state.examLevel} · ${mod} — click Sprechen to return to Teil 3.`);
+        }
+      });
+    });
+
+    document.querySelectorAll(".teil-pill").forEach(pill => {
+      pill.addEventListener("click", () => {
+        document.querySelectorAll(".teil-pill").forEach(p => p.classList.remove("active"));
+        pill.classList.add("active");
+        state.activeTeil = pill.dataset.teil;
+        document.getElementById("topContextPill").textContent = `${state.examLevel} · Sprechen · ${state.activeTeil}`;
+        if (state.activeTeil !== "Teil 3") {
+          showToast(`Switched header to Sprechen · ${state.activeTeil}`);
+        }
+      });
+    });
+
+    // Report / Feedback / Exit Practice
+    function openFeedbackModal(title) {
+      openModal(title, `
+        <div style="display:flex;flex-direction:column;gap:10px;">
+          <p style="font-size:0.83rem;color:var(--text-secondary);">Question ${state.currentIndex + 1} of 84 (${ALL_QUESTIONS[state.currentIndex].topic})</p>
+          <textarea id="fbTextarea" class="text-input" rows="4" placeholder="Write your message here..."></textarea>
+          <button type="button" id="fbSubmitBtn" class="roleplay-cta-btn">Submit</button>
+        </div>
+      `);
+      document.getElementById("fbSubmitBtn").addEventListener("click", () => {
+        closeModal();
+        showToast("Thank you! Your feedback has been sent.");
+      });
+    }
+
+    document.getElementById("reportIssueBtn").addEventListener("click", () => openFeedbackModal("Report an Issue"));
+    document.getElementById("shareFeedbackBtn").addEventListener("click", () => openFeedbackModal("Share Feedback"));
+    document.getElementById("footerReportLink").addEventListener("click", (e) => { e.preventDefault(); openFeedbackModal("Report an Issue"); });
+    document.getElementById("footerFeedbackLink").addEventListener("click", (e) => { e.preventDefault(); openFeedbackModal("Share Feedback"); });
+
+    document.getElementById("exitPracticeBtn").addEventListener("click", () => {
+      const practiced = Object.values(state.statuses).filter(v => v === "practiced").length;
+      openModal("Session Summary — Goethe A1 Sprechen Teil 3", `
+        <div style="display:flex;flex-direction:column;gap:12px;">
+          <p style="font-size:0.86rem;color:var(--text-secondary);">You have practiced <strong>${practiced} of 84</strong> speaking prompt cards in this session.</p>
+          <div style="display:flex;gap:8px;justify-content:flex-end;">
+            <button type="button" class="yt-outline-btn" style="width:auto;" id="continuePracticeBtn">Continue Practice</button>
+          </div>
+        </div>
+      `);
+      document.getElementById("continuePracticeBtn").addEventListener("click", closeModal);
+    });
+
+    // Modal Close Events
+    document.getElementById("closeModalBtn").addEventListener("click", closeModal);
+    document.getElementById("appModal").addEventListener("click", (e) => {
+      if (e.target.id === "appModal") closeModal();
+    });
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") closeModal();
+    });
+
+    /* ==========================================================================
+       6. INITIALIZE UI
+       ========================================================================== */
+    renderCurrentQuestion();
+    renderSidebar();
+  </script>
+</body>
+</html>

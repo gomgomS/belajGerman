@@ -1,0 +1,89 @@
+{% extends "student/base_student.html" %}
+
+{% block title %}Mein Abo{% endblock %}
+
+{% block head %}
+<style>
+  .abo-hero{ position:relative; overflow:hidden; border-radius:22px; padding:28px 26px; margin-bottom:18px;
+    background:linear-gradient(145deg,#12245A 0%,#1D4ED8 58%,#3B63E8 100%); color:#fff; }
+  .abo-hero .k{ font-size:11px; font-weight:700; letter-spacing:.14em; text-transform:uppercase; color:#C7D6F5; }
+  .abo-hero h1{ font-size:clamp(28px, 3.6vw, 36px); font-weight:700; margin-top:8px; line-height:1.1; }
+  .abo-hero p{ margin-top:10px; color:#D7E3FF; font-size:14px; max-width:40ch; }
+  .abo-grid{ display:grid; gap:12px; margin-bottom:18px; }
+  @media (min-width:720px){ .abo-grid{ grid-template-columns:repeat(3,1fr); } }
+  .abo-metric{ padding:18px; }
+  .abo-metric .lbl{ font-size:11px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:var(--faint); }
+  .abo-metric .val{ margin-top:8px; font-family:'Barlow'; font-size:24px; font-weight:700; color:var(--ink); line-height:1; }
+  .abo-metric .val span{ font-size:12px; font-weight:500; color:var(--faint); }
+  .abo-actions{ display:flex; flex-wrap:wrap; gap:10px; }
+  .empty-abo{ padding:40px 24px; text-align:center; }
+  .empty-abo .ico{ width:56px; height:56px; border-radius:16px; margin:0 auto 14px;
+    display:flex; align-items:center; justify-content:center; background:var(--brand-soft); color:var(--brand); }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="std-wrap" style="max-width:820px">
+
+    {% if subscription %}
+    {% set plan_label = subscription.plan_data.label if subscription.plan_data else subscription.tier %}
+    <section class="abo-hero">
+        <div class="flex items-start justify-between gap-3 flex-wrap">
+            <div>
+                <div class="k">Mein Abo · Langganan aktif</div>
+                <h1>{{ plan_label }}</h1>
+                {% if subscription.expire_at_str %}
+                <p>Berlaku sampai <strong style="color:#fff">{{ subscription.expire_at_str }}</strong>
+                    {% if subscription.days_left is defined and subscription.days_left <= 14 %}
+                    · {{ subscription.days_left }} hari lagi
+                    {% endif %}
+                </p>
+                {% else %}
+                <p>Semua simulasi &amp; pembahasan terbuka selama masa Abo.</p>
+                {% endif %}
+            </div>
+            <span class="pill ok">Aktiv</span>
+        </div>
+    </section>
+
+    <div class="abo-grid">
+        <div class="card abo-metric">
+            <div class="lbl">Kredit AI</div>
+            <div class="val">{{ (subscription.plan_data.ai_credits_monthly if subscription.plan_data else 0) or 0 }}<span> / bln</span></div>
+        </div>
+        <div class="card abo-metric">
+            <div class="lbl">Akses ujian</div>
+            <div class="val">Semua<span> level</span></div>
+        </div>
+        <div class="card abo-metric">
+            <div class="lbl">Pembahasan</div>
+            <div class="val">Lengkap</div>
+        </div>
+    </div>
+
+    <div class="abo-actions">
+        <a href="/student" class="btn-primary">Kembali latihan</a>
+        <a href="/student/preise" class="btn-ghost">Perpanjang / Upgrade</a>
+        <a href="/student/verlauf" class="btn-soft">Riwayat pembayaran</a>
+    </div>
+
+    {% else %}
+    <div class="mb-6">
+        <div class="std-kicker">Mein Abo</div>
+        <h1 class="std-title">Belum berlangganan</h1>
+        <p class="std-sub">Akunmu masih Free Plan. Upgrade sekali untuk membuka semua simulasi, pembahasan, dan kredit AI.</p>
+    </div>
+    <div class="card empty-abo">
+        <div class="ico">
+            <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+        </div>
+        <h3 class="font-display font-semibold text-[18px] mb-2" style="color:var(--ink)">Free Plan aktif</h3>
+        <p class="text-[13.5px] max-w-sm mx-auto mb-6" style="color:var(--muted)">
+            Simulasi terbatas. Pilih paket Abo agar bisa mulai latihan penuh.
+        </p>
+        <a href="/student/preise" class="btn-primary">Pilih paket Abo</a>
+    </div>
+    {% endif %}
+
+</div>
+{% endblock %}

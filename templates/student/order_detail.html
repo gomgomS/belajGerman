@@ -1,0 +1,86 @@
+{% extends "student/base_student.html" %}
+
+{% block title %}Bestellung{% endblock %}
+
+{% block head %}
+<style>
+  .order-shell{ max-width:480px; margin:0 auto; }
+  .order-card{ padding:28px 24px; text-align:center; }
+  .order-ico{ width:64px; height:64px; border-radius:999px; margin:0 auto 14px;
+    display:flex; align-items:center; justify-content:center; }
+  .order-ico.warn{ background:#FDF1E2; color:var(--warn); }
+  .order-ico.ok{ background:#E7F5EF; color:var(--ok); }
+  .order-ico.err{ background:#FDEBE9; color:var(--danger); }
+  .order-card h2{ font-size:22px; font-weight:700; color:var(--ink); }
+  .order-card .lead{ margin:8px 0 18px; font-size:13.5px; color:var(--muted); }
+  .pay-box{ text-align:left; border-radius:12px; padding:14px 16px; margin-bottom:18px;
+    background:var(--brand-soft); border:1px solid #C9D8F3; color:var(--brand-ink); font-size:13px; }
+  .meta{ margin-top:22px; padding-top:18px; border-top:1px solid var(--line-soft);
+    text-align:left; display:grid; gap:10px; font-size:13px; }
+  .meta-row{ display:flex; justify-content:space-between; gap:12px; }
+  .meta-row span{ color:var(--muted); }
+  .meta-row strong{ color:var(--ink); text-align:right; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="std-wrap order-shell">
+    <div class="card order-card">
+
+        {% if order.status == 'PENDING' %}
+        <div class="order-ico warn">
+            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        </div>
+        <h2>Menunggu konfirmasi</h2>
+        <p class="lead">Order diverifikasi admin (maks. 1×24 jam). Setelah dikonfirmasi, akses langsung aktif.</p>
+        <div class="pay-box">
+            <div class="font-semibold mb-1.5">Transfer ke:</div>
+            <div>BCA: <strong>1234567890</strong> a.n. BelajDeutsch</div>
+            <div>OVO / GoPay / DANA: <strong>08xxxxxxxx</strong></div>
+        </div>
+
+        {% elif order.status == 'CONFIRMED' %}
+        <div class="order-ico ok">
+            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+        </div>
+        <h2>Pembayaran dikonfirmasi</h2>
+        <p class="lead">
+            {% if order.order_type == 'SUBSCRIPTION' %}Abo aktif — seluruh simulasi terbuka. Viel Spaß beim Lernen!{% else %}Akses ujian aktif. Selamat belajar!{% endif %}
+        </p>
+        <a href="{% if order.order_type == 'SUBSCRIPTION' %}/student{% else %}/exam/{{ order.fk_package_id }}/start{% endif %}"
+            class="btn-primary">
+            {% if order.order_type == 'SUBSCRIPTION' %}Ke latihan{% else %}Mulai ujian{% endif %}
+        </a>
+
+        {% else %}
+        <div class="order-ico err">
+            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+        </div>
+        <h2>Order dibatalkan</h2>
+        <p class="lead">Order ini dibatalkan. Buat order baru kapan saja dari halaman paket.</p>
+        <a href="/student/preise" class="btn-primary">Pilih paket</a>
+        {% endif %}
+
+        <div class="meta">
+            <div class="meta-row">
+                <span>{{ 'Paket langganan' if order.order_type == 'SUBSCRIPTION' else 'Paket' }}</span>
+                <strong>{{ order.package_title }}</strong>
+            </div>
+            <div class="meta-row">
+                <span>Durasi</span>
+                <strong>{% if order.order_type == 'SUBSCRIPTION' %}{{ order.months }} bulan{% else %}{{ order.tier }}{% endif %}</strong>
+            </div>
+            <div class="meta-row">
+                <span>Total</span>
+                <strong style="color:var(--brand)">Rp {{ "{:,}".format(order.amount) }}</strong>
+            </div>
+            <div class="meta-row">
+                <span>Tanggal</span>
+                <strong style="font-weight:500; color:#4A5361">{{ order.rec_timestamp_str }}</strong>
+            </div>
+        </div>
+
+        <a href="/student/verlauf" class="inline-block mt-6 text-[12.5px]" style="color:var(--muted)">← Semua riwayat</a>
+    </div>
+</div>
+{% endblock %}

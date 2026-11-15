@@ -43,6 +43,9 @@
         <div id="bank-list" class="p-4 space-y-2">
             {% for item in candidates %}
             {% set preview = (item.questions[0].question_text if item.questions else '')|striptags %}
+            {% if item.question_mode == 'sprechen' and not preview %}
+            {% set preview = ((item.instruction or '') ~ ' — ' ~ (item.content_text or ''))|striptags %}
+            {% endif %}
             <label class="bank-item flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition
                 {% if item.attached %}bg-blue-50 border-blue-200{% else %}bg-white border-gray-200 hover:border-blue-200{% endif %}"
                 data-search="{{ (item.title or '')|lower }} {{ preview|lower }}">
@@ -52,7 +55,9 @@
                 <div class="min-w-0 flex-1">
                     <div class="flex items-center flex-wrap gap-1.5">
                         <span class="text-sm font-semibold text-gray-800 truncate">{{ item.title or '(Tanpa judul)' }}</span>
-                        {% if item.question_mode == 'single' %}
+                        {% if item.question_mode == 'sprechen' %}
+                        <span class="text-xs bg-green-100 text-green-700 font-semibold px-1.5 py-0.5 rounded">Sprechen · Rekam Suara</span>
+                        {% elif item.question_mode == 'single' %}
                         <span class="text-xs bg-amber-100 text-amber-700 font-semibold px-1.5 py-0.5 rounded">Mandiri</span>
                         {% else %}
                         <span class="text-xs bg-blue-100 text-blue-700 font-semibold px-1.5 py-0.5 rounded">Kelompok</span>
@@ -66,7 +71,9 @@
                         <span class="text-xs bg-violet-100 text-violet-700 font-semibold px-1.5 py-0.5 rounded">{{ item.used_in_other|length }} paket lain</span>
                         {% endif %}
                     </div>
-                    <div class="text-xs text-gray-400 mt-0.5">{{ item.question_count }} soal{% if item.section_key %} · {{ item.section_key }}{% endif %}</div>
+                    <div class="text-xs text-gray-400 mt-0.5">
+                        {% if item.question_mode == 'sprechen' %}Tugas bicara (rekam suara){% else %}{{ item.question_count }} soal{% endif %}{% if item.section_key %} · {{ item.section_key }}{% endif %}
+                    </div>
                     {% if preview %}
                     <div class="text-xs text-gray-600 mt-1">{{ preview[:180] }}{% if preview|length > 180 %}…{% endif %}</div>
                     {% endif %}

@@ -22,7 +22,7 @@ def start_exam(package_pkey):
         from payment import payment_proc
         access = payment_proc.check_user_access(g.current_user["user_id"], package_pkey)
         if not access["has_access"]:
-            return redirect("/catalog")
+            return redirect("/student/preise")
         # end if
 
         import database, config as cfg
@@ -42,7 +42,7 @@ def start_exam(package_pkey):
         )
 
         if result["status"] != "OK":
-            return redirect("/catalog")
+            return redirect("/student/preise")
         # end if
 
         return redirect("/exam/session/" + result["exam_session_pkey"])
@@ -62,7 +62,7 @@ def exam_session_page(exam_session_pkey):
         exam_session = sess_result.get("data")
 
         if not exam_session:
-            return redirect("/catalog")
+            return redirect("/student/preise")
         # end if
 
         if exam_session.get("status") == "COMPLETED":
@@ -165,7 +165,7 @@ def submit_exam(exam_session_pkey):
         if result["status"] == "OK":
             return redirect("/exam/result/" + result["result_pkey"])
         # end if
-        return redirect("/catalog")
+        return redirect("/student/preise")
     except Exception:
         print(traceback.format_exc())
         return "Terjadi kesalahan", 500
@@ -182,7 +182,7 @@ def result_page(result_pkey):
 
         result_data = exam_engine_proc.get_result(result_pkey, g.current_user["user_id"])
         if result_data["status"] != "OK" or not result_data["data"]:
-            return redirect("/peserta/riwayat")
+            return redirect("/student/verlauf")
         # end if
 
         result  = result_data["data"]
@@ -209,7 +209,7 @@ def review_page(result_pkey):
 
         result_data = exam_engine_proc.get_result(result_pkey, g.current_user["user_id"])
         if result_data["status"] != "OK" or not result_data["data"]:
-            return redirect("/peserta/riwayat")
+            return redirect("/student/verlauf")
         # end if
 
         result = result_data["data"]

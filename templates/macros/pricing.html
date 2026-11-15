@@ -1,0 +1,234 @@
+{# ── Macro kartu harga langganan ─────────────────────────────────
+   Dipakai di landing (index.html) & area siswa (student/pricing.html).
+   Context:
+     plans        : list paket (punya .pricing = matrix MONTHLY/QUARTERLY/YEARLY)
+     mode         : 'landing' | 'student'
+     current_code : kode paket aktif user (opsional, untuk badge "Aktif")
+   Layout mandiri (CSS bawaan) — tidak bergantung utilitas Tailwind
+   yang belum tentu ada di platform.output.css. ──────────────────── #}
+
+{% macro _price_block(cyc_code, pricing) %}
+<div class="pcx-price{% if cyc_code != 'MONTHLY' %} pcx-hide{% endif %}" data-cycle-block="{{ cyc_code }}">
+    {% if pricing.final_price <= 0 %}
+    <div class="pcx-final">Gratis</div>
+    <div class="pcx-note">selama dipakai</div>
+    {% else %}
+    {% if pricing.discount_pct > 0 and pricing.list_price > pricing.final_price %}
+    <div class="pcx-strike">Rp {{ "{:,}".format(pricing.list_price) }}</div>
+    {% endif %}
+    <div class="pcx-final">
+        <span class="cur">Rp</span> {{ "{:,}".format(pricing.final_price) }}
+        <span class="per">/ {{ pricing.label_id | lower }}</span>
+    </div>
+    <div class="pcx-note">
+        {% if pricing.months > 1 %}± Rp {{ "{:,}".format(pricing.per_month) }} / bulan{% else %}bisa berhenti kapan saja{% endif %}
+    </div>
+    {% if pricing.discount_pct > 0 or pricing.save_pct > 0 %}
+    <div class="pcx-badges">
+        {% if pricing.discount_pct > 0 %}<span class="pcx-badge gold">−{{ pricing.discount_pct | int }}%</span>{% endif %}
+        {% if pricing.save_pct > 0 %}<span class="pcx-badge ok">hemat {{ pricing.save_pct }}%</span>{% endif %}
+    </div>
+    {% endif %}
+    {% endif %}
+</div>
+{% endmacro %}
+
+{% macro _features(plan) %}
+<ul class="pcx-feat">
+    <li>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+        <span>{{ 'Semua level A1–C2' if plan.code != 'FREE' else 'Level terbatas' }}</span>
+    </li>
+    <li>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+        <span>{{ plan.ai_credits_monthly or 0 }} Kredit AI / bulan</span>
+    </li>
+    <li class="{{ 'off' if plan.code == 'FREE' else '' }}">
+        {% if plan.code == 'FREE' %}
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+        {% else %}
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+        {% endif %}
+        <span>{{ 'Pembahasan & review jawaban' if plan.code != 'FREE' else 'Pembahasan (khusus berbayar)' }}</span>
+    </li>
+</ul>
+{% endmacro %}
+
+{% macro pricing_cards(plans, mode='landing', current_code='') %}
+
+{% set saves = {'MONTHLY': [], 'QUARTERLY': [], 'YEARLY': []} %}
+{% for p in plans %}{% for c, pr in (p.pricing or {}).items() %}{% if pr.save_pct %}{% set _ = saves[c].append(pr.save_pct) %}{% endif %}{% endfor %}{% endfor %}
+
+<div class="pcx">
+<style>
+  .pcx{ --pcx-ink:var(--ink,#171A21); --pcx-muted:var(--muted,#5B6472); --pcx-faint:var(--faint,#98A1AE);
+    --pcx-line:var(--line,#E4E7EC); --pcx-brand:var(--brand,#1D4ED8); --pcx-brand-ink:var(--brand-ink,#1E3A8A);
+    --pcx-brand-soft:var(--brand-soft,#EFF4FF); }
+  .pcx-toggle{ display:flex; justify-content:center; margin-bottom:26px; }
+  .pcx-cycles{ display:inline-flex; padding:4px; background:#EFF1F4; border-radius:13px; gap:2px; }
+  .pcx-cycle{ display:inline-flex; align-items:center; gap:6px; padding:8px 15px; border:none; border-radius:10px;
+    background:transparent; font-family:'Barlow','Arial Narrow',sans-serif; font-size:13px; font-weight:600;
+    color:#4A5361; cursor:pointer; transition:all .15s; white-space:nowrap; }
+  .pcx-cycle:hover{ color:var(--pcx-ink); }
+  .pcx-cycle.active{ background:#fff; color:var(--pcx-brand-ink); box-shadow:0 1px 2px rgba(23,26,33,.1); }
+  .pcx-cycle small{ font-size:10.5px; font-weight:500; opacity:.6; }
+  .pcx-cycle .pcx-save{ font-size:10px; font-weight:700; padding:1.5px 7px; border-radius:99px;
+    background:#E7F5EF; color:#12805C; }
+  .pcx-grid{ display:grid; grid-template-columns:1fr; gap:16px; align-items:stretch; }
+  @media (min-width:680px){ .pcx-grid{ grid-template-columns:1fr 1fr; } }
+  @media (min-width:1020px){ .pcx-grid{ grid-template-columns:repeat(4,1fr); } }
+  .pcx-card{ position:relative; display:flex; flex-direction:column; border-radius:16px; padding:22px 20px 20px;
+    background:var(--surface,#fff); border:1px solid var(--pcx-line);
+    transition:transform .18s, box-shadow .18s; }
+  .pcx-card:hover{ transform:translateY(-3px); box-shadow:0 14px 30px rgba(23,26,33,.1); }
+  .pcx-card.pop{ background:linear-gradient(160deg,#1E40AF 0%,#1D4ED8 58%,#3B63E8 100%);
+    border:none; box-shadow:0 16px 38px rgba(30,64,175,.26); }
+  .pcx-flag{ position:absolute; top:14px; right:14px; font-family:'Barlow'; font-size:10px; font-weight:800;
+    letter-spacing:.06em; padding:4px 9px; border-radius:99px; }
+  .pcx-flag.pop{ background:#E9B10E; color:#3A2B00; }
+  .pcx-flag.cur{ background:#E7F5EF; color:#12805C; }
+  .pcx-name{ display:flex; align-items:center; gap:8px; font-family:'Barlow'; font-size:17px;
+    font-weight:700; color:var(--pcx-ink); }
+  .pcx-card.pop .pcx-name{ color:#fff; }
+  .pcx-code{ font-size:10px; font-weight:700; padding:2px 7px; border-radius:6px;
+    background:var(--pcx-brand-soft); color:var(--pcx-brand-ink); letter-spacing:.04em; }
+  .pcx-card.pop .pcx-code{ background:rgba(255,255,255,.16); color:#C7D6F5; }
+  .pcx-tag{ margin-top:6px; font-size:12.5px; color:var(--pcx-muted); min-height:19px; }
+  .pcx-card.pop .pcx-tag{ color:#C7D6F5; }
+  .pcx-price{ margin-top:16px; }
+  .pcx-price.pcx-hide{ display:none; }
+  .pcx-strike{ font-size:13px; color:var(--pcx-faint); text-decoration:line-through; margin-bottom:2px; }
+  .pcx-card.pop .pcx-strike{ color:#A9C0EE; }
+  .pcx-final{ font-family:'Barlow'; font-size:30px; font-weight:700; color:var(--pcx-ink);
+    line-height:1.05; letter-spacing:-.01em; }
+  .pcx-card.pop .pcx-final{ color:#fff; }
+  .pcx-final .cur{ font-size:15px; font-weight:600; margin-right:2px; opacity:.75; }
+  .pcx-final .per{ font-size:12.5px; font-weight:500; color:var(--pcx-faint); margin-left:4px; }
+  .pcx-card.pop .pcx-final .per{ color:#C7D6F5; }
+  .pcx-note{ margin-top:6px; font-size:12px; color:var(--pcx-muted); }
+  .pcx-card.pop .pcx-note{ color:#C7D6F5; }
+  .pcx-badges{ display:flex; gap:6px; margin-top:8px; flex-wrap:wrap; }
+  .pcx-badge{ font-size:10.5px; font-weight:700; padding:2.5px 8px; border-radius:99px; }
+  .pcx-badge.ok{ background:#E7F5EF; color:#12805C; }
+  .pcx-badge.gold{ background:#FDF6E7; color:#B45309; }
+  .pcx-feat{ list-style:none; margin:18px 0 20px; padding:16px 0 0; border-top:1px solid var(--pcx-line);
+    display:grid; gap:9px; flex:1; }
+  .pcx-card.pop .pcx-feat{ border-top-color:rgba(255,255,255,.2); }
+  .pcx-feat li{ display:flex; gap:9px; align-items:flex-start; font-size:12.5px; color:#4A5361; line-height:1.45; }
+  .pcx-card.pop .pcx-feat li{ color:#D7E3FF; }
+  .pcx-feat li.off{ opacity:.72; }
+  .pcx-feat svg{ width:15px; height:15px; flex-shrink:0; margin-top:2px; color:#12805C; }
+  .pcx-card.pop .pcx-feat svg{ color:#7EE2B8; }
+  .pcx-feat li.off svg{ color:var(--pcx-faint); }
+  .pcx-cta{ display:block; width:100%; text-align:center; text-decoration:none;
+    font-family:'Barlow'; font-size:13.5px; font-weight:600; padding:11px 12px; border-radius:11px;
+    border:none; cursor:pointer; transition:all .15s; }
+  .pcx-cta.main{ background:var(--pcx-brand); color:#fff; }
+  .pcx-cta.main:hover{ background:#1E40AF; }
+  .pcx-cta.inv{ background:#fff; color:var(--pcx-brand-ink); }
+  .pcx-cta.inv:hover{ background:#F4F7FF; }
+  .pcx-cta.dim{ background:#EFF1F4; color:#4A5361; cursor:default; }
+  .pcx-cta.done{ background:#E7F5EF; color:#12805C; cursor:default; }
+  .pcx-hint{ margin-top:9px; text-align:center; font-size:11px; color:var(--pcx-faint); }
+</style>
+
+    <div class="pcx-toggle">
+        <div class="pcx-cycles" role="tablist" data-cycle-toggle>
+            <button type="button" class="pcx-cycle active" data-cycle-btn="MONTHLY">Bulanan</button>
+            <button type="button" class="pcx-cycle" data-cycle-btn="QUARTERLY">
+                3 Bulan
+                {% if saves['QUARTERLY'] %}<span class="pcx-save">−{{ saves['QUARTERLY'] | max }}%</span>{% endif %}
+            </button>
+            <button type="button" class="pcx-cycle" data-cycle-btn="YEARLY">
+                Tahunan
+                {% if saves['YEARLY'] %}<span class="pcx-save">−{{ saves['YEARLY'] | max }}%</span>{% endif %}
+            </button>
+        </div>
+    </div>
+
+    <div class="pcx-grid">
+        {% for plan in plans %}
+        {% set is_current = current_code and current_code == plan.code %}
+        {% set is_popular = plan.code == 'PRO' %}
+        <div class="pcx-card{% if is_popular %} pop{% endif %}" data-plan-card>
+
+            {% if is_current %}
+            <span class="pcx-flag cur">PAKETMU</span>
+            {% elif is_popular %}
+            <span class="pcx-flag pop">BELIEBT</span>
+            {% endif %}
+
+            <div class="pcx-name">{{ plan.label }} <span class="pcx-code">{{ plan.code }}</span></div>
+            <div class="pcx-tag">{{ plan.tagline or '' }}</div>
+
+            {% for cyc_code in ['MONTHLY', 'QUARTERLY', 'YEARLY'] %}
+            {% if plan.pricing.get(cyc_code) %}
+            {{ _price_block(cyc_code, plan.pricing[cyc_code]) }}
+            {% endif %}
+            {% endfor %}
+
+            {{ _features(plan) }}
+
+            <div>
+                {% if plan.pricing.MONTHLY.final_price <= 0 %}
+                    {% if mode == 'student' %}
+                    <span class="pcx-cta dim">{{ 'Paketmu sekarang' if is_current else 'Otomatis aktif' }}</span>
+                    {% else %}
+                    <a href="/register" class="pcx-cta dim">Daftar gratis</a>
+                    {% endif %}
+                {% elif mode == 'student' %}
+                    {% if is_current %}
+                    <span class="pcx-cta done">Aktif ✓</span>
+                    {% else %}
+                    <form method="POST" action="/student/abo/subscribe">
+                        <input type="hidden" name="plan_code" value="{{ plan.code }}">
+                        <input type="hidden" name="cycle" value="MONTHLY" data-cycle-input>
+                        <button type="submit" class="pcx-cta{% if is_popular %} inv{% else %} main{% endif %}">Pilih {{ plan.label }}</button>
+                    </form>
+                    {% endif %}
+                {% else %}
+                    {% if session.get('role') in ['peserta', 'super_admin'] %}
+                    <a href="/student/preise" class="pcx-cta{% if is_popular %} inv{% else %} main{% endif %}">Pilih {{ plan.label }}</a>
+                    {% else %}
+                    <a href="/register" class="pcx-cta{% if is_popular %} inv{% else %} main{% endif %}">Mulai dengan {{ plan.label }}</a>
+                    {% endif %}
+                {% endif %}
+                <div class="pcx-hint">
+                    {%- if plan.pricing.MONTHLY.final_price <= 0 -%}
+                    Akses langsung tanpa order
+                    {%- elif mode == 'student' and is_current -%}
+                    Paket ini sedang berjalan
+                    {%- else -%}
+                    Aktif maks. 1×24 jam setelah transfer
+                    {%- endif -%}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<script>
+(function () {
+    var root = document.querySelectorAll('[data-cycle-toggle]');
+    if (!root.length) return;
+    var buttons = document.querySelectorAll('[data-cycle-btn]');
+    function setCycle(cycle) {
+        buttons.forEach(function (btn) {
+            btn.classList.toggle('active', btn.dataset.cycleBtn === cycle);
+        });
+        document.querySelectorAll('[data-plan-card]').forEach(function (card) {
+            card.querySelectorAll('[data-cycle-block]').forEach(function (block) {
+                block.classList.toggle('pcx-hide', block.dataset.cycleBlock !== cycle);
+            });
+        });
+        document.querySelectorAll('[data-cycle-input]').forEach(function (input) {
+            input.value = cycle;
+        });
+    }
+    buttons.forEach(function (btn) {
+        btn.addEventListener('click', function () { setCycle(btn.dataset.cycleBtn); });
+    });
+})();
+</script>
+{% endmacro %}

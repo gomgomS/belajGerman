@@ -11,7 +11,12 @@ from landingpage import landingpage_proc
 
 def html_index():
     data = landingpage_proc.get_site_data()
-    return render_template("index.html", data=data)
+    from app_settings import app_settings_proc
+    from sanitize import strip_objectid_list
+    sub_plans = strip_objectid_list(
+        app_settings_proc.get_public_sub_plans().get("data", [])
+    )
+    return render_template("index.html", data=data, sub_plans=sub_plans)
 # end def
 
 

@@ -1,4 +1,6 @@
 {% extends 'base.html' %}
+{% from "macros/pricing.html" import pricing_cards %}
+
 {% block title %}{{ data.name }} — {{ data.tagline }}{% endblock %}
 
 {% block head %}
@@ -33,7 +35,7 @@
                 <span class="text-blue-300">Bahasa Jermanmu</span>
             </h1>
             <p class="text-lg md:text-xl text-blue-100 mb-10 leading-relaxed max-w-xl">
-                Simulasi ujian bahasa Jerman yang realistis — Goethe-Zertifikat, telc, dan TestDaF. Soal berkualitas, timer akurat, skor instan, dan pembahasan detail dari guru berpengalaman.
+                Simulasi ujian bahasa Jerman yang realistis — Goethe-Zertifikat, telc, dan TestDaF. Satu langganan untuk semua level: soal berkualitas, timer akurat, skor instan, dan pembahasan detail.
             </p>
             <div class="flex flex-wrap gap-4">
                 <a href="/register"
@@ -43,9 +45,9 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
                     </svg>
                 </a>
-                <a href="/catalog"
+                <a href="#harga"
                    class="inline-flex items-center gap-2 border-2 border-white/40 text-white hover:border-white hover:bg-white/10 font-semibold px-7 py-3.5 rounded-xl transition text-sm sm:text-base">
-                    Lihat Katalog Ujian
+                    Lihat Harga Paket
                 </a>
             </div>
         </div>
@@ -107,7 +109,7 @@
         <div class="text-center mb-14">
             <p class="text-sm font-semibold text-blue-600 uppercase tracking-widest mb-2">Jenis Ujian</p>
             <h2 class="text-3xl md:text-4xl font-extrabold text-gray-900 mb-4">Tersedia 3 Jenis Tes</h2>
-            <p class="text-gray-500 max-w-lg mx-auto">Pilih jenis ujian yang sesuai kebutuhanmu dan mulai simulasi kapanpun.</p>
+            <p class="text-gray-500 max-w-lg mx-auto">Pilih jenis ujian yang sesuai kebutuhanmu — semuanya terbuka dalam satu langganan.</p>
         </div>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-7">
             {% for t in data.test_types %}
@@ -130,10 +132,10 @@
                     </li>
                     {% endfor %}
                 </ul>
-                <a href="/catalog" class="mt-7 block text-center text-sm font-semibold
+                <a href="#harga" class="mt-7 block text-center text-sm font-semibold
                     {% if t.color == 'blue' %}text-blue-600 hover:text-blue-800{% elif t.color == 'indigo' %}text-indigo-600 hover:text-indigo-800{% else %}text-purple-600 hover:text-purple-800{% endif %}
                     transition">
-                    Lihat Paket {{ t.title }} &rarr;
+                    Mulai Latihan {{ t.title }} &rarr;
                 </a>
             </div>
             {% endfor %}
@@ -142,71 +144,23 @@
 </section>
 
 <!-- ════════════════════════════════════════════
-     CTA PRICING TEASER
+     HARGA LANGGANAN (dari DB admin sub-plan)
 ════════════════════════════════════════════ -->
-<section class="py-20 bg-gray-50">
-    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="text-center mb-12">
-            <p class="text-sm font-semibold text-blue-600 uppercase tracking-widest mb-2">Paket</p>
-            <h2 class="text-3xl md:text-4xl font-extrabold text-gray-900 mb-4">Harga Terjangkau, Fitur Lengkap</h2>
-            <p class="text-gray-500 max-w-md mx-auto">Mulai dari ujian simulasi dasar hingga pembahasan lengkap setiap soal.</p>
+<section id="harga" class="py-20 bg-gray-50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="text-center mb-10">
+            <p class="text-sm font-semibold text-blue-600 uppercase tracking-widest mb-2">Preise — Harga</p>
+            <h2 class="text-3xl md:text-4xl font-extrabold text-gray-900 mb-4">Ein Abo, alles drin.</h2>
+            <p class="text-gray-500 max-w-xl mx-auto">
+                Tidak ada lagi beli per paket ujian — satu langganan membuka <strong>semua</strong> simulasi, semua level. Pilih durasunya: makin lama, makin hemat.
+            </p>
         </div>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <!-- Basic -->
-            <div class="bg-white rounded-2xl p-8 border border-gray-200 shadow-sm">
-                <div class="text-base font-bold text-gray-900 mb-1">Basic</div>
-                <div class="text-3xl font-extrabold text-gray-900 mb-4">Gratis <span class="text-base font-normal text-gray-400">/ujian*</span></div>
-                <ul class="space-y-3 mb-7">
-                    <li class="flex items-start gap-2 text-sm text-gray-600">
-                        <svg class="w-4 h-4 text-green-500 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
-                        Simulasi ujian penuh (semua seksi)
-                    </li>
-                    <li class="flex items-start gap-2 text-sm text-gray-600">
-                        <svg class="w-4 h-4 text-green-500 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
-                        Skor prediksi langsung
-                    </li>
-                    <li class="flex items-start gap-2 text-sm text-gray-600">
-                        <svg class="w-4 h-4 text-green-500 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
-                        Auto-save jawaban
-                    </li>
-                    <li class="flex items-start gap-2 text-sm text-gray-400">
-                        <svg class="w-4 h-4 text-gray-300 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-                        Pembahasan detail tiap soal
-                    </li>
-                </ul>
-                <a href="/register" class="block w-full text-center bg-gray-100 hover:bg-gray-200 text-gray-800 font-semibold py-3 rounded-xl transition text-sm">
-                    Mulai Sekarang
-                </a>
-                <p class="text-xs text-gray-400 mt-3 text-center">*Harga tergantung paket yang dipilih di katalog</p>
-            </div>
-            <!-- Premium -->
-            <div class="bg-blue-600 rounded-2xl p-8 shadow-xl relative overflow-hidden">
-                <div class="absolute top-4 right-4 bg-yellow-400 text-yellow-900 text-xs font-extrabold px-2.5 py-0.5 rounded-full">POPULER</div>
-                <div class="text-base font-bold text-blue-100 mb-1">Premium</div>
-                <div class="text-3xl font-extrabold text-white mb-4">Lihat Katalog <span class="text-base font-normal text-blue-300">/paket</span></div>
-                <ul class="space-y-3 mb-7">
-                    <li class="flex items-start gap-2 text-sm text-blue-100">
-                        <svg class="w-4 h-4 text-green-300 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
-                        Semua fitur Basic
-                    </li>
-                    <li class="flex items-start gap-2 text-sm text-blue-100">
-                        <svg class="w-4 h-4 text-green-300 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
-                        Pembahasan detail setiap soal
-                    </li>
-                    <li class="flex items-start gap-2 text-sm text-blue-100">
-                        <svg class="w-4 h-4 text-green-300 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
-                        Review semua jawaban setelah ujian
-                    </li>
-                    <li class="flex items-start gap-2 text-sm text-blue-100">
-                        <svg class="w-4 h-4 text-green-300 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
-                        Analisis kelemahan per seksi
-                    </li>
-                </ul>
-                <a href="/catalog" class="block w-full text-center bg-white text-blue-700 hover:bg-blue-50 font-bold py-3 rounded-xl transition text-sm shadow-md">
-                    Pilih Paket Premium
-                </a>
-            </div>
-        </div>
+
+        {{ pricing_cards(sub_plans, mode='landing') }}
+
+        <p class="text-center text-xs text-gray-400 mt-6 max-w-lg mx-auto">
+            * Harga dalam Rupiah. Pembayaran manual via transfer/e-wallet, akses aktif maks. 1×24 jam setelah konfirmasi.
+        </p>
     </div>
 </section>
 

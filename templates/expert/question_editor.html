@@ -96,10 +96,12 @@
 {% set return_to = return_to|default('') %}
 {% set cloze_answer_mode = cloze_answer_mode|default('mc') %}
 {% set cloze_input = answer_type == 'cloze' and cloze_answer_mode == 'input' %}
-{% set q_mode = passage.question_mode if passage else (requested_mode if requested_mode in ['single', 'grouped'] else 'grouped') %}
-{% set lock_mode = (passage.question_mode if passage else requested_mode) if (passage or requested_mode in ['single', 'grouped']) else '' %}
+{% set q_mode = passage.question_mode if passage else (requested_mode if requested_mode in ['single', 'grouped', 'sprechen'] else 'grouped') %}
+{% set lock_mode = (passage.question_mode if passage else requested_mode) if (passage or requested_mode in ['single', 'grouped', 'sprechen']) else '' %}
+{% set is_sprechen = q_mode == 'sprechen' or answer_type == 'speak' %}
 {% set passage_card_title = 'Teks Lückentext' if answer_type == 'cloze' else 'Bacaan & Audio' %}
-{% if answer_type == 'rf' %}{% set answer_label = 'Richtig / Falsch' %}
+{% if answer_type == 'speak' %}{% set answer_label = 'Sprechen · Rekam suara' %}
+{% elif answer_type == 'rf' %}{% set answer_label = 'Richtig / Falsch' %}
 {% elif answer_type == 'cloze' and cloze_answer_mode == 'select' %}{% set answer_label = 'Lückentext · Dropdown di teks' %}
 {% elif answer_type == 'cloze' and cloze_answer_mode == 'input' %}{% set answer_label = 'Lückentext · Ketik jawaban' %}
 {% elif answer_type == 'cloze' %}{% set answer_label = 'Lückentext · Pilihan A–D' %}
@@ -392,8 +394,8 @@
     </a>
     {% endif %}
     <button type="submit" form="passage-form" id="save-passage-btn"
-        title="{% if passage and q_mode == 'single' %}Simpan perubahan soal ini{% elif passage %}Menyimpan judul, audio &amp; teks — soal disimpan lewat kartunya masing-masing{% elif q_mode == 'single' %}Simpan soal mandiri ini{% else %}Simpan teks beserta semua soal sekaligus{% endif %}">
-        {% if passage and q_mode == 'single' %}Simpan Perubahan{% elif passage %}Simpan Teks &amp; Judul{% else %}<span id="btn-save-label">{% if q_mode == 'single' %}Simpan Soal Mandiri{% else %}Simpan Kelompok Soal{% endif %}</span>{% endif %}
+        title="{% if is_sprechen %}Simpan tugas Sprechen ini{% elif passage and q_mode == 'single' %}Simpan perubahan soal ini{% elif passage %}Menyimpan judul, audio &amp; teks — soal disimpan lewat kartunya masing-masing{% elif q_mode == 'single' %}Simpan soal mandiri ini{% else %}Simpan teks beserta semua soal sekaligus{% endif %}">
+        {% if is_sprechen %}{% if passage %}Simpan Perubahan{% else %}Simpan Tugas Sprechen{% endif %}{% elif passage and q_mode == 'single' %}Simpan Perubahan{% elif passage %}Simpan Teks &amp; Judul{% else %}<span id="btn-save-label">{% if q_mode == 'single' %}Simpan Soal Mandiri{% else %}Simpan Kelompok Soal{% endif %}</span>{% endif %}
     </button>
 </div>
 {% endblock %}
@@ -406,6 +408,169 @@
 {% set tt_label = namespace(value=current_section_key|upper) %}
 {% for opt in bank_section_options %}{% if opt.key == current_section_key %}{% set tt_label.value = opt.label %}{% endif %}{% endfor %}
 {% set audio_first = current_section_key == 'hoeren' %}
+
+{% if is_sprechen %}
+{# ══════════════════════════════════════════════════════════════════
+     EDITOR SPRECHEN — tugas bicara: instruksi + situasi + gambar +
+     Musterantwort + waktu, siswa merekam suara di pratinjau/sesi ujian.
+   ══════════════════════════════════════════════════════════════════ #}
+<div id="qe-page" class="qe-page" data-mode="sprechen">
+
+    <div id="top-bar" class="qe-topbar">
+        <div class="qe-topbar-row">
+            <span class="ctx-chip" style="background:#E7F5EF; border-color:#BFE3D4; color:var(--ok)">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0-4a3 3 0 003-3V5a3 3 0 00-6 0v10a3 3 0 003 3z"/></svg>
+                Tugas Sprechen
+            </span>
+            <span class="ctx-chip" style="background:var(--surface); color:#4A5361">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                {{ answer_label }}
+            </span>
+            {% if tt_label.value %}
+            <span class="ctx-chip" style="background:#EFF1F4; border-color:var(--line); color:#4A5361">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
+                {{ tt_label.value }}
+            </span>
+            {% endif %}
+            {% if passage %}
+            <a href="/expert/question-bank/{{ passage.pkey }}/preview" target="_blank" rel="noopener"
+                class="ctx-chip" style="background:var(--brand-soft); border-color:#C9D8F3; color:var(--brand-ink); text-decoration:none">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                Pratinjau Siswa + Rekam
+            </a>
+            {% endif %}
+        </div>
+    </div>
+
+    <form method="POST"
+        action="{% if passage %}/expert/question-bank/{{ passage.pkey }}/update{% else %}/expert/question-bank/create{% endif %}"
+        id="passage-form" class="qe-col" style="max-width:860px">
+        <input type="hidden" name="question_mode" value="sprechen">
+        <input type="hidden" name="answer_type" value="speak">
+        <input type="hidden" name="cloze_answer_mode" value="mc">
+        <input type="hidden" name="passage_sub_type" value="{{ passage.passage_sub_type if passage else '' }}">
+        <input type="hidden" name="return_to" value="{{ return_to }}">
+        {% if preset_section and not passage %}
+        <input type="hidden" name="section_id" value="{{ preset_section.pkey }}">
+        {% endif %}
+        <input type="hidden" name="section_key" value="{{ current_section_key }}">
+
+        <section class="qe-card">
+            <header class="qe-card-head">
+                <span class="qe-card-icon" style="background:#E7F5EF; color:var(--ok)">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0-4a3 3 0 003-3V5a3 3 0 00-6 0v10a3 3 0 003 3z"/></svg>
+                </span>
+                <div class="min-w-0">
+                    <h3 class="qe-card-title">Tugas Sprechen <span class="qe-optional">— siswa merekam jawabannya</span></h3>
+                    <p class="qe-card-sub">Instruksi &amp; situasi tampil di halaman siswa; Musterantwort bisa dibuka lewat tombol.</p>
+                </div>
+            </header>
+
+            <div class="qe-sec">
+                <div class="qe-sec-head" style="margin-bottom:8px">
+                    <label for="spk-title" class="qe-sec-title">Judul <span class="qe-req">*</span></label>
+                    <span class="qe-hint">Untuk menemukan tugas ini di Bank Soal</span>
+                </div>
+                <input type="text" name="title" id="spk-title" required
+                    value="{{ passage.title if passage else '' }}"
+                    class="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50 focus:bg-white transition"
+                    placeholder="Contoh: Teil 1 — Höfliche Bitte">
+            </div>
+
+            <div class="qe-sec">
+                <div class="qe-sec-head" style="margin-bottom:8px">
+                    <label for="spk-instruction" class="qe-sec-title">Instruksi / Aufgabe <span class="qe-req">*</span></label>
+                    <span class="qe-hint">Kalimat perintah — tampil besar di halaman siswa</span>
+                </div>
+                <input type="text" name="spk_instruction" id="spk-instruction" required
+                    value="{{ passage.instruction if passage else '' }}"
+                    class="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50 focus:bg-white transition"
+                    placeholder="Make one short polite request in German.">
+            </div>
+
+            <div class="qe-sec">
+                <div class="qe-sec-head" style="margin-bottom:8px">
+                    <label for="spk-situation" class="qe-sec-title">Situasi / teks soal <span class="qe-optional">opsional</span></label>
+                    <span class="qe-hint">Konteks singkat sebelum siswa bicara</span>
+                </div>
+                <textarea name="spk_situation" id="spk-situation" rows="4"
+                    class="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50 focus:bg-white transition resize-y leading-relaxed"
+                    placeholder="Nachbarschaft: Sie möchten, dass Ihr Nachbar abends leiser Musik hört. Bitten Sie ihn höflich.">{{ passage.content_text if passage else '' }}</textarea>
+            </div>
+
+            <div class="qe-sec">
+                <div class="qe-sec-head" style="margin-bottom:8px">
+                    <span class="qe-sec-title">Gambar soal <span class="qe-optional">opsional</span></span>
+                    <span class="qe-hint">PNG · JPG · GIF · WebP, maks 5 MB</span>
+                </div>
+                <input type="hidden" name="spk_image_url" id="spk-image-url" value="{{ passage.image_url if passage else '' }}">
+                <input type="file" id="spk-image-picker" accept="image/jpeg,image/png,image/gif,image/webp" class="hidden" onchange="spkImagePick(this)">
+                <div id="spk-img-empty" class="spk-img-zone" onclick="document.getElementById('spk-image-picker').click()">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                    <span>Klik untuk pilih gambar</span>
+                </div>
+                <div id="spk-img-preview" class="spk-img-preview {% if not passage or not passage.image_url %}hidden{% endif %}">
+                    <img id="spk-img-thumb" src="{{ passage.image_url if passage else '' }}" alt="">
+                    <button type="button" class="qe-act is-danger" onclick="spkImageClear()">Hapus</button>
+                </div>
+                <p class="qe-hint" id="spk-img-status" style="margin-top:6px"></p>
+            </div>
+
+            <div class="qe-sec">
+                <div class="qe-sec-head" style="margin-bottom:8px">
+                    <label for="spk-sample" class="qe-sec-title">Musterantwort <span class="qe-optional">contoh jawaban</span></label>
+                    <span class="qe-hint">Ditampilkan lewat tombol “Musterantwort anzeigen”</span>
+                </div>
+                <textarea name="spk_sample_answer" id="spk-sample" rows="3"
+                    class="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50 focus:bg-white transition resize-y leading-relaxed"
+                    placeholder="Entschuldigung, könnten Sie bitte die Musik etwas leiser machen?">{{ passage.sample_answer if passage else '' }}</textarea>
+            </div>
+
+            <div class="qe-sec" style="display:grid; grid-template-columns:1fr 1fr; gap:12px">
+                <div>
+                    <label for="spk-prep" class="qe-sec-title" style="display:block; margin-bottom:8px">Waktu persiapan (detik)</label>
+                    <input type="number" name="spk_prep_seconds" id="spk-prep" min="0" step="5"
+                        value="{{ passage.prep_seconds if passage else 30 }}"
+                        class="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50 focus:bg-white transition">
+                </div>
+                <div>
+                    <label for="spk-speak" class="qe-sec-title" style="display:block; margin-bottom:8px">Waktu bicara (detik)</label>
+                    <input type="number" name="spk_speak_seconds" id="spk-speak" min="10" step="5"
+                        value="{{ passage.speak_seconds if passage else 60 }}"
+                        class="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50 focus:bg-white transition">
+                </div>
+            </div>
+        </section>
+
+        {% if passage %}
+        <div class="qe-card" style="padding:16px 20px; display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap">
+            <p class="qe-hint" style="margin:0">
+                Tersimpan sebagai tugas bicara — tanpa butir pilihan ganda.
+                Klik <strong>Simpan Perubahan</strong> di kanan atas untuk menyimpan.
+            </p>
+            <form method="POST" action="/expert/question-bank/{{ passage.pkey }}/delete" class="inline"
+                onsubmit="return confirm('Hapus tugas Sprechen ini?')">
+                <button type="submit" class="qe-act is-danger">Hapus tugas</button>
+            </form>
+        </div>
+        {% endif %}
+    </form>
+</div>
+
+<style>
+    .spk-img-zone{ display:flex; align-items:center; gap:12px; padding:16px 18px; border-radius:12px;
+        border:1.5px dashed var(--line); background:#FBFCFE; color:var(--muted); cursor:pointer; transition:all .15s; }
+    .spk-img-zone:hover{ border-color:var(--brand); color:var(--brand-ink); background:var(--brand-soft); }
+    .spk-img-zone svg{ width:24px; height:24px; color:var(--faint); }
+    .spk-img-zone:hover svg{ color:var(--brand); }
+    .spk-img-zone span{ font-size:12.5px; font-weight:500; }
+    .spk-img-preview{ display:flex; align-items:center; gap:14px; padding:10px 12px; border-radius:12px;
+        border:1px solid var(--line); background:#fff; }
+    .spk-img-preview img{ max-height:104px; max-width:220px; border-radius:9px; border:1px solid var(--line-soft); }
+    .spk-img-preview .qe-act{ margin-left:auto; }
+</style>
+
+{% else %}
 
 <div id="qe-page" class="qe-page" data-mode="{{ q_mode }}">
 
@@ -1173,9 +1338,59 @@
 
     </div>
 </div>
+{% endif %}
 {% endblock %}
 
 {% block scripts %}
+{% if is_sprechen %}
+<script>
+/* ── Sprechen: upload gambar soal ── */
+function spkImageSet(url) {
+    const wrap  = document.getElementById('spk-img-preview');
+    const empty = document.getElementById('spk-img-empty');
+    const thumb = document.getElementById('spk-img-thumb');
+    document.getElementById('spk-image-url').value = url || '';
+    if (url) {
+        thumb.src = url;
+        wrap.classList.remove('hidden');
+        empty.style.display = 'none';
+    } else {
+        thumb.removeAttribute('src');
+        wrap.classList.add('hidden');
+        empty.style.display = '';
+    }
+}
+
+function spkImageClear() {
+    spkImageSet('');
+    document.getElementById('spk-img-status').textContent = '';
+    document.getElementById('spk-image-picker').value = '';
+}
+
+async function spkImagePick(input) {
+    const file = input.files && input.files[0];
+    if (!file) return;
+    const status = document.getElementById('spk-img-status');
+    status.textContent = 'Mengunggah…';
+    try {
+        const fd = new FormData();
+        fd.append('file', file);
+        const res  = await fetch('/expert/upload-image', { method: 'POST', body: fd });
+        const data = await res.json();
+        if (data.status === 'ok') {
+            spkImageSet(data.url);
+            status.textContent = 'Gambar siap ✓';
+        } else {
+            status.textContent = '';
+            alert(data.message || 'Upload gagal');
+        }
+    } catch (e) {
+        status.textContent = '';
+        alert('Upload gagal — periksa koneksi lalu coba lagi.');
+    }
+}
+</script>
+{% else %}
 <script src="{{ url_for('static', filename='libs/quill/quill.min.js') }}"></script>
 <script>
 // Sections data for dynamic select
@@ -3319,4 +3534,5 @@ function qeFocusAdd() {
 
 ['passage-audio-url', 'sq-audio-url'].forEach(qeSyncAudioState);
 </script>
+{% endif %}
 {% endblock %}

@@ -87,6 +87,7 @@
     .pv .dd{ width:54px; height:14px; border:1.5px solid var(--brand); border-radius:4px; background:#fff; flex-shrink:0; position:relative; }
     .pv .dd::after{ content:""; position:absolute; right:4px; top:3.5px; border-left:3.5px solid transparent; border-right:3.5px solid transparent; border-top:4.5px solid var(--brand); }
     .pv .inp{ width:50px; height:14px; border:1.5px dashed var(--brand); border-radius:4px; background:#fff; flex-shrink:0; }
+    .pv .mic{ width:14px; height:14px; border-radius:50% 50% 50% 0; background:var(--brand); flex-shrink:0; transform:rotate(-45deg); }
     .pv .chips{ display:flex; gap:3px; flex-shrink:0; }
     .pv .chips span{ font:700 8.5px/1 'Barlow'; padding:3px 6px; border-radius:4px; border:1.2px solid #C3CAD5; color:var(--muted); background:#fff; }
     .pv .chips span.ok{ border-color:var(--brand); color:var(--brand-ink); background:var(--brand-soft); }
@@ -244,6 +245,19 @@
                     </span>
                 </label>
 
+                <label class="qn-opt">
+                    <input type="radio" name="qn_answer" value="speak" data-label="Sprechen (Bicara)">
+                    <span class="qn-card">
+                        <span class="qn-radio"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3.5" d="M5 13l4 4L19 7"/></svg></span>
+                        <span><span class="qn-h">Sprechen <span class="nw">· Bicara</span></span><span class="qn-d">Peserta membaca tugas lalu <strong>merekam jawabannya</strong>.</span></span>
+                        <span class="pv" aria-hidden="true">
+                            <span class="row"><i class="f"></i><span class="mic"></span></span>
+                            <span class="row"><i style="width:46%"></i></span>
+                        </span>
+                        <span class="qn-meta">1 bentuk</span>
+                    </span>
+                </label>
+
             </div>
         </section>
 
@@ -364,6 +378,23 @@
                     </span>
                 </label>
             </div>
+
+            <!-- Sprechen -->
+            <div class="qn-grid" data-group="speak" role="radiogroup" aria-labelledby="sec-3-title" hidden>
+                <label class="qn-opt">
+                    <input type="radio" name="qn_variant" value="speak-task" data-mode="sprechen" data-answer-type="speak" data-label="Tugas Bicara (rekam suara)" checked
+                        data-fill="Instruksi / Aufgabe yang tampil ke siswa|Situasi + gambar (opsional)|Musterantwort + waktu persiapan &amp; bicara">
+                    <span class="qn-card">
+                        <span class="qn-radio"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3.5" d="M5 13l4 4L19 7"/></svg></span>
+                        <span class="pv" aria-hidden="true">
+                            <span class="row"><i class="f"></i><span class="mic"></span></span>
+                            <span class="row"><i style="width:52%"></i></span>
+                            <span class="row" style="margin-top:2px"><span class="chips"><span class="ok">Aufnahme</span><span>00:45</span></span></span>
+                        </span>
+                        <span><span class="qn-h">Tugas Bicara</span><span class="qn-d">Instruksi + situasi, lalu siswa merekam suaranya. Ada Musterantwort.</span></span>
+                    </span>
+                </label>
+            </div>
         </section>
 
     </div>
@@ -416,7 +447,8 @@
     var HELP = {
         mc:    'Satu soal berdiri sendiri, atau beberapa soal berbagi satu teks/audio?',
         rf:    'Satu pernyataan saja, atau beberapa pernyataan berbagi satu teks/audio?',
-        cloze: 'Lückentext selalu satu teks dengan banyak rumpang. Bagaimana peserta mengisinya?'
+        cloze: 'Lückentext selalu satu teks dengan banyak rumpang. Bagaimana peserta mengisinya?',
+        speak: 'Tugas bicara selalu satu instruksi per soal — siswa merekam jawabannya sendiri.'
     };
 
     function $(id) { return document.getElementById(id); }

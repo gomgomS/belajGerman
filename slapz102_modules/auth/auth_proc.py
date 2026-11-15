@@ -143,11 +143,14 @@ def create_super_admin(full_name, email, password):
 # end def
 
 
-def get_all_users(role_filter=None):
+def get_all_users(role_filter=None, roles=None):
     try:
         mgdDB = database.get_db_conn(config.mainDB)
         query = {"is_deleted": False}
-        if role_filter:
+        if roles:
+            # beberapa peran sekaligus, mis. ["super_admin", "expert"]
+            query["role"] = {"$in": list(roles)}
+        elif role_filter:
             query["role"] = role_filter
         # end if
         users = list(mgdDB.db_toefl_user.find(query, {"password": 0}).sort("rec_timestamp", -1))

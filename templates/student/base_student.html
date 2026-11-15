@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Studentbereich{% endblock %} — BelajDeutsch</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='v2/platform.output.css') }}">
+    <style>
+      :root{
+        --bg:#F3F5F8; --surface:#FFFFFF; --ink:#171A21; --muted:#5B6472; --faint:#98A1AE;
+        --line:#E4E7EC; --line-soft:#EDF0F4;
+        --brand:#1D4ED8; --brand-strong:#1E40AF; --brand-soft:#EFF4FF; --brand-ink:#1E3A8A;
+        --danger:#D92D20; --ok:#12805C; --warn:#B54708; --gold:#D97706;
+      }
+      body.std{ background:var(--bg); color:var(--ink);
+        font-family:'IBM Plex Sans','Segoe UI',system-ui,sans-serif; font-size:14.5px; line-height:1.6; }
+      .std h1,.std h2,.std h3,.std h4,.font-display{ font-family:'Barlow','Arial Narrow',sans-serif; letter-spacing:-.01em; }
+      .std button,.std .btn{ font-family:'Barlow','Arial Narrow',sans-serif; }
+
+      .pill{ display:inline-flex; align-items:center; gap:4px; font-size:11px; font-weight:600; border-radius:999px; padding:2.5px 10px; }
+      .pill.ok{ background:#E7F5EF; color:var(--ok); }
+      .pill.warn{ background:#FDF1E2; color:var(--warn); }
+      .pill.err{ background:#FDEBE9; color:var(--danger); }
+      .pill.neutral{ background:#EFF1F4; color:#4A5361; }
+      .pill.brand{ background:var(--brand-soft); color:var(--brand-ink); }
+      .pill.gold{ background:#FDF6E7; color:var(--gold); }
+
+      .std-shell{ min-height:100vh; display:flex; flex-direction:column; }
+      .std-top{ position:sticky; top:0; z-index:40; background:rgba(255,255,255,.92); backdrop-filter:blur(10px);
+        border-bottom:1px solid var(--line); }
+      .std-top-inner{ max-width:1120px; margin:0 auto; padding:0 16px; }
+      .std-brand{ display:flex; align-items:center; gap:10px; min-width:0; text-decoration:none; }
+      .std-brand:hover{ text-decoration:none; }
+      .std-logo{ width:34px; height:34px; border-radius:10px; background:var(--brand); color:#fff;
+        display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+      .std-logo svg{ width:18px; height:18px; }
+      .std-nav{ display:flex; align-items:center; gap:4px; padding:4px; background:#EFF1F4; border-radius:12px;
+        width:max-content; max-width:100%; overflow-x:auto; }
+      .stud-tab{ display:inline-flex; align-items:center; gap:7px; padding:8px 14px; border-radius:9px;
+        font-family:'Barlow'; font-size:13.5px; font-weight:600; color:#4A5361; white-space:nowrap;
+        text-decoration:none !important; transition:all .15s; }
+      .stud-tab svg{ width:15px; height:15px; opacity:.7; }
+      .stud-tab:hover{ color:var(--ink); text-decoration:none; background:rgba(255,255,255,.65); }
+      .stud-tab.active{ background:var(--surface); color:var(--brand-ink); box-shadow:0 1px 2px rgba(23,26,33,.08); }
+      .stud-tab.active svg{ opacity:1; color:var(--brand); }
+      .stud-tab .de-note{ font-size:10.5px; font-weight:500; color:var(--faint); }
+      .stud-tab.active .de-note{ color:var(--brand); opacity:.8; }
+
+      .std-main{ flex:1; }
+      .std-wrap{ max-width:1120px; margin:0 auto; padding:28px 16px 56px; }
+      .std-kicker{ font-family:'Barlow'; font-size:11px; font-weight:700; letter-spacing:.14em; text-transform:uppercase; color:var(--brand); margin-bottom:6px; }
+      .std-title{ font-size:clamp(26px, 3.4vw, 34px); font-weight:700; color:var(--ink); line-height:1.15; }
+      .std-sub{ margin-top:6px; font-size:14.5px; color:var(--muted); max-width:42rem; }
+
+      .card{ background:var(--surface); border:1px solid var(--line); border-radius:16px; }
+      .card-hover{ transition:box-shadow .2s, transform .2s, border-color .2s; }
+      .card-hover:hover{ box-shadow:0 12px 28px rgba(23,26,33,.08); transform:translateY(-2px); border-color:#D5DCE8; text-decoration:none; }
+
+      .btn-primary{ display:inline-flex; align-items:center; justify-content:center; gap:8px; font-family:'Barlow';
+        font-weight:600; font-size:14px; padding:11px 18px; border-radius:11px; background:var(--brand); color:#fff;
+        transition:background .15s, transform .15s, box-shadow .15s; }
+      .btn-primary:hover{ background:var(--brand-strong); color:#fff; text-decoration:none; box-shadow:0 8px 18px rgba(29,78,216,.24); transform:translateY(-1px); }
+      .btn-soft{ display:inline-flex; align-items:center; justify-content:center; gap:8px; font-family:'Barlow';
+        font-weight:600; font-size:13.5px; padding:10px 16px; border-radius:11px; background:var(--brand-soft);
+        color:var(--brand-ink); border:1px solid #C9D8F3; transition:all .15s; }
+      .btn-soft:hover{ background:#E3ECFE; text-decoration:none; }
+      .btn-ghost{ display:inline-flex; align-items:center; justify-content:center; gap:8px; font-family:'Barlow';
+        font-weight:600; font-size:13.5px; padding:10px 16px; border-radius:11px; background:transparent;
+        color:var(--muted); border:1px solid var(--line); transition:all .15s; }
+      .btn-ghost:hover{ background:#F7F8FA; color:var(--ink); text-decoration:none; }
+
+      .cycle-toggle{ display:inline-flex; padding:4px; background:#EFF1F4; border-radius:12px; }
+      .cycle-btn{ padding:8px 15px; border-radius:9px; font-family:'Barlow'; font-size:13px; font-weight:600;
+        color:#4A5361; transition:all .15s; border:none; background:transparent; cursor:pointer; }
+      .cycle-btn:hover{ color:var(--ink); }
+      .cycle-btn.active{ background:var(--surface); color:var(--brand-ink); box-shadow:0 1px 2px rgba(23,26,33,.1); }
+      .cycle-btn .save{ font-size:10px; font-weight:700; margin-left:5px; padding:1px 6px; border-radius:99px;
+        background:#E7F5EF; color:var(--ok); }
+
+      /* chip paket & kredit di header */
+      .abo-chip{ display:inline-flex; align-items:center; gap:6px; padding:6.5px 11px; border-radius:11px;
+        background:var(--brand-soft); border:1px solid #C9D8F3; color:var(--brand-ink);
+        font-family:'Barlow'; font-size:12.5px; font-weight:600; white-space:nowrap;
+        text-decoration:none !important; transition:all .15s; }
+      .abo-chip:hover{ background:#E3ECFE; text-decoration:none; }
+      .abo-chip svg{ width:13px; height:13px; flex-shrink:0; }
+      .abo-chip b{ font-weight:700; }
+      .abo-chip .kred{ font-weight:500; opacity:.82; }
+      .abo-chip:not(.on){ background:#EFF1F4; border-color:var(--line); color:#4A5361; }
+      .abo-chip:not(.on):hover{ background:#E6E9EE; }
+      .abo-chip .dot{ width:6px; height:6px; border-radius:99px; background:var(--ok); flex-shrink:0; }
+      @media (max-width:600px){ .abo-chip .kred, .abo-chip .sep{ display:none; } .abo-chip .dot{ display:inline-block; } }
+
+      .seg{ display:inline-flex; padding:4px; background:#EFF1F4; border-radius:12px; }
+      .seg-btn{ padding:8px 14px; border-radius:9px; font-family:'Barlow'; font-size:13px; font-weight:600;
+        color:#4A5361; border:none; background:transparent; cursor:pointer; }
+      .seg-btn.active{ background:#fff; color:var(--brand-ink); box-shadow:0 1px 2px rgba(23,26,33,.08); }
+
+      .std .bg-blue-600{ background-color:var(--brand) !important; }
+      .std .hover\:bg-blue-700:hover{ background-color:var(--brand-strong) !important; }
+      .std .text-blue-600{ color:var(--brand) !important; }
+      .std .text-blue-700,.std .text-blue-800{ color:var(--brand-ink) !important; }
+      .std .border-blue-600{ border-color:var(--brand) !important; }
+      .std .bg-blue-50,.std .hover\:bg-blue-50:hover{ background-color:var(--brand-soft) !important; }
+      .std .focus\:ring-blue-500:focus{ --tw-ring-color:var(--brand) !important; }
+      .std .border-gray-200{ border-color:var(--line) !important; }
+      .std .border-gray-100{ border-color:var(--line-soft) !important; }
+      .std .bg-gray-50{ background-color:#F7F8FA !important; }
+      .std .bg-gray-100{ background-color:#EFF1F4 !important; }
+      .std .hover\:bg-gray-50:hover{ background-color:#F3F5F8 !important; }
+      .std .text-gray-500{ color:var(--muted) !important; }
+      .std .text-gray-400{ color:var(--faint) !important; }
+      .std .text-gray-600{ color:#4A5361 !important; }
+      .std .text-gray-800{ color:#242933 !important; }
+      .std .text-gray-900{ color:var(--ink) !important; }
+      .std .rounded-xl{ border-radius:12px !important; }
+      .std .rounded-2xl{ border-radius:16px !important; }
+      .std .shadow-sm{ box-shadow:0 1px 2px rgba(23,26,33,.05) !important; }
+    </style>
+    {% block head %}{% endblock %}
+</head>
+
+<body class="std std-shell">
+
+    <header class="std-top">
+        <div class="std-top-inner">
+            <div class="flex justify-between items-center h-16 gap-3">
+                <a href="/student" class="std-brand">
+                    <span class="std-logo">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                        </svg>
+                    </span>
+                    <span class="min-w-0">
+                        <span class="font-display font-bold text-[16px] leading-none" style="color:var(--ink)">Belaj<span style="color:var(--brand)">Deutsch</span></span>
+                        <span class="block text-[11px]" style="color:var(--faint)">Studentbereich · Area siswa</span>
+                    </span>
+                </a>
+
+                <div class="flex items-center gap-2 sm:gap-3">
+                    {% if header_abo %}
+                    <a href="/student/abo" class="abo-chip{% if header_abo.active %} on{% endif %}"
+                        title="{% if header_abo.active %}Langganan aktif{% if header_abo.expire_str %} sampai {{ header_abo.expire_str }}{% endif %}{% else %}Free Plan — upgrade untuk kredit AI lebih besar{% endif %}">
+                        {% if header_abo.active %}<span class="dot"></span>{% endif %}
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                        <b>{{ header_abo.plan_label }}</b>
+                        <span class="sep">·</span>
+                        <span class="kred">{{ header_abo.credits }} Kredit AI</span>
+                    </a>
+                    {% endif %}
+                    <div class="hidden sm:block text-right">
+                        <div class="text-[13px] font-semibold leading-tight" style="color:var(--ink)">{{ session.get('full_name', '') }}</div>
+                        <div class="text-[11px]" style="color:var(--faint)">Lernende</div>
+                    </div>
+                    <div class="w-9 h-9 rounded-full flex items-center justify-center font-display font-bold text-sm"
+                        style="background:var(--brand-soft); color:var(--brand-ink)">
+                        {{ (session.get('full_name', 'U') or 'U')[0].upper() }}
+                    </div>
+                    <a href="/logout" class="text-sm px-3 py-2 rounded-lg font-medium transition"
+                        style="background:#EFF1F4; color:#4A5361">Keluar</a>
+                </div>
+            </div>
+
+            <div class="pb-3 overflow-x-auto">
+                <nav class="std-nav" aria-label="Navigasi siswa">
+                    <a href="/student" class="stud-tab {% if request.path == '/student' %}active{% endif %}">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+                        Latihan <span class="de-note">Übersicht</span>
+                    </a>
+                    <a href="/student/verlauf" class="stud-tab {% if '/verlauf' in request.path %}active{% endif %}">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                        Riwayat <span class="de-note">Verlauf</span>
+                    </a>
+                    <a href="/student/abo" class="stud-tab {% if request.path == '/student/abo' %}active{% endif %}">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+                        Langganan <span class="de-note">Mein Abo</span>
+                    </a>
+                    <a href="/student/preise" class="stud-tab {% if '/preise' in request.path %}active{% endif %}">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"/></svg>
+                        Pilih paket <span class="de-note">Preise</span>
+                    </a>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <main class="std-main">
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer style="background:var(--ink)">
+        <div class="max-w-[1120px] mx-auto px-4 py-8 flex flex-col md:flex-row justify-between items-center gap-3">
+            <div class="text-sm" style="color:#98A1AE">Viel Erfolg beim Lernen — semoga sukses ujiannya.</div>
+            <div class="text-sm" style="color:#98A1AE">&copy; 2026 BelajDeutsch</div>
+        </div>
+    </footer>
+
+    {% block scripts %}{% endblock %}
+</body>
+
+</html>

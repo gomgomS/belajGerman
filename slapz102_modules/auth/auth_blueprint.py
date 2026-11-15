@@ -181,6 +181,6 @@ def _redirect_by_role(role):
     elif role == "expert":
         return redirect("/dashboard/expert")
     else:
-        return redirect("/catalog")
+        return redirect("/student")
     # end if
 # end def

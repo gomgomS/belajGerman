@@ -1,0 +1,189 @@
+{% extends "student/base_student.html" %}
+
+{% block title %}Latihan{% endblock %}
+
+{% block head %}
+<style>
+  .hero-panel{ display:grid; gap:18px; margin-bottom:28px; }
+  @media (min-width: 900px){
+    .hero-panel{ grid-template-columns:minmax(0,1.45fr) minmax(280px,.85fr); align-items:stretch; }
+  }
+  .hero-main{ position:relative; overflow:hidden; border-radius:22px; padding:28px 26px;
+    background:
+      radial-gradient(circle at 88% 18%, rgba(255,255,255,.18), transparent 28%),
+      linear-gradient(145deg, #12245A 0%, #1D4ED8 58%, #3B63E8 100%);
+    color:#fff; min-height:240px; }
+  .hero-main h1{ font-size:clamp(28px, 4vw, 40px); font-weight:700; line-height:1.12; max-width:16ch; }
+  .hero-main p{ margin-top:10px; color:#D7E3FF; font-size:14.5px; max-width:36ch; }
+  .hero-actions{ display:flex; flex-wrap:wrap; gap:10px; margin-top:22px; }
+  .hero-actions .btn-primary{ background:#fff; color:var(--brand-ink); }
+  .hero-actions .btn-primary:hover{ background:#F4F7FF; color:var(--brand-ink); box-shadow:0 8px 18px rgba(8,20,60,.18); }
+  .hero-actions .btn-ghost{ border-color:rgba(255,255,255,.28); color:#fff; background:rgba(255,255,255,.08); }
+  .hero-actions .btn-ghost:hover{ background:rgba(255,255,255,.16); color:#fff; }
+  .hero-stats{ display:flex; flex-wrap:wrap; gap:10px; margin-top:22px; }
+  .hero-stat{ min-width:88px; padding:10px 12px; border-radius:12px; background:rgba(255,255,255,.1); border:1px solid rgba(255,255,255,.12); }
+  .hero-stat b{ display:block; font-family:'Barlow'; font-size:22px; line-height:1; }
+  .hero-stat span{ display:block; margin-top:4px; font-size:11.5px; color:#C7D6F5; }
+
+  .abo-side{ padding:22px; display:flex; flex-direction:column; gap:14px; }
+  .abo-side .abo-top{ display:flex; align-items:flex-start; justify-content:space-between; gap:10px; }
+  .abo-side h2{ font-size:18px; font-weight:700; color:var(--ink); }
+  .abo-side p{ font-size:13px; color:var(--muted); }
+  .abo-meta{ display:grid; gap:8px; }
+  .abo-meta div{ display:flex; justify-content:space-between; gap:12px; font-size:13px; padding:10px 12px;
+    border-radius:11px; background:#F7F8FA; border:1px solid var(--line-soft); }
+  .abo-meta span{ color:var(--muted); }
+  .abo-meta strong{ color:var(--ink); }
+  .abo-side .cta{ margin-top:auto; }
+
+  .section-head{ display:flex; align-items:end; justify-content:space-between; gap:12px; flex-wrap:wrap; margin-bottom:14px; }
+  .section-head h2{ font-size:20px; font-weight:700; color:var(--ink); }
+  .section-head p{ font-size:13px; color:var(--muted); margin-top:2px; }
+
+  .pkg-grid{ display:grid; grid-template-columns:1fr; gap:14px; }
+  @media (min-width: 720px){ .pkg-grid{ grid-template-columns:1fr 1fr; } }
+  @media (min-width: 1040px){ .pkg-grid{ grid-template-columns:1fr 1fr 1fr; } }
+  .pkg-card{ padding:18px; display:flex; flex-direction:column; min-height:100%; }
+  .pkg-card h3{ font-size:16.5px; font-weight:700; color:var(--ink); line-height:1.3; margin-top:10px; }
+  .pkg-card .desc{ font-size:13px; color:var(--muted); margin-top:6px; margin-bottom:16px; flex:1; }
+  .pkg-meta{ display:flex; align-items:center; justify-content:space-between; gap:8px; }
+
+  .result-list{ display:grid; gap:10px; }
+  .result-row{ display:flex; align-items:center; justify-content:space-between; gap:14px; padding:14px 16px; flex-wrap:wrap; }
+  .result-score{ font-family:'Barlow'; font-weight:700; font-size:24px; color:var(--brand); line-height:1; }
+  .result-score span{ font-size:12px; font-weight:500; color:var(--faint); }
+  .empty-panel{ padding:36px 20px; text-align:center; color:var(--muted); }
+</style>
+{% endblock %}
+
+{% block content %}
+{% set first_name = (user.full_name or 'Lernende').split(' ')[0] %}
+<div class="std-wrap">
+
+    <div class="hero-panel">
+        <section class="hero-main">
+            <p class="text-[11px] font-bold uppercase tracking-[.16em]" style="color:#C7D6F5">Übersicht · Latihan hari ini</p>
+            <h1>Guten Tag, {{ first_name }}.</h1>
+            <p>
+                {% if subscription %}
+                Satu langkah jelas: pilih simulasi, kerjakan, lalu review jawabannya.
+                {% else %}
+                Kamu masih di Free Plan. Buka semua simulasi & pembahasan dengan berlangganan.
+                {% endif %}
+            </p>
+            <div class="hero-actions">
+                {% if subscription %}
+                <a href="#pruefungen" class="btn-primary">Mulai simulasi</a>
+                <a href="/student/verlauf" class="btn-ghost">Lihat riwayat</a>
+                {% else %}
+                <a href="/student/preise" class="btn-primary">Pilih paket Abo</a>
+                <a href="#pruefungen" class="btn-ghost">Lihat simulasi</a>
+                {% endif %}
+            </div>
+            <div class="hero-stats">
+                <div class="hero-stat"><b>{{ stats.total_exams or 0 }}</b><span>Ujian dikerjakan</span></div>
+                <div class="hero-stat"><b>{{ stats.avg_score or 0 }}</b><span>Rata-rata skor</span></div>
+                <div class="hero-stat"><b>{{ stats.best_score or 0 }}</b><span>Skor terbaik</span></div>
+            </div>
+        </section>
+
+        <aside class="card abo-side">
+            <div class="abo-top">
+                <div>
+                    <div class="std-kicker" style="margin-bottom:4px">Mein Abo</div>
+                    <h2>{% if subscription %}{{ subscription.plan_data.label if subscription.plan_data else subscription.tier }}{% else %}Free Plan{% endif %}</h2>
+                </div>
+                {% if subscription %}<span class="pill ok">Aktiv</span>{% else %}<span class="pill neutral">Free</span>{% endif %}
+            </div>
+            {% if subscription %}
+            <p>Langganan aktif{% if subscription.expire_at_str %} sampai <strong style="color:var(--ink)">{{ subscription.expire_at_str }}</strong>{% endif %}{% if subscription.days_left is defined and subscription.days_left <= 14 %} · {{ subscription.days_left }} hari lagi{% endif %}.</p>
+            <div class="abo-meta">
+                <div><span>Kredit AI</span><strong>{{ (subscription.plan_data.ai_credits_monthly if subscription.plan_data else 0) or 0 }}/bln</strong></div>
+                <div><span>Akses ujian</span><strong>Semua level</strong></div>
+            </div>
+            <a href="/student/abo" class="btn-soft cta w-full">Kelola langganan</a>
+            {% else %}
+            <p>Akses terbatas. Upgrade sekali, lalu semua simulasi & pembahasan terbuka sampai masa berlaku habis.</p>
+            <div class="abo-meta">
+                <div><span>Simulasi</span><strong>Terbatas</strong></div>
+                <div><span>Pembahasan</span><strong>Terkunci</strong></div>
+            </div>
+            <a href="/student/preise" class="btn-primary cta w-full">Upgrade Abo</a>
+            {% endif %}
+        </aside>
+    </div>
+
+    <section id="pruefungen" class="mb-10">
+        <div class="section-head">
+            <div>
+                <h2>Verfügbare Prüfungen</h2>
+                <p>{% if subscription %}Simulasi siap dikerjakan — klik untuk mulai.{% else %}Simulasi terlihat, tapi mulai ujian butuh Abo aktif.{% endif %}</p>
+            </div>
+            {% if not subscription %}
+            <a href="/student/preise" class="btn-soft">Lihat harga</a>
+            {% endif %}
+        </div>
+
+        {% if packages %}
+        <div class="pkg-grid">
+            {% for pkg in packages %}
+            <article class="card pkg-card card-hover">
+                <div class="pkg-meta">
+                    <span class="pill brand">{{ pkg.test_type }}</span>
+                    <span class="text-[12px]" style="color:var(--faint)">{{ pkg.total_questions }} soal</span>
+                </div>
+                <h3>{{ pkg.title }}</h3>
+                <p class="desc">{{ pkg.description or 'Simulasi lengkap sesuai format resmi.' }}</p>
+                {% if subscription %}
+                <a href="/exam/{{ pkg.pkey }}/start" class="btn-primary w-full">Simulation starten</a>
+                {% else %}
+                <a href="/student/preise" class="btn-ghost w-full">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                    Butuh Abo
+                </a>
+                {% endif %}
+            </article>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="card empty-panel">Belum ada simulasi yang dipublikasikan. Cek lagi nanti.</div>
+        {% endif %}
+    </section>
+
+    <section>
+        <div class="section-head">
+            <div>
+                <h2>Letzte Ergebnisse</h2>
+                <p>Hasil terbaru — lanjut review biar tahu bagian yang masih lemah.</p>
+            </div>
+            <a href="/student/verlauf" class="text-[13px] font-semibold" style="color:var(--brand)">Semua riwayat →</a>
+        </div>
+
+        {% if results %}
+        <div class="card result-list" style="padding:6px; border-color:var(--line)">
+            {% for r in results %}
+            <div class="result-row"{% if not loop.last %} style="border-bottom:1px solid var(--line-soft)"{% endif %}>
+                <div class="min-w-0">
+                    <div class="font-semibold text-[14.5px] truncate" style="color:var(--ink)">{{ r.package_data.title if r.package_data else 'Prüfung' }}</div>
+                    <div class="text-[12px] mt-0.5" style="color:var(--faint)">{{ r.rec_timestamp_str }}</div>
+                </div>
+                <div class="flex items-center gap-4 shrink-0">
+                    <div class="result-score text-right">{{ r.total_score }}<span>/100</span></div>
+                    <div class="flex gap-2">
+                        <a href="/exam/result/{{ r.pkey }}" class="btn-ghost" style="padding:8px 12px; font-size:12.5px">Skor</a>
+                        <a href="/exam/review/{{ r.pkey }}" class="btn-primary" style="padding:8px 12px; font-size:12.5px">Review</a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="card empty-panel">
+            <p class="mb-3">Belum ada hasil ujian.</p>
+            {% if subscription %}<a href="#pruefungen" class="btn-soft">Mulai simulasi pertama</a>{% endif %}
+        </div>
+        {% endif %}
+    </section>
+
+</div>
+{% endblock %}

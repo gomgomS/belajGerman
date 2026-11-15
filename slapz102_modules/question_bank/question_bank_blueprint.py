@@ -144,7 +144,7 @@ def _filter_bank_passages(passages, filter_section="", filter_mode=""):
         if filter_section and item.get("section_key") != filter_section:
             continue
         # end if
-        if filter_mode in ("single", "grouped") and item.get("question_mode") != filter_mode:
+        if filter_mode in ("single", "grouped", "sprechen") and item.get("question_mode") != filter_mode:
             continue
         # end if
         result.append(item)
@@ -591,10 +591,17 @@ def import_questions_json():
                 if not plain and nested:
                     plain = _plain_text(nested[0].get("question_text", ""))
                 # end if
+                if not plain and forced_mode == "sprechen":
+                    plain = _plain_text(item.get("instruction", ""))
+                # end if
                 title = (plain[:60] if plain else "Soal Impor %s" % idx)
             # end if
 
             content_text = sanitize.allow_html(item.get("content_text", "") or "")
+            if forced_mode == "sprechen":
+                # dump Sprechen: question_text = situasi, content_text biasanya kosong
+                content_text = content_text or sanitize.allow_html(item.get("question_text", "") or "")
+            # end if
             audio_url    = item.get("audio_url") or ""
             content_type = "audio" if audio_url else "text"
             passage_pkey = target_passage if (target_passage and idx == 1) else ""
@@ -639,6 +646,11 @@ def import_questions_json():
                     sub_type_key     = sub_type_key,
                     answer_type      = forced_answer_type or question_bank_proc.normalize_answer_type(item.get("answer_type")),
                     cloze_answer_mode= item.get("cloze_answer_mode", ""),
+                    instruction      = sanitize.allow_html(item.get("instruction", "") or "") if forced_mode == "sprechen" else "",
+                    sample_answer    = sanitize.allow_html(item.get("sample_answer", "") or "") if forced_mode == "sprechen" else "",
+                    image_url        = (item.get("image") or item.get("image_url") or "") if forced_mode == "sprechen" else "",
+                    prep_seconds     = item.get("prep_seconds", 0) if forced_mode == "sprechen" else 0,
+                    speak_seconds    = item.get("speak_seconds", 0) if forced_mode == "sprechen" else 0,
                 )
                 if result.get("status") != "OK":
                     errors.append("Item %s: gagal membuat passage" % idx)
@@ -650,6 +662,11 @@ def import_questions_json():
 
             if passage_pkey and passage_pkey not in passage_pkeys:
                 passage_pkeys.append(passage_pkey)
+            # end if
+
+            if q_mode == "sprechen":
+                # tugas bicara: tanpa butir soal pilihan ganda
+                continue
             # end if
 
             if nested:
@@ -725,11 +742,17 @@ def create_passage_page():
                 section_config = get_section_config(preset_section.get("section_type", ""))
             # end if
         # end if
-        if requested_mode not in ("single", "grouped"):
-            cfg_mode = (section_config or {}).get("default_passage_mode", "")
-            if cfg_mode in ("single", "grouped"):
-                requested_mode = cfg_mode
+        if requested_mode != "sprechen":
+            if requested_mode not in ("single", "grouped"):
+                cfg_mode = (section_config or {}).get("default_passage_mode", "")
+                if cfg_mode in ("single", "grouped"):
+                    requested_mode = cfg_mode
+                # end if
             # end if
+        # end if
+        requested_answer_type = question_bank_proc_answer_type(request.args.get("answer_type"))
+        if requested_mode == "sprechen":
+            requested_answer_type = "speak"
         # end if
 
         current_key = sanitize.clean_str(request.args.get("test_type") or "").lower().strip()
@@ -750,7 +773,7 @@ def create_passage_page():
             used_in_packages    = [],
             bank_section_options= _bank_section_options(current_key),
             current_section_key = current_key,
-            requested_answer_type = question_bank_proc_answer_type(request.args.get("answer_type")),
+            requested_answer_type = requested_answer_type,
             cloze_answer_mode   = (request.args.get("cloze_mode") or "").lower().strip(),
         )
     except Exception:
@@ -766,6 +789,9 @@ def create_passage_post():
     try:
         params       = sanitize.clean_html_dic(request.form.to_dict())
         content_text = sanitize.allow_html(request.form.get("content_text", ""))
+        if params.get("question_mode") == "sprechen":
+            content_text = sanitize.allow_html(request.form.get("spk_situation", ""))
+        # end if
 
         q_mode       = params.get("question_mode", "grouped")
         if question_bank_proc_answer_type(params.get("answer_type")) == "cloze":
@@ -783,6 +809,9 @@ def create_passage_post():
                 def handle_data(self, d): self.text.append(d)
             p = _P(); p.feed(sq_q_text); plain = "".join(p.text).strip()
             title = plain[:60] if plain else "Soal Mandiri"
+        # end if
+        if q_mode == "sprechen" and not title:
+            title = (params.get("spk_instruction", "") or "Tugas Sprechen").strip()[:60]
         # end if
 
         section_id   = params.get("section_id", "")
@@ -807,6 +836,11 @@ def create_passage_post():
             sub_type_key       = sub_type_key,
             answer_type        = question_bank_proc.normalize_answer_type(params.get("answer_type")),
             cloze_answer_mode  = params.get("cloze_answer_mode", ""),
+            instruction        = sanitize.allow_html(request.form.get("spk_instruction", "")),
+            sample_answer      = sanitize.allow_html(request.form.get("spk_sample_answer", "")),
+            image_url          = params.get("spk_image_url", ""),
+            prep_seconds       = params.get("spk_prep_seconds", 0),
+            speak_seconds      = params.get("spk_speak_seconds", 0),
         )
 
         if result["status"] != "OK":
@@ -814,6 +848,15 @@ def create_passage_post():
         # end if
 
         passage_pkey = result["passage_pkey"]
+
+        # Sprechen: tugas bicara berdiri sendiri — tanpa butir soal pilihan ganda
+        if q_mode == "sprechen":
+            return_to = params.get("return_to", "")
+            if return_to.startswith("/expert/"):
+                return redirect(return_to)
+            # end if
+            return redirect("/expert/question-bank/" + passage_pkey)
+        # end if
 
         # Single mode: also create the question immediately
         if q_mode == "single" and sq_q_text:
@@ -926,6 +969,15 @@ def preview_passage_page(passage_pkey):
         if not passage_clean:
             return redirect("/expert/question-bank")
         # end if
+
+        # Sprechen: pratinjau gaya siswa lengkap dengan perekam suara
+        if passage_clean.get("question_mode") == "sprechen":
+            return view_question_bank.html_passage_sprechen_preview(
+                passage = passage_clean,
+                user    = g.current_user,
+            )
+        # end if
+
         questions_clean = strip_objectid_list(questions_result.get("data", []))
         # Metadata rumpang untuk pratinjau interaktif Lückentext (isian / dropdown)
         gaps = []
@@ -963,6 +1015,9 @@ def update_passage_post(passage_pkey):
         params       = sanitize.clean_html_dic(request.form.to_dict())
         content_text = sanitize.allow_html(request.form.get("content_text", ""))
         q_mode       = params.get("question_mode", "grouped")
+        if q_mode == "sprechen":
+            content_text = sanitize.allow_html(request.form.get("spk_situation", ""))
+        # end if
         sq_q_text    = sanitize.allow_html(request.form.get("sq_question_text", ""))
         sq_exp       = sanitize.allow_html(request.form.get("sq_explanation", ""))
 
@@ -977,6 +1032,7 @@ def update_passage_post(passage_pkey):
             section_key, sub_type_key = _resolve_section_keys(saved_section_id, sub_type_raw)
         # end if
 
+        is_sprechen = q_mode == "sprechen" or existing_passage.get("question_mode") == "sprechen"
         question_bank_proc.update_passage(
             passage_pkey     = passage_pkey,
             title            = params.get("title", ""),
@@ -989,6 +1045,11 @@ def update_passage_post(passage_pkey):
             sub_type_key     = sub_type_key,
             cloze_answer_mode= (existing_passage.get("answer_type") == "cloze")
                                and params.get("cloze_answer_mode") or None,
+            instruction      = sanitize.allow_html(request.form.get("spk_instruction", "")) if is_sprechen else None,
+            sample_answer    = sanitize.allow_html(request.form.get("spk_sample_answer", "")) if is_sprechen else None,
+            image_url        = params.get("spk_image_url", "") if is_sprechen else None,
+            prep_seconds     = params.get("spk_prep_seconds", 0) if is_sprechen else None,
+            speak_seconds    = params.get("spk_speak_seconds", 0) if is_sprechen else None,
         )
 
         # Single mode: update or create the inline question
